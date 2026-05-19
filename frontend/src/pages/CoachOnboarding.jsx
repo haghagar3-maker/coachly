@@ -24,7 +24,7 @@ function StepBar({ current }) {
           }}>
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',
-              background: i < current ? 'var(--orange)' : i === current ? 'var(--orange)' : 'var(--border)',
+              background: i < current ? 'var(--coral)' : i === current ? 'var(--coral)' : 'var(--border)',
               color: i <= current ? '#fff' : 'var(--muted)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '13px', fontWeight: '700',
@@ -44,7 +44,7 @@ function StepBar({ current }) {
           {i < STEPS.length - 1 && (
             <div style={{
               width: '48px', height: '2px', marginBottom: '16px',
-              background: i < current ? 'var(--orange)' : 'var(--border)',
+              background: i < current ? 'var(--coral)' : 'var(--border)',
               transition: 'background 0.2s',
             }} />
           )}
@@ -280,7 +280,7 @@ export default function CoachOnboarding() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: "'Unbounded', sans-serif",
             fontSize: '28px', fontWeight: '700', marginBottom: '6px',
           }}>
             Become a coach
@@ -298,7 +298,7 @@ export default function CoachOnboarding() {
           border: '1px solid var(--border)', padding: '32px',
         }}>
           <div style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: "'Unbounded', sans-serif",
             fontSize: '20px', fontWeight: '700', marginBottom: '22px',
           }}>
             {STEPS[step].label}
@@ -352,7 +352,7 @@ export default function CoachOnboarding() {
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'var(--muted)' }}>
           Already have a coach account?{' '}
           <span
-            style={{ color: 'var(--orange)', cursor: 'pointer', fontWeight: '600' }}
+            style={{ color: 'var(--coral)', cursor: 'pointer', fontWeight: '600' }}
             onClick={() => navigate('/coach/login')}
           >
             Log in
