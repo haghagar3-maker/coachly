@@ -28,6 +28,7 @@ import BottomNav from '../components/BottomNav';
 import EmptyState from '../components/EmptyState';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
+import ProfileSection from '../components/ProfileSection';
 
 // ─── helpers ────────────────────────────────────────────────────
 const AVATAR_COLORS = ['#E8633A','#2a7a4f','#5a5ac8','#c94e2a','#2d6b47','#8b5cf6','#0891b2','#b45309','#be185d','#065f46'];
@@ -1307,7 +1308,7 @@ export default function UserDashboard() {
   const sectionTitles = {
     home: 'Dashboard', chat: 'AI Coach', dm: 'Message Coach',
     strategy: 'My Strategy', nutrition: 'Nutrition', community: 'Community',
-    progress: 'My Progress', content: 'Content Library', 'switch-coach': 'My Coaches',
+    progress: 'My Progress', content: 'Content Library', 'switch-coach': 'My Coaches', profile: 'My Profile',
   };
 
   return (
@@ -1365,6 +1366,17 @@ export default function UserDashboard() {
               currentCoachId={activeCoachId}
               onSwitch={switchCoach}
               onBrowse={() => navigate('/')}
+            />
+          )}
+          {section === 'profile' && (
+            <ProfileSection
+              user={user}
+              subscriptions={enrichedSubs}
+              onUpdate={(updated, refreshSubs) => {
+                if (updated) setUser(updated);
+                if (refreshSubs) getUserSubscriptions().then(setSubscriptions).catch(() => {});
+              }}
+              onLogout={async () => { await logout().catch(() => {}); navigate('/'); }}
             />
           )}
         </div>
