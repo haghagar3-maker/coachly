@@ -73,7 +73,7 @@ function SectionOverview({ showToast }) {
   useEffect(() => {
     async function load() {
       try {
-        const [s, a, r] = await Promise.all([
+        const [s, a, r] = await Promise.allSettled([
           getAdminStats(),
           getAdminActivity(),
           getAdminRevenue(),
