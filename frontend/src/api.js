@@ -285,6 +285,11 @@ export function deleteCoach(id) {
   return request(`/api/admin/coach/${id}`, { method: 'DELETE', admin: true });
 }
 
+// aliases used by AdminDashboard
+export const approveAdminCoach = approveCoach;
+export const suspendAdminCoach = suspendCoach;
+export const deleteAdminCoach  = deleteCoach;
+
 export function getAdminUsers() {
   return request('/api/admin/users', { admin: true });
 }
@@ -336,15 +341,4 @@ export async function adminLogout() {
   } finally {
     clearAdminToken();
   }
-}
-export function approveAdminCoach(id) {
-  return apiFetch(`/api/admin/coaches/${id}/approve`, { method: 'PATCH' });
-}
-
-export function suspendAdminCoach(id) {
-  return apiFetch(`/api/admin/coaches/${id}/suspend`, { method: 'PATCH' });
-}
-
-export function deleteAdminCoach(id) {
-  return apiFetch(`/api/admin/coaches/${id}`, { method: 'DELETE' });
 }

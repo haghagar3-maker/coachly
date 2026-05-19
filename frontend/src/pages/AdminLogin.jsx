@@ -8,22 +8,18 @@ export default function AdminLogin() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
 
-  function set(k, v) { setForm((p) => ({ ...p, [k]: v })); }
+  function set(k, v) { setForm(p => ({ ...p, [k]: v })); }
 
   async function submit(e) {
     e.preventDefault();
-    if (!form.email.trim() || !form.password) {
-      showToast('Email and password are required', 'error');
-      return;
-    }
+    if (!form.email || !form.password) { showToast('Fill in all fields', 'error'); return; }
     setLoading(true);
     try {
-      const res = await adminLogin(form.email.trim(), form.password);
+      const res = await adminLogin(form.email, form.password);
       saveAdminToken(res.token);
-      showToast('Access granted', 'success');
-      setTimeout(() => navigate('/admin'), 800);
+      navigate('/admin', { replace: true });
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message || 'Login failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -31,164 +27,99 @@ export default function AdminLogin() {
 
   return (
     <div style={{
-      minHeight: '100vh',
-      width: '100%',
+      minHeight: '100vh', width: '100%',
       background: 'var(--dark)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '40px 20px',
-      position: 'relative',
-      overflow: 'hidden',
+      flex: 1,
     }}>
-      {/* Background glows */}
-      <div style={{ position: 'absolute', top: '-80px', right: '-60px', width: '300px', height: '300px', borderRadius: '50%', background: '#7F77DD', opacity: 0.08, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '-60px', left: '-40px', width: '240px', height: '240px', borderRadius: '50%', background: 'var(--coral)', opacity: 0.06, pointerEvents: 'none' }} />
-
       <Toast />
 
-      <div style={{ width: '100%', maxWidth: '400px', position: 'relative', zIndex: 1 }}>
+      <div style={{
+        position: 'fixed', top: '-200px', left: '50%', transform: 'translateX(-50%)',
+        width: '600px', height: '600px', borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(255,77,28,0.07) 0%, transparent 70%)',
+        pointerEvents: 'none', zIndex: 0,
+      }} />
 
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            fontFamily: "'Unbounded', sans-serif",
-            fontSize: '20px',
-            fontWeight: '800',
-            color: '#fff',
-            letterSpacing: '-0.5px',
-            marginBottom: '10px',
-          }}>
-            Coachly<span style={{ color: 'var(--lime)' }}>.</span>
-          </div>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(127,119,221,0.15)',
-            color: '#A9A3F0',
-            fontSize: '10px',
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: '0.12em',
-            padding: '4px 12px',
-            borderRadius: '100px',
-            border: '1px solid rgba(127,119,221,0.25)',
-          }}>
-            ⚙ Admin Portal
-          </div>
+      <div style={{ width: '100%', maxWidth: '380px', position: 'relative', zIndex: 1 }}>
+        <div style={{
+          textAlign: 'center', marginBottom: '36px',
+          fontFamily: "'Unbounded', sans-serif", fontSize: '18px',
+          fontWeight: '800', color: '#fff', letterSpacing: '-0.5px',
+        }}>
+          Coachly<span style={{ color: 'var(--coral)' }}>.</span>
         </div>
 
-        {/* Card */}
         <div style={{
           background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: '18px',
-          padding: '32px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '20px', padding: '36px 32px',
           backdropFilter: 'blur(20px)',
         }}>
-          <h1 style={{
+          <h2 style={{
             fontFamily: "'Unbounded', sans-serif",
-            fontSize: '18px',
-            fontWeight: '800',
-            color: '#fff',
-            margin: '0 0 6px',
-            letterSpacing: '-0.3px',
-          }}>
-            Admin access
-          </h1>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', margin: '0 0 26px', lineHeight: 1.5 }}>
-            Restricted area. Authorised personnel only.
+            fontSize: '18px', fontWeight: '800',
+            color: '#fff', marginBottom: '6px', letterSpacing: '-0.4px',
+          }}>Admin login</h2>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginBottom: '28px' }}>
+            Restricted access.
           </p>
 
-          <form onSubmit={submit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '700', display: 'block', marginBottom: '6px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Email address
-              </label>
-              <input
-                type="email"
-                placeholder="admin@coachly.com"
-                value={form.email}
-                onChange={(e) => set('email', e.target.value)}
-                autoComplete="email"
-                required
-                style={{
-                  width: '100%',
-                  padding: '11px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff',
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '13px',
-                  outline: 'none',
-                  transition: 'border-color 0.15s',
-                }}
-                onFocus={e => e.target.style.borderColor = 'rgba(127,119,221,0.5)'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-              />
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '700', display: 'block', marginBottom: '6px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Password
-              </label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={(e) => set('password', e.target.value)}
-                autoComplete="current-password"
-                required
-                style={{
-                  width: '100%',
-                  padding: '11px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff',
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '13px',
-                  outline: 'none',
-                  transition: 'border-color 0.15s',
-                }}
-                onFocus={e => e.target.style.borderColor = 'rgba(127,119,221,0.5)'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-              />
-            </div>
+          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {['email', 'password'].map(field => (
+              <div key={field}>
+                <label style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: '7px' }}>
+                  {field}
+                </label>
+                <input
+                  type={field}
+                  value={form[field]}
+                  onChange={e => set(field, e.target.value)}
+                  placeholder={field === 'email' ? 'admin@coachly.com' : '••••••••'}
+                  autoComplete={field === 'email' ? 'email' : 'current-password'}
+                  style={{
+                    width: '100%', padding: '12px 14px',
+                    borderRadius: '11px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.06)',
+                    color: '#fff',
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: '14px', outline: 'none',
+                    transition: 'border-color 0.15s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = 'rgba(255,77,28,0.5)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                />
+              </div>
+            ))}
 
             <button
               type="submit"
               disabled={loading}
               style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
-                background: loading ? 'rgba(127,119,221,0.5)' : '#534AB7',
-                color: '#fff',
-                border: 'none',
+                marginTop: '8px', width: '100%', padding: '13px',
+                borderRadius: '11px',
+                background: loading ? 'rgba(255,77,28,0.5)' : 'var(--coral)',
+                color: '#fff', border: 'none',
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: '13px',
-                fontWeight: '700',
+                fontSize: '14px', fontWeight: '700',
                 cursor: loading ? 'default' : 'pointer',
-                transition: 'opacity 0.15s',
-                letterSpacing: '0.02em',
+                transition: 'all 0.15s',
               }}
             >
-              {loading ? 'Verifying…' : 'Log in →'}
+              {loading ? 'Signing in…' : 'Access admin →'}
             </button>
           </form>
         </div>
 
-        {/* Back link */}
         <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <span
-            style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', cursor: 'pointer' }}
+          <button
             onClick={() => navigate('/')}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px' }}
           >
-            ← Back to marketplace
-          </span>
+            ← Back to home
+          </button>
         </div>
       </div>
     </div>

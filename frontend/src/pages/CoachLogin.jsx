@@ -8,22 +8,19 @@ export default function CoachLogin() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
 
-  function set(k, v) { setForm((p) => ({ ...p, [k]: v })); }
+  function set(k, v) { setForm(p => ({ ...p, [k]: v })); }
 
   async function submit(e) {
     e.preventDefault();
-    if (!form.email.trim() || !form.password) {
-      showToast('Email and password are required', 'error');
-      return;
-    }
+    if (!form.email || !form.password) { showToast('Fill in all fields', 'error'); return; }
     setLoading(true);
     try {
-      const res = await coachLogin(form.email.trim(), form.password);
+      const res = await coachLogin(form.email, form.password);
+      // saveToken saves BOTH the token AND the type — fixes the redirect loop
       saveToken(res.token, 'coach');
-      showToast('Welcome back!', 'success');
-      setTimeout(() => navigate('/coach/dashboard'), 800);
+      navigate('/coach/dashboard', { replace: true });
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message || 'Login failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -31,129 +28,99 @@ export default function CoachLogin() {
 
   return (
     <div style={{
-      minHeight: '100vh',
-      width: '100%',
+      minHeight: '100vh', width: '100%',
       background: 'var(--dark)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '40px 20px',
-      position: 'relative',
-      overflow: 'hidden',
+      flex: 1,
     }}>
-      {/* Background glows */}
-      <div style={{ position: 'absolute', top: '-80px', right: '-60px', width: '320px', height: '320px', borderRadius: '50%', background: 'var(--lime)', opacity: 0.06, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '-80px', left: '-40px', width: '260px', height: '260px', borderRadius: '50%', background: 'var(--coral)', opacity: 0.06, pointerEvents: 'none' }} />
-
       <Toast />
 
-      <div style={{ width: '100%', maxWidth: '400px', position: 'relative', zIndex: 1 }}>
+      {/* Radial glow */}
+      <div style={{
+        position: 'fixed', top: '-200px', left: '50%', transform: 'translateX(-50%)',
+        width: '700px', height: '700px', borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(200,255,0,0.07) 0%, transparent 70%)',
+        pointerEvents: 'none', zIndex: 0,
+      }} />
 
+      <div style={{
+        width: '100%', maxWidth: '400px', position: 'relative', zIndex: 1,
+      }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            fontFamily: "'Unbounded', sans-serif",
-            fontSize: '20px',
-            fontWeight: '800',
-            color: '#fff',
-            letterSpacing: '-0.5px',
-            marginBottom: '10px',
-          }}>
-            Coachly<span style={{ color: 'var(--lime)' }}>.</span>
-          </div>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(200,255,0,0.1)',
-            color: 'var(--lime)',
-            fontSize: '10px',
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: '0.12em',
-            padding: '4px 12px',
-            borderRadius: '100px',
-            border: '1px solid rgba(200,255,0,0.2)',
-          }}>
-            Coach Portal
-          </div>
+        <div style={{
+          textAlign: 'center', marginBottom: '36px',
+          fontFamily: "'Unbounded', sans-serif", fontSize: '18px',
+          fontWeight: '800', color: '#fff', letterSpacing: '-0.5px',
+        }}>
+          Coachly<span style={{ color: 'var(--lime)' }}>.</span>
         </div>
 
         {/* Card */}
         <div style={{
           background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: '18px',
-          padding: '32px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '20px',
+          padding: '36px 32px',
           backdropFilter: 'blur(20px)',
         }}>
-          <h1 style={{
+          <h2 style={{
             fontFamily: "'Unbounded', sans-serif",
-            fontSize: '18px',
-            fontWeight: '800',
-            color: '#fff',
-            margin: '0 0 6px',
-            letterSpacing: '-0.3px',
-          }}>
-            Welcome back
-          </h1>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', margin: '0 0 26px', lineHeight: 1.5 }}>
-            Log in to your coaching dashboard.
+            fontSize: '20px', fontWeight: '800',
+            color: '#fff', marginBottom: '6px',
+            letterSpacing: '-0.4px',
+          }}>Coach login</h2>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginBottom: '28px' }}>
+            Welcome back. Let's get coaching.
           </p>
 
-          <form onSubmit={submit}>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '700', display: 'block', marginBottom: '6px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Email address
+          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: '7px' }}>
+                Email
               </label>
               <input
                 type="email"
-                placeholder="you@example.com"
                 value={form.email}
-                onChange={(e) => set('email', e.target.value)}
+                onChange={e => set('email', e.target.value)}
+                placeholder="you@example.com"
                 autoComplete="email"
-                required
                 style={{
-                  width: '100%',
-                  padding: '11px 14px',
-                  borderRadius: '10px',
+                  width: '100%', padding: '12px 14px',
+                  borderRadius: '11px',
                   border: '1px solid rgba(255,255,255,0.1)',
                   background: 'rgba(255,255,255,0.06)',
                   color: '#fff',
                   fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '13px',
-                  outline: 'none',
+                  fontSize: '14px', outline: 'none',
                   transition: 'border-color 0.15s',
                 }}
-                onFocus={e => e.target.style.borderColor = 'rgba(200,255,0,0.4)'}
+                onFocus={e => e.target.style.borderColor = 'rgba(200,255,0,0.5)'}
                 onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
               />
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '700', display: 'block', marginBottom: '6px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: '7px' }}>
                 Password
               </label>
               <input
                 type="password"
-                placeholder="••••••••"
                 value={form.password}
-                onChange={(e) => set('password', e.target.value)}
+                onChange={e => set('password', e.target.value)}
+                placeholder="••••••••"
                 autoComplete="current-password"
-                required
                 style={{
-                  width: '100%',
-                  padding: '11px 14px',
-                  borderRadius: '10px',
+                  width: '100%', padding: '12px 14px',
+                  borderRadius: '11px',
                   border: '1px solid rgba(255,255,255,0.1)',
                   background: 'rgba(255,255,255,0.06)',
                   color: '#fff',
                   fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '13px',
-                  outline: 'none',
+                  fontSize: '14px', outline: 'none',
                   transition: 'border-color 0.15s',
                 }}
-                onFocus={e => e.target.style.borderColor = 'rgba(200,255,0,0.4)'}
+                onFocus={e => e.target.style.borderColor = 'rgba(200,255,0,0.5)'}
                 onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
               />
             </div>
@@ -162,42 +129,45 @@ export default function CoachLogin() {
               type="submit"
               disabled={loading}
               style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
+                marginTop: '8px',
+                width: '100%', padding: '13px',
+                borderRadius: '11px',
                 background: loading ? 'rgba(200,255,0,0.5)' : 'var(--lime)',
                 color: 'var(--dark)',
                 border: 'none',
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: '13px',
-                fontWeight: '700',
+                fontSize: '14px', fontWeight: '700',
                 cursor: loading ? 'default' : 'pointer',
-                transition: 'opacity 0.15s',
-                letterSpacing: '0.02em',
+                transition: 'all 0.15s',
               }}
             >
-              {loading ? 'Logging in…' : 'Log in →'}
+              {loading ? 'Signing in…' : 'Sign in →'}
             </button>
           </form>
+
+          <div style={{
+            marginTop: '24px', paddingTop: '24px',
+            borderTop: '1px solid rgba(255,255,255,0.07)',
+            textAlign: 'center',
+            fontSize: '13px', color: 'rgba(255,255,255,0.3)',
+          }}>
+            No account?{' '}
+            <button
+              onClick={() => navigate('/coach/signup')}
+              style={{ background: 'none', border: 'none', color: 'var(--lime)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', fontWeight: '600' }}
+            >
+              Become a coach
+            </button>
+          </div>
         </div>
 
-        {/* Footer links */}
-        <div style={{ textAlign: 'center', marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
-            Don't have an account?{' '}
-            <span
-              style={{ color: 'var(--lime)', cursor: 'pointer', fontWeight: '600' }}
-              onClick={() => navigate('/coach/signup')}
-            >
-              Apply as a coach
-            </span>
-          </div>
-          <span
-            style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', cursor: 'pointer' }}
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button
             onClick={() => navigate('/')}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px' }}
           >
-            ← Back to marketplace
-          </span>
+            ← Back to home
+          </button>
         </div>
       </div>
     </div>
