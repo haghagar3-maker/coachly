@@ -337,3 +337,14 @@ export async function adminLogout() {
     clearAdminToken();
   }
 }
+export function approveAdminCoach(id) {
+  return apiFetch(`/api/admin/coaches/${id}/approve`, { method: 'PATCH' });
+}
+
+export function suspendAdminCoach(id) {
+  return apiFetch(`/api/admin/coaches/${id}/suspend`, { method: 'PATCH' });
+}
+
+export function deleteAdminCoach(id) {
+  return apiFetch(`/api/admin/coaches/${id}`, { method: 'DELETE' });
+}
