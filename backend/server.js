@@ -1545,7 +1545,3 @@ app.patch('/api/admin/settings', requireAuth, requireAdmin, async (req, res) => 
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });
-
-module.exports = app;
-   
- 
