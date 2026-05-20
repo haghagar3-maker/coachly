@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategories, getCoaches } from '../api';
 import EmptyState from '../components/EmptyState';
@@ -162,9 +162,6 @@ const STATS = [
   { value: '24/7', label: 'AI availability' },
 ];
 
-/* ─── Sport tags shown in hero ─── */
-const SPORT_TAGS = ['Football', 'Tennis', 'Swimming', 'CrossFit', 'Boxing', 'Running', 'Basketball', 'Yoga', 'Cycling', 'Martial Arts'];
-
 /* ─── Privacy & Terms modal ─── */
 function LegalModal({ type, onClose }) {
   useEffect(() => {
@@ -276,8 +273,8 @@ export default function Home() {
   const [legalModal, setLegalModal] = useState(null);
   const [heroLoaded, setHeroLoaded] = useState(false);
 
-  // Multiple sport images — pick one that loaded
-  const HERO_URL = 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1600&q=80';
+  // Multi-sport coaching image — group training / athletic collage
+  const HERO_URL = 'https://images.unsplash.com/photo-1547060827-e2b799f1f515?w=1600&q=80';
 
   useEffect(() => {
     if (!document.getElementById('coachly-home-styles')) {
@@ -319,21 +316,17 @@ export default function Home() {
         padding: '0 32px', height: '60px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        {/* Logo — dark pill with orange dot, matching login page */}
+        {/* Logo — plain text, no background */}
         <div
-          style={{
-            display: 'inline-flex', alignItems: 'center',
-            background: 'var(--dark)', borderRadius: '8px',
-            padding: '5px 14px', cursor: 'pointer',
-          }}
+          style={{ cursor: 'pointer' }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           <span style={{
             fontFamily: "'Playfair Display', serif",
-            fontWeight: '800', fontSize: '17px',
-            color: '#fff', letterSpacing: '0.03em',
+            fontWeight: '800', fontSize: '18px',
+            color: 'var(--dark)', letterSpacing: '0.06em',
           }}>
-            Coachly<span style={{ color: 'var(--orange)' }}>.</span>
+            COACHLY<span style={{ color: 'var(--orange)' }}>.</span>
           </span>
         </div>
 
@@ -374,12 +367,12 @@ export default function Home() {
         overflow: 'hidden',
         background: '#0f1f14',
       }}>
-        {/* Background — multi-sport collage */}
+        {/* Background — multi-sport coaching image */}
         <div style={{
           position: 'absolute', inset: 0,
           backgroundImage: heroLoaded ? `url('${HERO_URL}')` : 'none',
           backgroundSize: 'cover',
-          backgroundPosition: 'center 25%',
+          backgroundPosition: 'center 30%',
           transition: 'opacity 0.8s ease',
           opacity: heroLoaded ? 1 : 0,
         }} />
@@ -403,26 +396,12 @@ export default function Home() {
           <p className="anim-fadeup" style={{
             animationDelay: '160ms',
             fontSize: '16px', color: 'rgba(255,255,255,0.75)',
-            lineHeight: '1.7', marginBottom: '28px', fontWeight: '300',
+            lineHeight: '1.7', marginBottom: '36px', fontWeight: '300',
           }}>
             Real coaches across every discipline. Powered by AI.<br />Your program, community, and coach — all in one place.
           </p>
 
-          {/* Sport tags */}
-          <div className="anim-fadeup" style={{ animationDelay: '200ms', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginBottom: '32px' }}>
-            {SPORT_TAGS.map(tag => (
-              <span key={tag} style={{
-                padding: '5px 13px', borderRadius: '100px',
-                background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                backdropFilter: 'blur(8px)',
-                fontSize: '12px', color: 'rgba(255,255,255,0.85)',
-                fontWeight: '500',
-              }}>{tag}</span>
-            ))}
-          </div>
-
-          <div className="anim-fadeup" style={{ animationDelay: '260ms', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="anim-fadeup" style={{ animationDelay: '240ms', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               className="pill-btn"
               onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
@@ -517,7 +496,6 @@ export default function Home() {
                 borderRadius: '20px', padding: '32px 28px',
                 animationDelay: `${i * 100}ms`,
               }}>
-                {/* Number badge */}
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: '40px', height: '40px', borderRadius: '12px',
@@ -561,15 +539,14 @@ export default function Home() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexWrap: 'wrap', gap: '16px', background: 'var(--bg)',
       }}>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center',
-          background: 'var(--dark)', borderRadius: '8px',
-          padding: '5px 14px',
+        {/* Logo — plain text, no background */}
+        <span style={{
+          fontFamily: "'Playfair Display', serif",
+          fontWeight: '800', fontSize: '16px',
+          color: 'var(--dark)', letterSpacing: '0.06em',
         }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: '800', fontSize: '16px', color: '#fff', letterSpacing: '0.03em' }}>
-            Coachly<span style={{ color: 'var(--orange)' }}>.</span>
-          </span>
-        </div>
+          COACHLY<span style={{ color: 'var(--orange)' }}>.</span>
+        </span>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button onClick={() => navigate('/coach/signup')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
             For coaches
