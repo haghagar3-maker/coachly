@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategories, getCoaches } from '../api';
 import EmptyState from '../components/EmptyState';
@@ -19,19 +19,15 @@ const STYLES = `
   from { opacity: 0; transform: scale(0.93); }
   to   { opacity: 1; transform: scale(1); }
 }
-@keyframes slideRight {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
-}
 .anim-fadeup   { animation: fadeUp  0.7s cubic-bezier(.22,1,.36,1) both; }
 .anim-fadein   { animation: fadeIn  0.6s ease both; }
 .anim-scalein  { animation: scaleIn 0.55s cubic-bezier(.22,1,.36,1) both; }
 .hero-overlay  {
   background: linear-gradient(
     to bottom,
-    rgba(10,18,10,0.55) 0%,
-    rgba(10,18,10,0.30) 40%,
-    rgba(10,18,10,0.72) 100%
+    rgba(10,18,10,0.45) 0%,
+    rgba(10,18,10,0.20) 40%,
+    rgba(10,18,10,0.75) 100%
   );
 }
 .coach-card:hover {
@@ -40,6 +36,7 @@ const STYLES = `
 }
 .pill-btn:hover { opacity: 0.82; }
 .nav-link:hover { color: var(--dark) !important; }
+.cat-btn:hover { background: var(--dark) !important; color: #fff !important; }
 `;
 
 const AVATAR_COLORS = [
@@ -153,17 +150,20 @@ function CoachCard({ coach, onView, delay = 0 }) {
 }
 
 const HOW_IT_WORKS = [
-  { icon: '🎯', title: 'Subscribe to a coach', description: 'Browse real coaches, pick your niche, and subscribe to a monthly program tailored to your goals.' },
-  { icon: '🤖', title: 'Get your AI + program', description: "Your coach's AI clone is available 24/7. Get your custom workout plan, meal plan, and daily guidance." },
-  { icon: '📈', title: 'Track progress together', description: 'Weekly check-ins, progress photos, and direct coach access keep you accountable every step of the way.' },
+  { num: '01', title: 'Subscribe to a coach', description: 'Browse coaches across every sport and discipline — fitness, football, tennis, swimming, and more. Pick your niche and subscribe to a monthly program built for your goals.' },
+  { num: '02', title: 'Get your AI + program', description: "Your coach's AI is available 24/7. Get a custom training plan, nutrition guidance, and daily check-ins — always tailored to your sport and level." },
+  { num: '03', title: 'Track progress together', description: 'Weekly reviews, progress tracking, and direct coach messaging keep you accountable. Your coach sees your data and adjusts your plan as you grow.' },
 ];
 
 const STATS = [
-  { value: '10K+', label: 'Active clients' },
+  { value: '10K+', label: 'Active athletes' },
   { value: '200+', label: 'Expert coaches' },
-  { value: '95%', label: 'Goal achievement' },
+  { value: '50+', label: 'Sports & disciplines' },
   { value: '24/7', label: 'AI availability' },
 ];
+
+/* ─── Sport tags shown in hero ─── */
+const SPORT_TAGS = ['Football', 'Tennis', 'Swimming', 'CrossFit', 'Boxing', 'Running', 'Basketball', 'Yoga', 'Cycling', 'Martial Arts'];
 
 /* ─── Privacy & Terms modal ─── */
 function LegalModal({ type, onClose }) {
@@ -219,7 +219,6 @@ function LegalModal({ type, onClose }) {
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
         <div style={{
           padding: '24px 28px 20px',
           borderBottom: '1px solid var(--border)',
@@ -249,7 +248,6 @@ function LegalModal({ type, onClose }) {
             ×
           </button>
         </div>
-        {/* Body */}
         <div style={{ overflowY: 'auto', padding: '24px 28px 32px' }}>
           {content.sections.map((s, i) => (
             <div key={i} style={{ marginBottom: '24px' }}>
@@ -275,20 +273,21 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
-  const [legalModal, setLegalModal] = useState(null); // 'privacy' | 'terms' | null
+  const [legalModal, setLegalModal] = useState(null);
   const [heroLoaded, setHeroLoaded] = useState(false);
 
+  // Multiple sport images — pick one that loaded
+  const HERO_URL = 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1600&q=80';
+
   useEffect(() => {
-    // inject CSS once
     if (!document.getElementById('coachly-home-styles')) {
       const s = document.createElement('style');
       s.id = 'coachly-home-styles';
       s.textContent = STYLES;
       document.head.appendChild(s);
     }
-    // preload hero image
     const img = new Image();
-    img.src = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&q=80';
+    img.src = HERO_URL;
     img.onload = () => setHeroLoaded(true);
   }, []);
 
@@ -320,12 +319,19 @@ export default function Home() {
         padding: '0 32px', height: '60px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        {/* Logo — matches login page style */}
-        <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: '700', fontSize: '20px', color: '#fff', letterSpacing: '-0.01em' }}>
+        {/* Logo — dark pill with orange dot, matching login page */}
+        <div
+          style={{
+            display: 'inline-flex', alignItems: 'center',
+            background: 'var(--dark)', borderRadius: '8px',
+            padding: '5px 14px', cursor: 'pointer',
+          }}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
           <span style={{
-            background: 'var(--dark)', color: '#fff',
-            padding: '4px 12px', borderRadius: '8px',
-            fontFamily: 'inherit', fontWeight: '700', fontSize: '17px', letterSpacing: '0.04em',
+            fontFamily: "'Playfair Display', serif",
+            fontWeight: '800', fontSize: '17px',
+            color: '#fff', letterSpacing: '0.03em',
           }}>
             Coachly<span style={{ color: 'var(--orange)' }}>.</span>
           </span>
@@ -360,70 +366,80 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Hero with background image ─── */}
+      {/* ── Hero ─── */}
       <section style={{
         position: 'relative',
-        minHeight: '540px',
+        minHeight: '580px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
-        background: '#1e3a2a',
+        background: '#0f1f14',
       }}>
-        {/* Background image */}
+        {/* Background — multi-sport collage */}
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundImage: heroLoaded
-            ? `url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&q=80')`
-            : 'none',
+          backgroundImage: heroLoaded ? `url('${HERO_URL}')` : 'none',
           backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
+          backgroundPosition: 'center 25%',
           transition: 'opacity 0.8s ease',
           opacity: heroLoaded ? 1 : 0,
         }} />
-        {/* Overlay */}
         <div className="hero-overlay" style={{ position: 'absolute', inset: 0 }} />
 
         {/* Content */}
-        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '80px 32px 72px', maxWidth: '700px', margin: '0 auto' }}>
-          <div className="anim-fadeup" style={{ animationDelay: '0ms', fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: '18px' }}>
-            Real coaches · AI-powered · 24/7
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '80px 32px 60px', maxWidth: '720px', margin: '0 auto' }}>
+          <div className="anim-fadeup" style={{ animationDelay: '0ms', fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: '18px' }}>
+            Every sport · Every level · Any goal
           </div>
           <h1 className="anim-fadeup" style={{
             animationDelay: '80ms',
             fontFamily: "'Playfair Display', serif",
-            fontSize: 'clamp(40px, 7vw, 68px)',
-            fontWeight: '900', lineHeight: '1.05',
-            color: '#fff',
-            marginBottom: '22px',
-            textShadow: '0 2px 20px rgba(0,0,0,0.3)',
+            fontSize: 'clamp(38px, 6.5vw, 64px)',
+            fontWeight: '900', lineHeight: '1.06',
+            color: '#fff', marginBottom: '20px',
+            textShadow: '0 2px 24px rgba(0,0,0,0.4)',
           }}>
-            Your coach.<br />Available 24/7.
+            Find your coach.<br />Any sport. 24/7.
           </h1>
           <p className="anim-fadeup" style={{
             animationDelay: '160ms',
-            fontSize: '16px', color: 'rgba(255,255,255,0.78)',
-            lineHeight: '1.7', marginBottom: '36px', fontWeight: '300',
+            fontSize: '16px', color: 'rgba(255,255,255,0.75)',
+            lineHeight: '1.7', marginBottom: '28px', fontWeight: '300',
           }}>
-            Subscribe to a real coach. Get your AI clone, your program,<br />your community — all in one place.
+            Real coaches across every discipline. Powered by AI.<br />Your program, community, and coach — all in one place.
           </p>
-          <div className="anim-fadeup" style={{ animationDelay: '240ms', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+
+          {/* Sport tags */}
+          <div className="anim-fadeup" style={{ animationDelay: '200ms', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginBottom: '32px' }}>
+            {SPORT_TAGS.map(tag => (
+              <span key={tag} style={{
+                padding: '5px 13px', borderRadius: '100px',
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(8px)',
+                fontSize: '12px', color: 'rgba(255,255,255,0.85)',
+                fontWeight: '500',
+              }}>{tag}</span>
+            ))}
+          </div>
+
+          <div className="anim-fadeup" style={{ animationDelay: '260ms', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               className="pill-btn"
               onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{ padding: '15px 32px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s', boxShadow: '0 4px 20px rgba(232,99,58,0.45)' }}
+              style={{ padding: '15px 32px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s', boxShadow: '0 4px 20px rgba(232,99,58,0.5)' }}
             >
               Find a coach
             </button>
             <button
               className="pill-btn"
               onClick={() => navigate('/coach/signup')}
-              style={{ padding: '15px 32px', borderRadius: '100px', border: '2px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: '#fff', transition: 'opacity 0.15s' }}
+              style={{ padding: '15px 32px', borderRadius: '100px', border: '2px solid rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: '#fff', transition: 'opacity 0.15s' }}
             >
               Become a coach
             </button>
           </div>
         </div>
 
-        {/* Bottom fade to bg */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to bottom, transparent, var(--bg))' }} />
       </section>
 
@@ -445,6 +461,7 @@ export default function Home() {
           {[{ id: null, name: 'All', slug: null }].concat(categories).map((cat) => (
             <button
               key={cat.id ?? 'all'}
+              className="cat-btn"
               onClick={() => setActiveCategory(cat.slug === activeCategory ? null : cat.slug)}
               style={{
                 padding: '8px 18px', borderRadius: '100px',
@@ -484,27 +501,36 @@ export default function Home() {
       {/* ── How it works ─── */}
       <section style={{ background: 'var(--dark)', padding: '80px 32px' }}>
         <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '12px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '14px' }}>
               How it works
             </div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(26px, 4vw, 36px)', fontWeight: '700', color: '#fff', lineHeight: '1.2' }}>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: '700', color: '#fff', lineHeight: '1.2' }}>
               Coaching, reimagined.
             </h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
             {HOW_IT_WORKS.map((step, i) => (
               <div key={i} className="anim-scalein" style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '16px', padding: '28px 24px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                borderRadius: '20px', padding: '32px 28px',
                 animationDelay: `${i * 100}ms`,
               }}>
-                <div style={{ fontSize: '28px', marginBottom: '16px' }}>{step.icon}</div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: '700', color: '#fff', marginBottom: '10px' }}>
+                {/* Number badge */}
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: '40px', height: '40px', borderRadius: '12px',
+                  background: 'var(--orange)', marginBottom: '20px',
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: '15px', fontWeight: '800', color: '#fff',
+                }}>
+                  {step.num}
+                </div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '19px', fontWeight: '700', color: '#fff', marginBottom: '12px', lineHeight: '1.3' }}>
                   {step.title}
                 </h3>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.65', fontWeight: '300', margin: 0 }}>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', fontWeight: '300', margin: 0 }}>
                   {step.description}
                 </p>
               </div>
@@ -514,14 +540,12 @@ export default function Home() {
       </section>
 
       {/* ── CTA banner ─── */}
-      <section style={{
-        background: 'var(--orange)', padding: '60px 32px', textAlign: 'center',
-      }}>
-        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: '800', color: '#fff', marginBottom: '14px' }}>
-          Ready to transform your life?
+      <section style={{ background: 'var(--orange)', padding: '64px 32px', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: '800', color: '#fff', marginBottom: '14px' }}>
+          Ready to find your coach?
         </h2>
-        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', marginBottom: '28px', fontWeight: '300' }}>
-          Join thousands of people already crushing their goals with Coachly.
+        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', marginBottom: '32px', fontWeight: '300' }}>
+          Join thousands of athletes already training smarter with Coachly.
         </p>
         <button
           onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
@@ -538,11 +562,13 @@ export default function Home() {
         flexWrap: 'wrap', gap: '16px', background: 'var(--bg)',
       }}>
         <div style={{
-          fontFamily: "'Playfair Display', serif", fontWeight: '700', fontSize: '17px',
-          background: 'var(--dark)', color: '#fff',
-          padding: '4px 12px', borderRadius: '8px', letterSpacing: '0.02em',
+          display: 'inline-flex', alignItems: 'center',
+          background: 'var(--dark)', borderRadius: '8px',
+          padding: '5px 14px',
         }}>
-          Coachly<span style={{ color: 'var(--orange)' }}>.</span>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: '800', fontSize: '16px', color: '#fff', letterSpacing: '0.03em' }}>
+            Coachly<span style={{ color: 'var(--orange)' }}>.</span>
+          </span>
         </div>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button onClick={() => navigate('/coach/signup')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
