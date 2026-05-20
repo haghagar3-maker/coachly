@@ -32,8 +32,11 @@ export default function CoachDashboard() {
         const c = await getCoachMe();
         setCoach(c);
       } catch (err) {
-        clearToken();
-        navigate('/coach/login');
+        console.error('Coach me error:', err.message);
+        if (err.message.includes('401') || err.message.includes('403')) {
+          clearToken();
+          navigate('/coach/login');
+        }
       } finally {
         setLoading(false);
       }
