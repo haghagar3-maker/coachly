@@ -1,42 +1,80 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategories, getCoaches } from '../api';
 import EmptyState from '../components/EmptyState';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
 
-const AVATAR_COLORS = [
-  '#E8633A', '#2a7a4f', '#5a5ac8', '#c94e2a', '#2d6b47',
-  '#8b5cf6', '#0891b2', '#b45309', '#be185d', '#065f46',
-];
+/* ─── animation keyframes injected once ─── */
+const STYLES = `
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slideRight {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+.anim-fadeup   { animation: fadeUp  0.7s cubic-bezier(.22,1,.36,1) both; }
+.anim-fadein   { animation: fadeIn  0.6s ease both; }
+.anim-scalein  { animation: scaleIn 0.55s cubic-bezier(.22,1,.36,1) both; }
+.hero-overlay  {
+  background: linear-gradient(
+    to bottom,
+    rgba(10,18,10,0.55) 0%,
+    rgba(10,18,10,0.30) 40%,
+    rgba(10,18,10,0.72) 100%
+  );
+}
+.coach-card:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.13);
+  transform: translateY(-3px);
+}
+.pill-btn:hover { opacity: 0.82; }
+.nav-link:hover { color: var(--dark) !important; }
+`;
 
+const AVATAR_COLORS = [
+  '#E8633A','#2a7a4f','#5a5ac8','#c94e2a',
+  '#2d6b47','#8b5cf6','#0891b2','#b45309',
+];
 function avatarColor(id) {
   if (!id) return AVATAR_COLORS[0];
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
-
 function initials(name) {
   if (!name) return '?';
-  return name.split(' ').map((p) => p[0]).join('').toUpperCase().slice(0, 2);
+  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function CoachCard({ coach, onView }) {
+/* ─── Coach card ─── */
+function CoachCard({ coach, onView, delay = 0 }) {
   return (
-    <div style={{
-      background: 'var(--card)',
-      borderRadius: '16px',
-      border: '1px solid var(--border)',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      transition: 'box-shadow 0.15s, transform 0.15s',
-      cursor: 'pointer',
-    }}
+    <div
+      className="coach-card anim-scalein"
+      style={{
+        background: 'var(--card)',
+        borderRadius: '18px',
+        border: '1px solid var(--border)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'box-shadow 0.2s, transform 0.2s',
+        cursor: 'pointer',
+        animationDelay: `${delay}ms`,
+      }}
       onClick={() => onView(coach.id)}
     >
-      {/* Banner */}
       <div style={{
         height: '120px',
         background: coach.banner
@@ -44,32 +82,20 @@ function CoachCard({ coach, onView }) {
           : `linear-gradient(135deg, #1e3a2a, #2d6b47)`,
         position: 'relative',
       }}>
-        {/* Avatar */}
         <div style={{
-          position: 'absolute',
-          bottom: '-20px',
-          left: '20px',
-          width: '48px',
-          height: '48px',
-          borderRadius: '50%',
+          position: 'absolute', bottom: '-20px', left: '20px',
+          width: '48px', height: '48px', borderRadius: '50%',
           border: '3px solid var(--card)',
           background: coach.photo ? 'transparent' : avatarColor(coach.id),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '13px',
-          fontWeight: '700',
-          color: '#fff',
-          overflow: 'hidden',
-          flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '13px', fontWeight: '700', color: '#fff',
+          overflow: 'hidden', flexShrink: 0,
         }}>
           {coach.photo
             ? <img src={coach.photo} alt={coach.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : initials(coach.name)}
         </div>
       </div>
-
-      {/* Body */}
       <div style={{ padding: '28px 20px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
           <div>
@@ -91,13 +117,11 @@ function CoachCard({ coach, onView }) {
             </div>
           )}
         </div>
-
         {coach.tagline && (
           <p style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.5', marginBottom: '14px', marginTop: '8px' }}>
             {coach.tagline}
           </p>
         )}
-
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
           {coach.subscriber_count != null && (
             <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
@@ -110,24 +134,16 @@ function CoachCard({ coach, onView }) {
             </span>
           )}
         </div>
-
         <button
           onClick={(e) => { e.stopPropagation(); onView(coach.id); }}
           style={{
-            width: '100%',
-            padding: '10px',
-            borderRadius: '100px',
-            border: '1.5px solid var(--dark)',
-            background: 'none',
-            fontFamily: 'inherit',
-            fontSize: '13px',
-            fontWeight: '500',
-            color: 'var(--dark)',
-            cursor: 'pointer',
-            transition: 'all 0.15s',
+            width: '100%', padding: '10px', borderRadius: '100px',
+            border: '1.5px solid var(--dark)', background: 'none',
+            fontFamily: 'inherit', fontSize: '13px', fontWeight: '500',
+            color: 'var(--dark)', cursor: 'pointer', transition: 'all 0.15s',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--dark)'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--dark)'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--dark)'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--dark)'; }}
         >
           View profile
         </button>
@@ -137,23 +153,121 @@ function CoachCard({ coach, onView }) {
 }
 
 const HOW_IT_WORKS = [
-  {
-    icon: '🎯',
-    title: 'Subscribe to a coach',
-    description: 'Browse real coaches, pick your niche, and subscribe to a monthly program tailored to your goals.',
-  },
-  {
-    icon: '🤖',
-    title: 'Get your AI + program',
-    description: "Your coach's AI clone is available 24/7. Get your custom workout plan, meal plan, and daily guidance.",
-  },
-  {
-    icon: '📈',
-    title: 'Track progress together',
-    description: 'Weekly check-ins, progress photos, and direct coach access keep you accountable every step of the way.',
-  },
+  { icon: '🎯', title: 'Subscribe to a coach', description: 'Browse real coaches, pick your niche, and subscribe to a monthly program tailored to your goals.' },
+  { icon: '🤖', title: 'Get your AI + program', description: "Your coach's AI clone is available 24/7. Get your custom workout plan, meal plan, and daily guidance." },
+  { icon: '📈', title: 'Track progress together', description: 'Weekly check-ins, progress photos, and direct coach access keep you accountable every step of the way.' },
 ];
 
+const STATS = [
+  { value: '10K+', label: 'Active clients' },
+  { value: '200+', label: 'Expert coaches' },
+  { value: '95%', label: 'Goal achievement' },
+  { value: '24/7', label: 'AI availability' },
+];
+
+/* ─── Privacy & Terms modal ─── */
+function LegalModal({ type, onClose }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  const content = type === 'privacy' ? {
+    title: 'Privacy Policy',
+    lastUpdated: 'May 2025',
+    sections: [
+      { heading: 'Information We Collect', body: 'We collect information you provide directly to us when you create an account, subscribe to a coach, or communicate with us. This includes your name, email address, payment information, fitness goals, and any content you upload or share on the platform.' },
+      { heading: 'How We Use Your Information', body: 'We use the information we collect to provide, maintain, and improve our services, process transactions, send you technical notices and support messages, respond to your comments and questions, and send you marketing communications (with your consent).' },
+      { heading: 'Information Sharing', body: 'We do not sell, trade, or otherwise transfer your personally identifiable information to outside parties. This does not include trusted third parties who assist us in operating our website, conducting our business, or servicing you, so long as those parties agree to keep this information confidential.' },
+      { heading: 'Data Security', body: 'We implement a variety of security measures to maintain the safety of your personal information. Your personal information is contained behind secured networks and is only accessible by a limited number of persons who have special access rights to such systems.' },
+      { heading: 'Cookies', body: 'We use cookies to enhance your experience, gather general visitor information, and track visits to our website. You can choose to disable cookies through your browser settings, though this may affect your experience on our platform.' },
+      { heading: 'Contact Us', body: 'If you have any questions about this Privacy Policy, please contact us at privacy@coachly.app.' },
+    ],
+  } : {
+    title: 'Terms of Service',
+    lastUpdated: 'May 2025',
+    sections: [
+      { heading: 'Acceptance of Terms', body: 'By accessing or using Coachly, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our platform.' },
+      { heading: 'Use of Service', body: 'Coachly provides a platform connecting clients with fitness and wellness coaches. You agree to use the service only for lawful purposes and in a way that does not infringe the rights of others or restrict their use of the service.' },
+      { heading: 'Account Responsibilities', body: 'You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account. Notify us immediately of any unauthorized use of your account.' },
+      { heading: 'Subscriptions & Payments', body: 'Subscriptions are billed on a monthly basis. You may cancel at any time, and cancellation takes effect at the end of the current billing period. Refunds are issued at our discretion for unused portions of a subscription period.' },
+      { heading: 'Coach Content', body: 'Coaches are independent professionals and are solely responsible for the content, advice, and programs they provide. Coachly does not endorse any specific coach or guarantee results. Always consult a qualified healthcare professional before starting any fitness program.' },
+      { heading: 'Limitation of Liability', body: 'Coachly shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the service. Our total liability shall not exceed the amount paid by you in the past 12 months.' },
+      { heading: 'Changes to Terms', body: 'We reserve the right to modify these terms at any time. We will notify users of significant changes via email or a prominent notice on our platform. Continued use of the service after changes constitutes acceptance of the new terms.' },
+      { heading: 'Contact', body: 'For questions about these Terms of Service, contact us at legal@coachly.app.' },
+    ],
+  };
+
+  return (
+    <div
+      className="anim-fadein"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px',
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="anim-scalein"
+        style={{
+          background: 'var(--bg)', borderRadius: '20px',
+          maxWidth: '640px', width: '100%', maxHeight: '80vh',
+          overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{
+          padding: '24px 28px 20px',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '700', color: 'var(--dark)' }}>
+              {content.title}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+              Last updated: {content.lastUpdated}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: '36px', height: '36px', borderRadius: '50%',
+              border: '1.5px solid var(--border)', background: 'none',
+              cursor: 'pointer', fontSize: '18px', color: 'var(--muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--dark)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--muted)'; }}
+          >
+            ×
+          </button>
+        </div>
+        {/* Body */}
+        <div style={{ overflowY: 'auto', padding: '24px 28px 32px' }}>
+          {content.sections.map((s, i) => (
+            <div key={i} style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '16px', fontWeight: '700', color: 'var(--dark)', marginBottom: '8px' }}>
+                {i + 1}. {s.heading}
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: '1.75', margin: 0 }}>
+                {s.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Home component ─── */
 export default function Home() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
@@ -161,12 +275,25 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
+  const [legalModal, setLegalModal] = useState(null); // 'privacy' | 'terms' | null
+  const [heroLoaded, setHeroLoaded] = useState(false);
 
   useEffect(() => {
-    getCategories()
-      .then(setCategories)
-      .catch(() => setCategories([]))
-      .finally(() => setLoadingCategories(false));
+    // inject CSS once
+    if (!document.getElementById('coachly-home-styles')) {
+      const s = document.createElement('style');
+      s.id = 'coachly-home-styles';
+      s.textContent = STYLES;
+      document.head.appendChild(s);
+    }
+    // preload hero image
+    const img = new Image();
+    img.src = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&q=80';
+    img.onload = () => setHeroLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([])).finally(() => setLoadingCategories(false));
   }, []);
 
   useEffect(() => {
@@ -183,59 +310,49 @@ export default function Home() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', overflowY: 'auto', overflowX: 'hidden' }}>
       <Toast />
+      {legalModal && <LegalModal type={legalModal} onClose={() => setLegalModal(null)} />}
 
-      {/* ── Navbar ─────────────────────────────────── */}
+      {/* ── Navbar ─── */}
       <header style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        background: 'rgba(245,240,232,0.96)',
-        backdropFilter: 'blur(16px)',
+        position: 'sticky', top: 0, zIndex: 100,
+        background: 'rgba(245,240,232,0.96)', backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--border)',
-        padding: '0 32px',
-        height: '60px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        padding: '0 32px', height: '60px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <div style={{ fontWeight: '500', fontSize: '16px', letterSpacing: '0.15em', color: 'var(--dark)' }}>
-          COACH<span style={{ color: 'var(--orange)' }}>LY</span>
+        {/* Logo — matches login page style */}
+        <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: '700', fontSize: '20px', color: '#fff', letterSpacing: '-0.01em' }}>
+          <span style={{
+            background: 'var(--dark)', color: '#fff',
+            padding: '4px 12px', borderRadius: '8px',
+            fontFamily: 'inherit', fontWeight: '700', fontSize: '17px', letterSpacing: '0.04em',
+          }}>
+            Coachly<span style={{ color: 'var(--orange)' }}>.</span>
+          </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
+            className="nav-link"
             onClick={() => navigate('/coach/signup')}
-            style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer', padding: '6px 12px' }}
+            style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer', padding: '6px 12px', transition: 'color 0.15s' }}
           >
             For coaches
           </button>
-
           {token && tokenType === 'user' ? (
-            <button
-              onClick={() => navigate('/dashboard')}
-              style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--dark)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
-            >
+            <button onClick={() => navigate('/dashboard')} style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--dark)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
               My dashboard
             </button>
           ) : token && tokenType === 'coach' ? (
-            <button
-              onClick={() => navigate('/coach/dashboard')}
-              style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--dark)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
-            >
+            <button onClick={() => navigate('/coach/dashboard')} style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--dark)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
               Coach dashboard
             </button>
           ) : (
             <>
-              <button
-                onClick={() => navigate('/coach/login')}
-                style={{ padding: '8px 16px', borderRadius: '100px', border: '1.5px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer', color: 'var(--dark)' }}
-              >
+              <button onClick={() => navigate('/coach/login')} style={{ padding: '8px 16px', borderRadius: '100px', border: '1.5px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer', color: 'var(--dark)' }}>
                 Log in
               </button>
-              <button
-                onClick={() => navigate('/coach/signup')}
-                style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
-              >
+              <button onClick={() => navigate('/coach/signup')} style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
                 Get started
               </button>
             </>
@@ -243,84 +360,100 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Hero ───────────────────────────────────── */}
+      {/* ── Hero with background image ─── */}
       <section style={{
-        padding: '80px 32px 64px',
-        textAlign: 'center',
-        maxWidth: '680px',
-        margin: '0 auto',
+        position: 'relative',
+        minHeight: '540px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+        background: '#1e3a2a',
       }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(36px, 6vw, 58px)', fontWeight: '900', lineHeight: '1.05', color: 'var(--dark)', marginBottom: '20px' }}>
-          Your coach.<br />Available 24/7.
-        </h1>
-        <p style={{ fontSize: '16px', color: 'var(--muted)', lineHeight: '1.7', marginBottom: '32px', fontWeight: '300' }}>
-          Subscribe to a real coach. Get your AI clone, your program, your community — all in one place.
-        </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-            style={{ padding: '14px 28px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer' }}
-          >
-            Find a coach
-          </button>
-          <button
-            onClick={() => navigate('/coach/signup')}
-            style={{ padding: '14px 28px', borderRadius: '100px', border: '1.5px solid var(--dark)', background: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: 'var(--dark)' }}
-          >
-            Become a coach
-          </button>
+        {/* Background image */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: heroLoaded
+            ? `url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&q=80')`
+            : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 30%',
+          transition: 'opacity 0.8s ease',
+          opacity: heroLoaded ? 1 : 0,
+        }} />
+        {/* Overlay */}
+        <div className="hero-overlay" style={{ position: 'absolute', inset: 0 }} />
+
+        {/* Content */}
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '80px 32px 72px', maxWidth: '700px', margin: '0 auto' }}>
+          <div className="anim-fadeup" style={{ animationDelay: '0ms', fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: '18px' }}>
+            Real coaches · AI-powered · 24/7
+          </div>
+          <h1 className="anim-fadeup" style={{
+            animationDelay: '80ms',
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 'clamp(40px, 7vw, 68px)',
+            fontWeight: '900', lineHeight: '1.05',
+            color: '#fff',
+            marginBottom: '22px',
+            textShadow: '0 2px 20px rgba(0,0,0,0.3)',
+          }}>
+            Your coach.<br />Available 24/7.
+          </h1>
+          <p className="anim-fadeup" style={{
+            animationDelay: '160ms',
+            fontSize: '16px', color: 'rgba(255,255,255,0.78)',
+            lineHeight: '1.7', marginBottom: '36px', fontWeight: '300',
+          }}>
+            Subscribe to a real coach. Get your AI clone, your program,<br />your community — all in one place.
+          </p>
+          <div className="anim-fadeup" style={{ animationDelay: '240ms', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              className="pill-btn"
+              onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
+              style={{ padding: '15px 32px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s', boxShadow: '0 4px 20px rgba(232,99,58,0.45)' }}
+            >
+              Find a coach
+            </button>
+            <button
+              className="pill-btn"
+              onClick={() => navigate('/coach/signup')}
+              style={{ padding: '15px 32px', borderRadius: '100px', border: '2px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: '#fff', transition: 'opacity 0.15s' }}
+            >
+              Become a coach
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom fade to bg */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to bottom, transparent, var(--bg))' }} />
+      </section>
+
+      {/* ── Stats strip ─── */}
+      <section style={{ background: 'var(--card)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '28px 32px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          {STATS.map((s, i) => (
+            <div key={i} className="anim-fadeup" style={{ textAlign: 'center', animationDelay: `${i * 80}ms` }}>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '26px', fontWeight: '800', color: 'var(--dark)' }}>{s.value}</div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '3px', fontWeight: '500' }}>{s.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ── Category strip ─────────────────────────── */}
+      {/* ── Category strip ─── */}
       {!loadingCategories && categories.length > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          padding: '0 32px 32px',
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-          maxWidth: '1200px',
-          margin: '0 auto',
-        }}>
-          <button
-            onClick={() => setActiveCategory(null)}
-            style={{
-              padding: '8px 18px',
-              borderRadius: '100px',
-              border: '1.5px solid var(--border)',
-              background: activeCategory === null ? 'var(--dark)' : 'var(--card)',
-              color: activeCategory === null ? '#fff' : 'var(--muted)',
-              fontFamily: 'inherit',
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              transition: 'all 0.15s',
-            }}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
+        <div style={{ display: 'flex', gap: '8px', padding: '32px 32px 24px', overflowX: 'auto', scrollbarWidth: 'none', maxWidth: '1200px', margin: '0 auto' }}>
+          {[{ id: null, name: 'All', slug: null }].concat(categories).map((cat) => (
             <button
-              key={cat.id}
+              key={cat.id ?? 'all'}
               onClick={() => setActiveCategory(cat.slug === activeCategory ? null : cat.slug)}
               style={{
-                padding: '8px 18px',
-                borderRadius: '100px',
+                padding: '8px 18px', borderRadius: '100px',
                 border: '1.5px solid var(--border)',
-                background: activeCategory === cat.slug ? 'var(--dark)' : 'var(--card)',
-                color: activeCategory === cat.slug ? '#fff' : 'var(--muted)',
-                fontFamily: 'inherit',
-                fontSize: '13px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
+                background: (cat.slug === null ? activeCategory === null : activeCategory === cat.slug) ? 'var(--dark)' : 'var(--card)',
+                color: (cat.slug === null ? activeCategory === null : activeCategory === cat.slug) ? '#fff' : 'var(--muted)',
+                fontFamily: 'inherit', fontSize: '13px', fontWeight: '500',
+                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                display: 'flex', alignItems: 'center', gap: '6px',
                 transition: 'all 0.15s',
               }}
             >
@@ -331,39 +464,25 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Coach grid ─────────────────────────────── */}
-      <section
-        id="coaches-grid"
-        style={{ padding: '0 32px 80px', maxWidth: '1200px', margin: '0 auto' }}
-      >
+      {/* ── Coach grid ─── */}
+      <section id="coaches-grid" style={{ padding: '0 32px 80px', maxWidth: '1200px', margin: '0 auto' }}>
         {loadingCoaches ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-            {[1, 2, 3].map((i) => <LoadingSkeleton key={i} type="card" />)}
+            {[1, 2, 3].map(i => <LoadingSkeleton key={i} type="card" />)}
           </div>
         ) : coaches.length === 0 ? (
-          <EmptyState
-            message="No coaches yet. Be the first to join Coachly."
-            cta="Become a coach"
-            onCta={() => navigate('/coach/signup')}
-          />
+          <EmptyState message="No coaches yet. Be the first to join Coachly." cta="Become a coach" onCta={() => navigate('/coach/signup')} />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-            {coaches.map((coach) => (
-              <CoachCard
-                key={coach.id}
-                coach={coach}
-                onView={(id) => navigate(`/coach/${id}`)}
-              />
+            {coaches.map((coach, i) => (
+              <CoachCard key={coach.id} coach={coach} onView={id => navigate(`/coach/${id}`)} delay={i * 60} />
             ))}
           </div>
         )}
       </section>
 
-      {/* ── How it works ───────────────────────────── */}
-      <section style={{
-        background: 'var(--dark)',
-        padding: '80px 32px',
-      }}>
+      {/* ── How it works ─── */}
+      <section style={{ background: 'var(--dark)', padding: '80px 32px' }}>
         <div style={{ maxWidth: '960px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <div style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '12px' }}>
@@ -375,15 +494,12 @@ export default function Home() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
             {HOW_IT_WORKS.map((step, i) => (
-              <div
-                key={i}
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '16px',
-                  padding: '28px 24px',
-                }}
-              >
+              <div key={i} className="anim-scalein" style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '16px', padding: '28px 24px',
+                animationDelay: `${i * 100}ms`,
+              }}>
                 <div style={{ fontSize: '28px', marginBottom: '16px' }}>{step.icon}</div>
                 <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: '700', color: '#fff', marginBottom: '10px' }}>
                   {step.title}
@@ -397,26 +513,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Footer ─────────────────────────────────── */}
-      <footer style={{
-        padding: '32px',
-        borderTop: '1px solid var(--border)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '16px',
-        background: 'var(--bg)',
+      {/* ── CTA banner ─── */}
+      <section style={{
+        background: 'var(--orange)', padding: '60px 32px', textAlign: 'center',
       }}>
-        <div style={{ fontWeight: '500', fontSize: '14px', letterSpacing: '0.12em', color: 'var(--dark)' }}>
-          COACH<span style={{ color: 'var(--orange)' }}>LY</span>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: '800', color: '#fff', marginBottom: '14px' }}>
+          Ready to transform your life?
+        </h2>
+        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', marginBottom: '28px', fontWeight: '300' }}>
+          Join thousands of people already crushing their goals with Coachly.
+        </p>
+        <button
+          onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
+          style={{ padding: '15px 36px', borderRadius: '100px', background: '#fff', color: 'var(--orange)', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+        >
+          Browse coaches →
+        </button>
+      </section>
+
+      {/* ── Footer ─── */}
+      <footer style={{
+        padding: '32px', borderTop: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: '16px', background: 'var(--bg)',
+      }}>
+        <div style={{
+          fontFamily: "'Playfair Display', serif", fontWeight: '700', fontSize: '17px',
+          background: 'var(--dark)', color: '#fff',
+          padding: '4px 12px', borderRadius: '8px', letterSpacing: '0.02em',
+        }}>
+          Coachly<span style={{ color: 'var(--orange)' }}>.</span>
         </div>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button onClick={() => navigate('/coach/signup')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
             For coaches
           </button>
-          <span style={{ fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>Terms</span>
-          <span style={{ fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>Privacy</span>
+          <button onClick={() => setLegalModal('terms')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
+            Terms
+          </button>
+          <button onClick={() => setLegalModal('privacy')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
+            Privacy
+          </button>
         </div>
         <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
           © {new Date().getFullYear()} Coachly
