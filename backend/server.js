@@ -273,12 +273,14 @@ app.post('/api/coach/login', async (req, res) => {
 
 app.get('/api/coach/me', requireAuth, requireCoach, async (req, res) => {
   try {
+    console.log('SESSION:', JSON.stringify(req.session));
     const coaches = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=*`);
     if (!coaches || coaches.length === 0) return res.status(404).json({ error: 'Coach not found' });
     const { password_hash: _, ...safeCoach } = coaches[0];
     res.json(safeCoach);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch profile' });
+    console.error('COACH ME ERROR:', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to fetch profile: ' + e.message });
   }
 });
 
