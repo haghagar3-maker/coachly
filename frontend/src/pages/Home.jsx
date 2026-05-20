@@ -7,36 +7,71 @@ import Toast, { showToast } from '../components/Toast';
 
 /* ─── animation keyframes injected once ─── */
 const STYLES = `
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.93); }
-  to   { opacity: 1; transform: scale(1); }
-}
-.anim-fadeup   { animation: fadeUp  0.7s cubic-bezier(.22,1,.36,1) both; }
-.anim-fadein   { animation: fadeIn  0.6s ease both; }
-.anim-scalein  { animation: scaleIn 0.55s cubic-bezier(.22,1,.36,1) both; }
-.hero-overlay  {
-  background: linear-gradient(
-    to bottom,
-    rgba(10,18,10,0.45) 0%,
-    rgba(10,18,10,0.20) 40%,
-    rgba(10,18,10,0.75) 100%
-  );
-}
-.coach-card:hover {
-  box-shadow: 0 12px 40px rgba(0,0,0,0.13);
-  transform: translateY(-3px);
-}
-.pill-btn:hover { opacity: 0.82; }
-.nav-link:hover { color: var(--dark) !important; }
-.cat-btn:hover { background: var(--dark) !important; color: #fff !important; }
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&display=swap');
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.93); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .anim-fadeup  { animation: fadeUp  0.7s cubic-bezier(.22,1,.36,1) both; }
+  .anim-fadein  { animation: fadeIn  0.6s ease both; }
+  .anim-scalein { animation: scaleIn 0.55s cubic-bezier(.22,1,.36,1) both; }
+
+  .hero-overlay {
+    background: linear-gradient(
+      160deg,
+      rgba(8,16,10,0.72) 0%,
+      rgba(8,16,10,0.38) 45%,
+      rgba(8,16,10,0.78) 100%
+    );
+  }
+
+  .coach-card:hover {
+    box-shadow: 0 16px 48px rgba(0,0,0,0.14);
+    transform: translateY(-4px);
+  }
+
+  .pill-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .pill-btn-ghost:hover   { background: rgba(255,255,255,0.18) !important; }
+  .nav-link:hover         { color: var(--dark) !important; }
+  .cat-btn:hover          { background: var(--dark) !important; color: #fff !important; }
+
+  /* Logo shine effect */
+  .logo-text {
+    background: linear-gradient(
+      90deg,
+      var(--dark) 0%,
+      var(--dark) 40%,
+      #6b8f71 50%,
+      var(--dark) 60%,
+      var(--dark) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .logo-wrap:hover .logo-text {
+    animation: shimmer 1.2s linear forwards;
+  }
+
+  /* Value prop cards */
+  .value-card:hover {
+    border-color: var(--orange) !important;
+    transform: translateY(-2px);
+  }
 `;
 
 const AVATAR_COLORS = [
@@ -54,6 +89,75 @@ function initials(name) {
   return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
 }
 
+/* ─── Logo component ─── */
+function CoachlyLogo({ size = 'md', onClick }) {
+  const sizes = {
+    sm: { badge: '28px', font: '13px', dot: '6px', radius: '7px' },
+    md: { badge: '36px', font: '16px', dot: '7px', radius: '9px' },
+    lg: { badge: '48px', font: '21px', dot: '9px', radius: '12px' },
+  };
+  const s = sizes[size] || sizes.md;
+
+  return (
+    <div
+      className="logo-wrap"
+      onClick={onClick}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '9px',
+        cursor: onClick ? 'pointer' : 'default',
+        userSelect: 'none',
+      }}
+    >
+      {/* Icon badge */}
+      <div style={{
+        width: s.badge, height: s.badge,
+        borderRadius: s.radius,
+        background: 'var(--dark)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'relative',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+        flexShrink: 0,
+      }}>
+        {/* Stylised "C" chevron */}
+        <svg width="55%" height="55%" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M15 5 L8 10 L15 15"
+            stroke="#fff"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="5.5" cy="10" r="1.8" fill="var(--orange)" />
+        </svg>
+      </div>
+
+      {/* Wordmark */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '1px' }}>
+        <span
+          className="logo-text"
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontWeight: '800',
+            fontSize: s.font,
+            letterSpacing: '0.07em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Coachly
+        </span>
+        <span style={{
+          color: 'var(--orange)',
+          fontSize: s.dot,
+          lineHeight: 1,
+          marginBottom: '2px',
+          fontFamily: "'Playfair Display', serif",
+          fontWeight: '900',
+        }}>●</span>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Coach card ─── */
 function CoachCard({ coach, onView, delay = 0 }) {
   return (
@@ -66,7 +170,7 @@ function CoachCard({ coach, onView, delay = 0 }) {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'box-shadow 0.2s, transform 0.2s',
+        transition: 'box-shadow 0.22s, transform 0.22s',
         cursor: 'pointer',
         animationDelay: `${delay}ms`,
       }}
@@ -155,11 +259,15 @@ const HOW_IT_WORKS = [
   { num: '03', title: 'Track progress together', description: 'Weekly reviews, progress tracking, and direct coach messaging keep you accountable. Your coach sees your data and adjusts your plan as you grow.' },
 ];
 
-const STATS = [
-  { value: '10K+', label: 'Active athletes' },
-  { value: '200+', label: 'Expert coaches' },
-  { value: '50+', label: 'Sports & disciplines' },
-  { value: '24/7', label: 'AI availability' },
+/* 
+  Value props — honest, no fake numbers.
+  These convey what makes Coachly special without fabricating stats.
+*/
+const VALUE_PROPS = [
+  { icon: '🤖', title: 'AI available 24/7', description: 'Your coach never sleeps. Ask anything, anytime.' },
+  { icon: '🏅', title: 'Real certified coaches', description: 'Every coach is vetted — no random influencers.' },
+  { icon: '📋', title: 'Custom programs', description: 'Built for your body, goals, and schedule.' },
+  { icon: '🌍', title: 'Every sport & discipline', description: 'Football, fitness, tennis, swimming, and beyond.' },
 ];
 
 /* ─── Privacy & Terms modal ─── */
@@ -273,8 +381,11 @@ export default function Home() {
   const [legalModal, setLegalModal] = useState(null);
   const [heroLoaded, setHeroLoaded] = useState(false);
 
-  // Multi-sport coaching image — group training / athletic collage
-  const HERO_URL = 'https://images.unsplash.com/photo-1547060827-e2b799f1f515?w=1600&q=80';
+  /*
+    Hero image: group of athletes / multi-sport training collage.
+    Using a direct Unsplash source URL that reliably loads cross-origin.
+  */
+  const HERO_URL = 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1800&q=85&auto=format&fit=crop';
 
   useEffect(() => {
     if (!document.getElementById('coachly-home-styles')) {
@@ -284,8 +395,10 @@ export default function Home() {
       document.head.appendChild(s);
     }
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.src = HERO_URL;
     img.onload = () => setHeroLoaded(true);
+    img.onerror = () => setHeroLoaded(true); // show overlay even if img fails
   }, []);
 
   useEffect(() => {
@@ -313,22 +426,10 @@ export default function Home() {
         position: 'sticky', top: 0, zIndex: 100,
         background: 'rgba(245,240,232,0.96)', backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--border)',
-        padding: '0 32px', height: '60px',
+        padding: '0 32px', height: '62px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        {/* Logo — plain text, no background */}
-        <div
-          style={{ cursor: 'pointer' }}
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        >
-          <span style={{
-            fontFamily: "'Playfair Display', serif",
-            fontWeight: '800', fontSize: '18px',
-            color: 'var(--dark)', letterSpacing: '0.06em',
-          }}>
-            COACHLY<span style={{ color: 'var(--orange)' }}>.</span>
-          </span>
-        </div>
+        <CoachlyLogo size="md" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
@@ -362,73 +463,134 @@ export default function Home() {
       {/* ── Hero ─── */}
       <section style={{
         position: 'relative',
-        minHeight: '580px',
+        minHeight: '600px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
-        background: '#0f1f14',
+        background: '#0c1a10', // dark green fallback
       }}>
-        {/* Background — multi-sport coaching image */}
+        {/* Background image */}
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundImage: heroLoaded ? `url('${HERO_URL}')` : 'none',
+          backgroundImage: `url('${HERO_URL}')`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
-          transition: 'opacity 0.8s ease',
+          backgroundPosition: 'center 25%',
+          transition: 'opacity 1s ease',
           opacity: heroLoaded ? 1 : 0,
         }} />
+        {/* Dark overlay */}
         <div className="hero-overlay" style={{ position: 'absolute', inset: 0 }} />
 
+        {/* Subtle grain texture for depth */}
+        <div style={{
+          position: 'absolute', inset: 0, opacity: 0.04,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundSize: '200px 200px',
+        }} />
+
         {/* Content */}
-        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '80px 32px 60px', maxWidth: '720px', margin: '0 auto' }}>
-          <div className="anim-fadeup" style={{ animationDelay: '0ms', fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: '18px' }}>
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '80px 32px 68px', maxWidth: '760px', margin: '0 auto' }}>
+
+          {/* Eyebrow tag */}
+          <div className="anim-fadeup" style={{
+            animationDelay: '0ms',
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '100px', padding: '6px 14px',
+            fontSize: '11px', fontWeight: '700', letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)',
+            marginBottom: '24px',
+          }}>
+            <span style={{ color: 'var(--orange)' }}>●</span>
             Every sport · Every level · Any goal
           </div>
+
+          {/* Headline */}
           <h1 className="anim-fadeup" style={{
             animationDelay: '80ms',
             fontFamily: "'Playfair Display', serif",
-            fontSize: 'clamp(38px, 6.5vw, 64px)',
-            fontWeight: '900', lineHeight: '1.06',
+            fontSize: 'clamp(42px, 6.5vw, 68px)',
+            fontWeight: '900', lineHeight: '1.04',
             color: '#fff', marginBottom: '20px',
-            textShadow: '0 2px 24px rgba(0,0,0,0.4)',
+            textShadow: '0 2px 32px rgba(0,0,0,0.5)',
           }}>
             Find your coach.<br />Any sport. 24/7.
           </h1>
+
+          {/* Hooky subtitle */}
           <p className="anim-fadeup" style={{
             animationDelay: '160ms',
-            fontSize: '16px', color: 'rgba(255,255,255,0.75)',
-            lineHeight: '1.7', marginBottom: '36px', fontWeight: '300',
+            fontSize: '17px', color: 'rgba(255,255,255,0.8)',
+            lineHeight: '1.65', marginBottom: '38px', fontWeight: '400',
+            maxWidth: '520px', margin: '0 auto 38px',
           }}>
-            Real coaches across every discipline. Powered by AI.<br />Your program, community, and coach — all in one place.
+            Stop winging it. Get a real coach,<br />
+            a program built for <em>you</em>, and AI support — all in one place.
           </p>
 
+          {/* CTAs */}
           <div className="anim-fadeup" style={{ animationDelay: '240ms', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
-              className="pill-btn"
+              className="pill-btn-primary"
               onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{ padding: '15px 32px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s', boxShadow: '0 4px 20px rgba(232,99,58,0.5)' }}
+              style={{
+                padding: '15px 34px', borderRadius: '100px',
+                background: 'var(--orange)', color: '#fff', border: 'none',
+                fontFamily: 'inherit', fontSize: '15px', fontWeight: '600',
+                cursor: 'pointer', transition: 'filter 0.15s, transform 0.15s',
+                boxShadow: '0 6px 24px rgba(232,99,58,0.5)',
+              }}
             >
-              Find a coach
+              Find a coach →
             </button>
             <button
-              className="pill-btn"
+              className="pill-btn-ghost"
               onClick={() => navigate('/coach/signup')}
-              style={{ padding: '15px 32px', borderRadius: '100px', border: '2px solid rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: '#fff', transition: 'opacity 0.15s' }}
+              style={{
+                padding: '15px 32px', borderRadius: '100px',
+                border: '2px solid rgba(255,255,255,0.45)',
+                background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)',
+                fontFamily: 'inherit', fontSize: '15px', fontWeight: '500',
+                cursor: 'pointer', color: '#fff', transition: 'background 0.15s',
+              }}
             >
-              Become a coach
+              I'm a coach
             </button>
           </div>
         </div>
 
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to bottom, transparent, var(--bg))' }} />
+        {/* Bottom fade to page background */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100px', background: 'linear-gradient(to bottom, transparent, var(--bg))' }} />
       </section>
 
-      {/* ── Stats strip ─── */}
+      {/* ── Value props (replaces fake stats) ─── */}
       <section style={{ background: 'var(--card)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '28px 32px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-          {STATS.map((s, i) => (
-            <div key={i} className="anim-fadeup" style={{ textAlign: 'center', animationDelay: `${i * 80}ms` }}>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '26px', fontWeight: '800', color: 'var(--dark)' }}>{s.value}</div>
-              <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '3px', fontWeight: '500' }}>{s.label}</div>
+        <div style={{
+          maxWidth: '960px', margin: '0 auto', padding: '32px 32px',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px',
+        }}>
+          {VALUE_PROPS.map((v, i) => (
+            <div
+              key={i}
+              className="value-card anim-fadeup"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '16px 18px', borderRadius: '14px',
+                border: '1.5px solid var(--border)',
+                background: 'var(--bg)',
+                animationDelay: `${i * 70}ms`,
+                transition: 'border-color 0.2s, transform 0.2s',
+              }}
+            >
+              <span style={{ fontSize: '22px', flexShrink: 0 }}>{v.icon}</span>
+              <div>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '14px', fontWeight: '700', color: 'var(--dark)', marginBottom: '2px' }}>
+                  {v.title}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.4' }}>
+                  {v.description}
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -522,12 +684,14 @@ export default function Home() {
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: '800', color: '#fff', marginBottom: '14px' }}>
           Ready to find your coach?
         </h2>
-        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', marginBottom: '32px', fontWeight: '300' }}>
-          Join thousands of athletes already training smarter with Coachly.
+        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.88)', marginBottom: '32px', fontWeight: '300' }}>
+          Stop guessing. Start training with someone who actually knows your sport.
         </p>
         <button
           onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-          style={{ padding: '15px 36px', borderRadius: '100px', background: '#fff', color: 'var(--orange)', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+          style={{ padding: '15px 36px', borderRadius: '100px', background: '#fff', color: 'var(--orange)', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', transition: 'transform 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
         >
           Browse coaches →
         </button>
@@ -539,14 +703,7 @@ export default function Home() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexWrap: 'wrap', gap: '16px', background: 'var(--bg)',
       }}>
-        {/* Logo — plain text, no background */}
-        <span style={{
-          fontFamily: "'Playfair Display', serif",
-          fontWeight: '800', fontSize: '16px',
-          color: 'var(--dark)', letterSpacing: '0.06em',
-        }}>
-          COACHLY<span style={{ color: 'var(--orange)' }}>.</span>
-        </span>
+        <CoachlyLogo size="sm" />
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button onClick={() => navigate('/coach/signup')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
             For coaches
