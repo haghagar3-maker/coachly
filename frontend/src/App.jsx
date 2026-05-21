@@ -7,6 +7,7 @@ import CoachDashboard from './pages/CoachDashboard';
 import UserDashboard from './pages/UserDashboard';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import UserLogin from './pages/UserLogin';
 
 function getToken() {
   return localStorage.getItem('coachly_token');
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/coach/signup" element={<CoachOnboarding />} />
         <Route path="/coach/login" element={<CoachLogin />} />
+        <Route path="/user/login" element={<UserLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
 
         {/* Coach store — public, must come after /coach/signup and /coach/login */}
