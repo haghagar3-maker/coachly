@@ -504,7 +504,10 @@ function SectionStore({ coach, setCoach }) {
 
   async function save() {
     setSaving(true);
-    try { await updateCoachProfile(form); setCoach({ ...coach, ...form }); alert('Saved!'); }
+    const cleaned = { ...form };
+    if (cleaned.years_experience === '') cleaned.years_experience = null;
+    if (cleaned.plan_price === '') cleaned.plan_price = null;
+    try { await updateCoachProfile(cleaned); setCoach({ ...coach, ...cleaned }); alert('Saved!'); }
     catch (err) { alert(err.message); }
     finally { setSaving(false); }
   }
