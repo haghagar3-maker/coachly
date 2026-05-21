@@ -348,7 +348,7 @@ export default function Home() {
             </button>
           ) : (
             <>
-              <button onClick={() => navigate('/coach/login')} style={{ padding: '8px 16px', borderRadius: '100px', border: '1.5px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer', color: 'var(--dark)' }}>
+              <button onClick={() => navigate('/user/login')} style={{ padding: '8px 16px', borderRadius: '100px', border: '1.5px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer', color: 'var(--dark)' }}>
                 Log in
               </button>
               <button onClick={() => navigate('/coach/signup')} style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
