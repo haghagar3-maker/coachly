@@ -482,11 +482,23 @@ function SectionAI({ coach }) {
 // ═══════════════════════════════════════════════════════════════
 function SectionStore({ coach, setCoach }) {
   const [form, setForm] = useState({
-    name: coach.name || '', tagline: coach.tagline || '', bio: coach.bio || '',
-    sport: coach.sport || '', location: coach.location || '',
-    years_experience: coach.years_experience || '', plan_price: coach.plan_price || '',
+    name: coach.name || '',
+    tagline: coach.tagline || '',
+    bio: coach.bio || '',
+    sport: coach.sport || '',
+    location: coach.location || '',
+    years_experience: coach.years_experience || '',
+    plan_price: coach.plan_price || '',
+    store_color: coach.store_color || '#C8FF00',
+    intro_video_url: coach.intro_video_url || '',
+    instagram: coach.instagram || '',
+    twitter: coach.twitter || '',
+    youtube: coach.youtube || '',
+    tiktok: coach.tiktok || '',
   });
   const [saving, setSaving] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
 
   function upd(k, v) { setForm(p => ({ ...p, [k]: v })); }
 
@@ -497,21 +509,100 @@ function SectionStore({ coach, setCoach }) {
     finally { setSaving(false); }
   }
 
-  const fields = [
-    { key: 'name', label: 'Display name', type: 'text' },
-    { key: 'tagline', label: 'Tagline', type: 'text', placeholder: 'e.g. Strength coach for busy professionals' },
-    { key: 'bio', label: 'Bio', type: 'textarea', rows: 5 },
-    { key: 'sport', label: 'Sport / Niche', type: 'text' },
-    { key: 'location', label: 'Location', type: 'text' },
-    { key: 'years_experience', label: 'Years experience', type: 'number' },
-    { key: 'plan_price', label: 'Monthly price (USD)', type: 'number', placeholder: '199' },
-  ];
+  function toBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function uploadPhoto(e, field) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const setter = field === 'photo' ? setPhotoUploading : setBannerUploading;
+    setter(true);
+    try {
+      const base64 = await toBase64(file);
+      await updateCoachProfile({ [field]: base64 });
+      setCoach(prev => ({ ...prev, [field]: base64 }));
+      upd(field, base64);
+    } catch (err) { alert('Upload failed: ' + err.message); }
+    finally { setter(false); }
+  }
+
+  const PRESET_COLORS = ['#C8FF00','#FF6B35','#5C6BC0','#00BCD4','#E91E63','#4CAF50','#FF9800','#ffffff'];
 
   return (
-    <div style={{ maxWidth: '600px' }}>
+    <div style={{ maxWidth: '640px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+      {/* Photos */}
+      <div className="field-group">
+        <div className="field-group-title">Photos</div>
+
+        {/* Banner */}
+        <div className="field">
+          <label>Store banner</label>
+          <div style={{
+            width: '100%', height: '120px', borderRadius: '10px', overflow: 'hidden',
+            background: coach.banner ? 'none' : 'var(--border)', position: 'relative',
+            border: '1px dashed var(--border)', cursor: 'pointer',
+          }}
+            onClick={() => document.getElementById('banner-upload').click()}
+          >
+            {coach.banner
+              ? <img src={coach.banner} alt="banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)', fontSize: '13px' }}>
+                  Click to upload banner
+                </div>
+            }
+            <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '11px', padding: '4px 10px', borderRadius: '6px' }}>
+              {bannerUploading ? 'Uploading…' : 'Change'}
+            </div>
+          </div>
+          <input id="banner-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={e => uploadPhoto(e, 'banner')} />
+        </div>
+
+        {/* Profile photo */}
+        <div className="field">
+          <label>Profile photo</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
+              background: 'var(--border)', flexShrink: 0, cursor: 'pointer',
+              border: '2px solid var(--border)',
+            }} onClick={() => document.getElementById('photo-upload').click()}>
+              {coach.photo
+                ? <img src={coach.photo} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '22px', fontWeight: '700', color: 'var(--muted)' }}>
+                    {coach.name?.charAt(0).toUpperCase()}
+                  </div>
+              }
+            </div>
+            <div>
+              <button className="btn-secondary" onClick={() => document.getElementById('photo-upload').click()} disabled={photoUploading}>
+                {photoUploading ? 'Uploading…' : 'Change photo'}
+              </button>
+              <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>JPG or PNG, max 2MB</div>
+            </div>
+          </div>
+          <input id="photo-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={e => uploadPhoto(e, 'photo')} />
+        </div>
+      </div>
+
+      {/* Store details */}
       <div className="field-group">
         <div className="field-group-title">Store settings</div>
-        {fields.map(({ key, label, type, placeholder, rows }) => (
+        {[
+          { key: 'name', label: 'Display name', type: 'text' },
+          { key: 'tagline', label: 'Tagline', type: 'text', placeholder: 'e.g. Strength coach for busy professionals' },
+          { key: 'bio', label: 'Bio', type: 'textarea', rows: 5 },
+          { key: 'sport', label: 'Sport / Niche', type: 'text' },
+          { key: 'location', label: 'Location', type: 'text' },
+          { key: 'years_experience', label: 'Years experience', type: 'number' },
+          { key: 'plan_price', label: 'Monthly price (USD)', type: 'number', placeholder: '199' },
+        ].map(({ key, label, type, placeholder, rows }) => (
           <div key={key} className="field">
             <label>{label}</label>
             {type === 'textarea'
@@ -520,6 +611,60 @@ function SectionStore({ coach, setCoach }) {
           </div>
         ))}
       </div>
+
+      {/* Store color */}
+      <div className="field-group">
+        <div className="field-group-title">Store color</div>
+        <div className="field">
+          <label>Accent color</label>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {PRESET_COLORS.map(c => (
+              <div key={c} onClick={() => upd('store_color', c)} style={{
+                width: 32, height: 32, borderRadius: '50%', background: c,
+                cursor: 'pointer', border: form.store_color === c ? '3px solid var(--dark)' : '2px solid var(--border)',
+                boxSizing: 'border-box', transition: 'transform 0.1s',
+              }} />
+            ))}
+            <input type="color" value={form.store_color} onChange={e => upd('store_color', e.target.value)}
+              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer', padding: 0 }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Intro video */}
+      <div className="field-group">
+        <div className="field-group-title">Intro video</div>
+        <div className="field">
+          <label>YouTube or Vimeo URL</label>
+          <input type="url" value={form.intro_video_url} onChange={e => upd('intro_video_url', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
+          {form.intro_video_url && (
+            <div style={{ marginTop: '8px', borderRadius: '8px', overflow: 'hidden', aspectRatio: '16/9' }}>
+              <iframe
+                src={form.intro_video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                allowFullScreen
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Social links */}
+      <div className="field-group">
+        <div className="field-group-title">Social media</div>
+        {[
+          { key: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/yourhandle' },
+          { key: 'twitter', label: 'Twitter / X', placeholder: 'https://twitter.com/yourhandle' },
+          { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/@yourchannel' },
+          { key: 'tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/@yourhandle' },
+        ].map(({ key, label, placeholder }) => (
+          <div key={key} className="field">
+            <label>{label}</label>
+            <input type="url" value={form[key]} onChange={e => upd(key, e.target.value)} placeholder={placeholder} />
+          </div>
+        ))}
+      </div>
+
       <div className="save-bar">
         <div className="save-bar-left">Changes are saved live</div>
         <div className="save-bar-right">
@@ -533,9 +678,15 @@ function SectionStore({ coach, setCoach }) {
 // ═══════════════════════════════════════════════════════════════
 // CONTENT
 // ═══════════════════════════════════════════════════════════════
-function SectionContent() {
+function SectionContent({ coach }) {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('byweek'); // 'byweek' | 'all'
+  const [filterType, setFilterType] = useState('all');
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [newWeekTitle, setNewWeekTitle] = useState('');
+  const [addingWeek, setAddingWeek] = useState(false);
 
   useEffect(() => {
     getCoachContent().then(setContent).catch(console.error).finally(() => setLoading(false));
@@ -543,27 +694,262 @@ function SectionContent() {
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
 
+  // Group by week
+  const weeks = {};
+  content.forEach(c => {
+    const w = c.week_number || 1;
+    if (!weeks[w]) weeks[w] = { week: w, title: c.week_title || `Week ${w}`, items: [] };
+    weeks[w].items.push(c);
+  });
+  const weekList = Object.values(weeks).sort((a, b) => a.week - b.week);
+
+  const allFiltered = content.filter(c => filterType === 'all' || c.type === filterType);
+
+  function typeIcon(type) {
+    if (type === 'video') return (
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    );
+    if (type === 'pdf') return (
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    );
+    return (
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    );
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('Delete this content?')) return;
+    try {
+      await deleteCoachContent(id);
+      setContent(prev => prev.filter(c => c.id !== id));
+    } catch (err) { alert(err.message); }
+  }
+
   return (
-    <div className="library-grid">
-      {content.length === 0 ? (
-        <div style={{ gridColumn: '1/-1', padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
-          Upload your first content piece. Subscribers will see it immediately.
+    <div>
+      {/* Header tabs */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', background: 'var(--card)', borderRadius: '10px', padding: '3px', border: '1px solid var(--border)' }}>
+          {[['byweek','By week'],['all','All content']].map(([v,l]) => (
+            <button key={v} onClick={() => setView(v)} style={{
+              padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+              background: view === v ? 'var(--dark)' : 'transparent',
+              color: view === v ? '#fff' : 'var(--muted)',
+              fontFamily: 'inherit',
+            }}>{l}</button>
+          ))}
         </div>
-      ) : content.map(c => (
-        <div key={c.id} className="lib-card">
-          <div className="lib-thumb">
-            <div className={`lib-type-tag ${c.type === 'video' ? 'lt-video' : c.type === 'pdf' ? 'lt-pdf' : 'lt-guide'}`}>{c.type}</div>
+        <button className="btn-save-live" onClick={() => { setEditItem(null); setShowModal(true); }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          + Upload content
+        </button>
+      </div>
+
+      {/* Info banner */}
+      <div style={{ background: 'rgba(200,255,0,0.07)', border: '1px solid rgba(200,255,0,0.15)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: 'var(--muted)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--lime)" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {view === 'byweek'
+          ? 'Content here appears in each subscriber\'s Content Library → By Week view. Locked weeks are revealed automatically on schedule.'
+          : 'Post anything here — bonus videos, tips, mindset clips. These appear in subscribers\' All content feed. No week structure needed.'}
+      </div>
+
+      {view === 'byweek' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {weekList.length === 0 && (
+            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
+              No content yet. Click "Upload content" to add your first piece.
+            </div>
+          )}
+          {weekList.map(({ week, title, items }) => (
+            <div key={week} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase' }}>Week {week}</span>
+                  <span style={{ fontSize: '15px', fontWeight: '700' }}>{title}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '11px', background: 'rgba(200,255,0,0.12)', color: 'var(--lime)', padding: '3px 10px', borderRadius: '100px', fontWeight: '600' }}>
+                    Live · {items.length} item{items.length !== 1 ? 's' : ''}
+                  </span>
+                  <button onClick={() => { setEditItem({ week_number: week, week_title: title }); setShowModal(true); }}
+                    style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '7px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', color: 'var(--dark)', fontFamily: 'inherit' }}>
+                    + Add content
+                  </button>
+                </div>
+              </div>
+              {items.map(item => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 18px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--muted)' }}>
+                    {typeIcon(item.type)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--muted)' }}>
+                      {item.type?.charAt(0).toUpperCase() + item.type?.slice(1)} · {item.duration || 'No duration'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                    <button className="content-btn" onClick={() => { setEditItem(item); setShowModal(true); }}>Edit</button>
+                    <button className="content-btn" style={{ color: 'var(--coral)', borderColor: 'rgba(255,77,28,0.25)' }} onClick={() => deleteItem(item.id)}>Remove</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          {/* Add week */}
+          {addingWeek ? (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input value={newWeekTitle} onChange={e => setNewWeekTitle(e.target.value)} placeholder="Week title e.g. Foundation"
+                style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', color: 'var(--dark)' }} />
+              <button className="btn-save-live" onClick={async () => {
+                if (!newWeekTitle.trim()) return;
+                const week = weekList.length + 1;
+                try {
+                  const item = await createCoachContent({ title: 'Intro', type: 'guide', week_number: week, week_title: newWeekTitle.trim() });
+                  setContent(prev => [...prev, item]);
+                  setNewWeekTitle(''); setAddingWeek(false);
+                } catch (err) { alert(err.message); }
+              }}>Add week</button>
+              <button onClick={() => setAddingWeek(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '20px' }}>×</button>
+            </div>
+          ) : (
+            <button onClick={() => setAddingWeek(true)} style={{ background: 'none', border: '1px dashed var(--border)', borderRadius: '10px', padding: '12px', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
+              + Add new week
+            </button>
+          )}
+        </div>
+      ) : (
+        /* All content grid */
+        <div>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            {['all','video','pdf','guide','mindset'].map(t => (
+              <button key={t} className={`filter-btn${filterType === t ? ' active' : ''}`} onClick={() => setFilterType(t)}>
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
           </div>
-          <div className="lib-body">
-            <div className="lib-name">{c.title}</div>
-            <div className="lib-meta">{c.duration || 'No duration'}</div>
-            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-              <button className="content-btn">Edit</button>
-              <button className="content-btn" style={{ color: 'var(--coral)', borderColor: 'rgba(255,77,28,0.25)' }}>Delete</button>
+          <div className="library-grid">
+            {allFiltered.length === 0 ? (
+              <div style={{ gridColumn: '1/-1', padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
+                No content yet.
+              </div>
+            ) : allFiltered.map(c => (
+              <div key={c.id} className="lib-card">
+                <div className="lib-thumb" style={{ background: c.type === 'video' ? '#1a2f1a' : c.type === 'pdf' ? '#1a1a2f' : '#2f1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                    {typeIcon(c.type)}
+                  </div>
+                  <div className={`lib-type-tag ${c.type === 'video' ? 'lt-video' : c.type === 'pdf' ? 'lt-pdf' : 'lt-guide'}`}>{c.type}</div>
+                </div>
+                <div className="lib-body">
+                  <div className="lib-name">{c.title}</div>
+                  <div className="lib-meta">{c.duration || ''} · {timeAgo(c.created_at)}</div>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                    <button className="content-btn" onClick={() => { setEditItem(c); setShowModal(true); }}>Edit</button>
+                    <button className="content-btn" style={{ color: 'var(--coral)', borderColor: 'rgba(255,77,28,0.25)' }} onClick={() => deleteItem(c.id)}>Remove</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="lib-card" style={{ border: '1px dashed var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '140px' }}
+              onClick={() => { setEditItem(null); setShowModal(true); }}>
+              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
+                <div style={{ fontSize: '24px', marginBottom: '6px' }}>+</div>
+                Post something new
+              </div>
             </div>
           </div>
         </div>
-      ))}
+      )}
+
+      {/* Upload modal */}
+      {showModal && (
+        <ContentModal
+          item={editItem}
+          onClose={() => { setShowModal(false); setEditItem(null); }}
+          onSave={async (data) => {
+            try {
+              if (editItem?.id) {
+                const updated = await updateCoachContent(editItem.id, data);
+                setContent(prev => prev.map(c => c.id === editItem.id ? updated : c));
+              } else {
+                const created = await createCoachContent(data);
+                setContent(prev => [...prev, created]);
+              }
+              setShowModal(false); setEditItem(null);
+            } catch (err) { alert(err.message); }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ContentModal({ item, onClose, onSave }) {
+  const [form, setForm] = useState({
+    title: item?.title || '',
+    type: item?.type || 'video',
+    url: item?.url || '',
+    duration: item?.duration || '',
+    week_number: item?.week_number || 1,
+    week_title: item?.week_title || '',
+    description: item?.description || '',
+  });
+  const [saving, setSaving] = useState(false);
+  function upd(k, v) { setForm(p => ({ ...p, [k]: v })); }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: 'var(--bg)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ fontSize: '16px', fontWeight: '700' }}>{item?.id ? 'Edit content' : 'Upload content'}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--muted)' }}>×</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="field">
+            <label>Title</label>
+            <input type="text" value={form.title} onChange={e => upd('title', e.target.value)} placeholder="e.g. How to bench properly" />
+          </div>
+          <div className="field">
+            <label>Type</label>
+            <select value={form.type} onChange={e => upd('type', e.target.value)} style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', color: 'var(--dark)' }}>
+              {['video','pdf','guide','mindset','audio'].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>URL / Link</label>
+            <input type="url" value={form.url} onChange={e => upd('url', e.target.value)} placeholder="https://..." />
+          </div>
+          <div className="field">
+            <label>Duration</label>
+            <input type="text" value={form.duration} onChange={e => upd('duration', e.target.value)} placeholder="e.g. 42 min" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="field">
+              <label>Week number</label>
+              <input type="number" value={form.week_number} onChange={e => upd('week_number', e.target.value)} min="1" />
+            </div>
+            <div className="field">
+              <label>Week title</label>
+              <input type="text" value={form.week_title} onChange={e => upd('week_title', e.target.value)} placeholder="Foundation" />
+            </div>
+          </div>
+          <div className="field">
+            <label>Description (optional)</label>
+            <textarea value={form.description} onChange={e => upd('description', e.target.value)} rows={3} placeholder="What will subscribers learn?" />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-save-live" disabled={saving} onClick={async () => {
+            if (!form.title) return alert('Title required');
+            setSaving(true);
+            await onSave(form);
+            setSaving(false);
+          }}>{saving ? 'Saving…' : item?.id ? 'Save changes' : 'Upload'}</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -572,46 +958,171 @@ function SectionContent() {
 // AI TRAINING
 // ═══════════════════════════════════════════════════════════════
 function SectionTraining({ coach, setCoach }) {
-  const [form, setForm] = useState({ ai_who: coach.ai_who || '', ai_method: coach.ai_method || '', ai_tone: coach.ai_tone || '' });
+  const [form, setForm] = useState({
+    ai_who: coach.ai_who || '',
+    ai_method: coach.ai_method || '',
+    ai_tone: coach.ai_tone || '',
+    ai_limits: coach.ai_limits || '',
+    ai_examples: coach.ai_examples || '',
+  });
+  const [quickUpdate, setQuickUpdate] = useState('');
+  const [quickType, setQuickType] = useState('Behavior');
+  const [updates, setUpdates] = useState(coach.ai_quick_updates || []);
   const [saving, setSaving] = useState(false);
+  const [savingQuick, setSavingQuick] = useState(false);
 
   function upd(k, v) { setForm(p => ({ ...p, [k]: v })); }
 
-  async function save() {
-    setSaving(true);
-    try { await updateCoachAiTraining(form); setCoach({ ...coach, ...form }); alert('AI training updated!'); }
-    catch (err) { alert(err.message); }
+  async function save(key) {
+    setSaving(key);
+    try {
+      await updateCoachAiTraining(form);
+      setCoach({ ...coach, ...form });
+    } catch (err) { alert(err.message); }
     finally { setSaving(false); }
   }
 
+  async function addQuickUpdate() {
+    if (!quickUpdate.trim()) return;
+    setSavingQuick(true);
+    const entry = { id: Date.now(), type: quickType, content: quickUpdate.trim(), time: new Date().toISOString() };
+    const newUpdates = [entry, ...updates];
+    try {
+      await updateCoachAiTraining({ ...form, ai_quick_updates: newUpdates });
+      setUpdates(newUpdates);
+      setCoach({ ...coach, ai_quick_updates: newUpdates });
+      setQuickUpdate('');
+    } catch (err) { alert(err.message); }
+    finally { setSavingQuick(false); }
+  }
+
+  async function removeUpdate(id) {
+    const newUpdates = updates.filter(u => u.id !== id);
+    await updateCoachAiTraining({ ...form, ai_quick_updates: newUpdates });
+    setUpdates(newUpdates);
+  }
+
+  // Training health scores
+  const health = {
+    Identity: form.ai_who.length > 100 ? 90 : Math.max(10, Math.floor(form.ai_who.length / 2)),
+    Method: form.ai_method.length > 100 ? 85 : Math.max(10, Math.floor(form.ai_method.length / 2)),
+    Tone: form.ai_tone.length > 80 ? 80 : Math.max(10, Math.floor(form.ai_tone.length / 1.5)),
+    Examples: form.ai_examples.length > 200 ? 90 : Math.max(5, Math.floor(form.ai_examples.length / 4)),
+    Limits: form.ai_limits.length > 80 ? 95 : Math.max(5, Math.floor(form.ai_limits.length / 1.5)),
+  };
+
   const blocks = [
-    { key: 'ai_who', title: 'Who you are', desc: 'Background, values, what makes you different', placeholder: 'I\'m a former NCAA athlete…' },
-    { key: 'ai_method', title: 'Your coaching method', desc: 'Training philosophy, periodization, nutrition principles', placeholder: 'I use linear periodization…' },
-    { key: 'ai_tone', title: 'How you talk', desc: 'Tone, personality, communication style', placeholder: 'I\'m direct but supportive…' },
+    { key: 'ai_who', title: 'Who you are', desc: 'Your identity as a coach — background, values, what makes you different. The AI uses this to introduce itself to new clients.', placeholder: "I've been coaching for 9 years…" },
+    { key: 'ai_method', title: 'Your coaching method', desc: 'How you actually coach — training philosophy, periodization approach, nutrition principles. The AI answers client questions from this foundation.', placeholder: 'My training is built around 3-4 week progressive blocks…' },
+    { key: 'ai_tone', title: 'How you talk to clients', desc: 'Your tone, personality, expressions you use. The AI should sound like you — not like a generic chatbot.', placeholder: "I'm direct but supportive. I use 'we' not 'you should'…" },
+    { key: 'ai_examples', title: 'Example conversations', desc: 'Paste 3–5 real conversations (or write examples). The AI learns your exact style from these.', placeholder: 'Client: I missed 3 days this week\nMe: Life happens. What day are we restarting?…' },
+    { key: 'ai_limits', title: 'What the AI must never say', desc: 'Hard limits — things that go against your method, could harm clients, or that you want to always handle personally.', placeholder: 'Never recommend cutting below 1600 calories…' },
   ];
 
-  return (
-    <>
-      <div className="ai-status-bar" style={{ marginBottom: '20px' }}>
-        <div className="ai-pulse" />
-        <div className="ai-status-text">Your AI is <strong>active</strong></div>
-      </div>
+  const tagColors = { Behavior: '#5c6bc0', Nutrition: '#2a9d4e', 'Hard Limit': '#c94e2a', Tone: '#e67e00', General: '#888' };
 
-      {blocks.map(({ key, title, desc, placeholder }) => (
-        <div key={key} className="ai-train-block" style={{ marginBottom: '14px' }}>
-          <div className="ai-train-block-head">
-            <div style={{ flex: 1 }}>
-              <div className="ai-train-block-title">{title}</div>
-              <div className="ai-train-block-desc">{desc}</div>
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
+      {/* Left — training blocks */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="ai-status-bar" style={{ marginBottom: '4px' }}>
+          <div className="ai-pulse" />
+          <div className="ai-status-text">Your AI is <strong>active</strong></div>
+        </div>
+
+        {blocks.map(({ key, title, desc, placeholder }) => (
+          <div key={key} className="ai-train-block">
+            <div className="ai-train-block-head">
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="ai-train-block-title">{title}</div>
+                  {form[key].length > 20 && (
+                    <span style={{ fontSize: '10px', fontWeight: '700', background: 'rgba(200,255,0,0.12)', color: 'var(--lime)', padding: '2px 8px', borderRadius: '100px' }}>Trained</span>
+                  )}
+                </div>
+                <div className="ai-train-block-desc">{desc}</div>
+              </div>
+            </div>
+            <textarea className="textarea-field" value={form[key]} onChange={e => upd(key, e.target.value)} placeholder={placeholder} rows={key === 'ai_examples' ? 6 : 4} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Changes saved automatically</span>
+              <button className="btn-save-live" style={{ padding: '7px 16px', fontSize: '12px' }} onClick={() => save(key)} disabled={saving === key}>
+                {saving === key ? 'Saving…' : 'Push update to AI'}
+              </button>
             </div>
           </div>
-          <textarea className="textarea-field" value={form[key]} onChange={e => upd(key, e.target.value)} placeholder={placeholder} />
-        </div>
-      ))}
+        ))}
+      </div>
 
-      <button className="btn-save-live" onClick={save} disabled={saving} style={{ marginTop: '8px' }}>
-        {saving ? 'Saving…' : 'Push update to AI'}
-      </button>
-    </>
+      {/* Right panel */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '20px' }}>
+        {/* Training health */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '14px' }}>Training health</div>
+          {Object.entries(health).map(([label, score]) => (
+            <div key={label} style={{ marginBottom: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{label}</span>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: score > 70 ? '#2a9d4e' : score > 40 ? '#e67e00' : '#c94e2a' }}>{score}%</span>
+              </div>
+              <div style={{ height: '5px', background: 'var(--border)', borderRadius: '100px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${score}%`, background: score > 70 ? '#2a9d4e' : score > 40 ? '#e67e00' : '#c94e2a', borderRadius: '100px', transition: 'width 0.3s' }} />
+              </div>
+            </div>
+          ))}
+          {Object.entries(health).some(([, v]) => v < 50) && (
+            <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(201,78,42,0.08)', borderRadius: '8px', fontSize: '12px' }}>
+              <div style={{ color: '#c94e2a', fontWeight: '700', marginBottom: '3px' }}>
+                Improve: {Object.entries(health).filter(([,v]) => v < 50).map(([k]) => k).join(', ')}
+              </div>
+              <div style={{ color: 'var(--muted)' }}>Add more detail to improve AI accuracy.</div>
+            </div>
+          )}
+        </div>
+
+        {/* Quick update */}
+        <div style={{ background: 'var(--dark)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '18px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff', marginBottom: '6px' }}>Push a quick update</div>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '14px' }}>Add a small targeted instruction. The AI remembers all previous updates and stacks them.</div>
+          <textarea value={quickUpdate} onChange={e => setQuickUpdate(e.target.value)}
+            placeholder="Example: Starting this week, always ask clients about their sleep before adjusting their program…"
+            rows={4}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontFamily: 'inherit', fontSize: '12px', resize: 'vertical', boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center' }}>
+            <select value={quickType} onChange={e => setQuickType(e.target.value)}
+              style={{ flex: 1, padding: '8px 10px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontFamily: 'inherit', fontSize: '12px' }}>
+              {['Behavior','Nutrition','Hard Limit','Tone','General'].map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <button onClick={addQuickUpdate} disabled={savingQuick}
+              style={{ padding: '8px 16px', borderRadius: '7px', background: 'var(--lime)', color: 'var(--dark)', border: 'none', fontFamily: 'inherit', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
+              {savingQuick ? '…' : 'Add'}
+            </button>
+          </div>
+        </div>
+
+        {/* Updates log */}
+        {updates.length > 0 && (
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ fontSize: '14px', fontWeight: '700' }}>Updates log</div>
+              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{updates.length} updates</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto' }}>
+              {updates.map(u => (
+                <div key={u.id} style={{ paddingBottom: '10px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '700', background: `${tagColors[u.type] || '#888'}22`, color: tagColors[u.type] || '#888', padding: '2px 8px', borderRadius: '100px' }}>{u.type}</span>
+                    <button onClick={() => removeUpdate(u.id)} style={{ background: 'none', border: 'none', fontSize: '11px', color: 'var(--muted)', cursor: 'pointer' }}>Remove</button>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: 1.5 }}>{u.content}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '3px', opacity: 0.6 }}>{timeAgo(u.time)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
