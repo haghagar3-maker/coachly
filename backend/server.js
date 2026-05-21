@@ -149,8 +149,9 @@ app.get('/api/coaches', async (req, res) => {
 });
 
 // GET /api/coach/:id — public coach profile
-app.get('/api/coach/:coachPublicId', async (req, res) => {
+app.get('/api/coach/:coachPublicId([0-9a-f-]{36})', async (req, res) => {
   if (req.params.coachPublicId === 'me') return res.status(400).json({ error: 'Not found' });
+  return res.status(404).json({ error: 'Not found' });
   try {
     const coaches = await db('coaches', 'GET', null, `?id=eq.${req.params.coachPublicId}&select=*`);
     if (!coaches || coaches.length === 0) return res.status(404).json({ error: 'Coach not found' });
