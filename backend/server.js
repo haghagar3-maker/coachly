@@ -149,10 +149,10 @@ app.get('/api/coaches', async (req, res) => {
 });
 
 // GET /api/coach/:id — public coach profile
-app.get('/api/coach/:id', async (req, res) => {
-  if (req.params.id === 'me') return res.status(400).json({ error: 'Not found' });
-  try {
-    const coaches = await db('coaches', 'GET', null, `?id=eq.${req.params.id}&select=*`);
+app.get('/api/coach/:coachId', async (req, res) => {
+  if (req.params.coachId === 'me') return res.status(400).json({ error: 'Not found' });
+  try {-
+    const coaches = await db('coaches', 'GET', null, `?id=eq.${req.params.coachId}&select=*`);
     if (!coaches || coaches.length === 0) return res.status(404).json({ error: 'Coach not found' });
     const coach = coaches[0];
     if (!coach.is_approved || !coach.is_active) return res.status(404).json({ error: 'Coach not found' });
@@ -355,7 +355,7 @@ app.patch('/api/coach/checkin/:id', requireAuth, requireCoach, async (req, res) 
   try {
     const result = await db('checkins', 'PATCH',
       { coach_reply: req.body.coach_reply, replied_at: new Date().toISOString() },
-      `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`
+      `?id=eq.${req.params.coachId}&coach_id=eq.${req.session.coach_id}`
     );
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
@@ -477,7 +477,7 @@ app.post('/api/coach/content', requireAuth, requireCoach, async (req, res) => {
 app.patch('/api/coach/content/:id', requireAuth, requireCoach, async (req, res) => {
   try {
     const result = await db('content', 'PATCH', req.body,
-      `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`
+      `?id=eq.${req.params.coachId}&coach_id=eq.${req.session.coach_id}`
     );
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
@@ -488,7 +488,7 @@ app.patch('/api/coach/content/:id', requireAuth, requireCoach, async (req, res) 
 app.delete('/api/coach/content/:id', requireAuth, requireCoach, async (req, res) => {
   try {
     await db('content', 'DELETE', null,
-      `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`
+      `?id=eq.${req.params.coachId}&coach_id=eq.${req.session.coach_id}`
     );
     res.json({ success: true });
   } catch (e) {
@@ -740,7 +740,7 @@ app.delete('/api/user/subscription/:id', requireAuth, requireUser, async (req, r
   try {
     await db('subscriptions', 'PATCH',
       { status: 'cancelled' },
-      `?id=eq.${req.params.id}&user_id=eq.${req.session.user_id}`
+      `?id=eq.${req.params.coachId}&user_id=eq.${req.session.user_id}`
     );
     res.json({ success: true });
   } catch (e) {
@@ -1047,10 +1047,10 @@ app.post('/api/posts', requireAuth, requireUser, async (req, res) => {
 app.patch('/api/posts/:id/like', requireAuth, async (req, res) => {
   try {
     // Optimistic increment
-    const posts = await db('posts', 'GET', null, `?id=eq.${req.params.id}&select=likes`);
+    const posts = await db('posts', 'GET', null, `?id=eq.${req.params.coachId}&select=likes`);
     if (!posts || posts.length === 0) return res.status(404).json({ error: 'Post not found' });
     const newLikes = (posts[0].likes || 0) + 1;
-    const result = await db('posts', 'PATCH', { likes: newLikes }, `?id=eq.${req.params.id}`);
+    const result = await db('posts', 'PATCH', { likes: newLikes }, `?id=eq.${req.params.coachId}`);
     res.json({ likes: newLikes });
   } catch (e) {
     res.status(500).json({ error: 'Failed to like post' });
@@ -1320,7 +1320,7 @@ app.get('/api/admin/coaches', requireAuth, requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/coach/:id/approve', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('coaches', 'PATCH', { is_approved: true, is_active: true }, `?id=eq.${req.params.id}`);
+    await db('coaches', 'PATCH', { is_approved: true, is_active: true }, `?id=eq.${req.params.coachId}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to approve coach' });
@@ -1329,7 +1329,7 @@ app.patch('/api/admin/coach/:id/approve', requireAuth, requireAdmin, async (req,
 
 app.patch('/api/admin/coach/:id/suspend', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('coaches', 'PATCH', { is_active: false }, `?id=eq.${req.params.id}`);
+    await db('coaches', 'PATCH', { is_active: false }, `?id=eq.${req.params.coachId}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to suspend coach' });
@@ -1338,7 +1338,7 @@ app.patch('/api/admin/coach/:id/suspend', requireAuth, requireAdmin, async (req,
 
 app.delete('/api/admin/coach/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('coaches', 'DELETE', null, `?id=eq.${req.params.id}`);
+    await db('coaches', 'DELETE', null, `?id=eq.${req.params.coachId}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete coach' });
@@ -1407,7 +1407,7 @@ app.post('/api/admin/category', requireAuth, requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/category/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const result = await db('categories', 'PATCH', req.body, `?id=eq.${req.params.id}`);
+    const result = await db('categories', 'PATCH', req.body, `?id=eq.${req.params.coachId}`);
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to update category' });
@@ -1416,7 +1416,7 @@ app.patch('/api/admin/category/:id', requireAuth, requireAdmin, async (req, res)
 
 app.delete('/api/admin/category/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('categories', 'DELETE', null, `?id=eq.${req.params.id}`);
+    await db('categories', 'DELETE', null, `?id=eq.${req.params.coachId}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete category' });
@@ -1502,7 +1502,7 @@ app.get('/api/admin/system', requireAuth, requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/errors/:id/resolve', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('error_logs', 'PATCH', { resolved: true }, `?id=eq.${req.params.id}`);
+    await db('error_logs', 'PATCH', { resolved: true }, `?id=eq.${req.params.coachId}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to resolve error' });
