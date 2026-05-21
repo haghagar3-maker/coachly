@@ -151,7 +151,7 @@ app.get('/api/coaches', async (req, res) => {
 // GET /api/coach/:id — public coach profile
 app.get('/api/coach/:coachId', async (req, res) => {
   if (req.params.coachId === 'me') return res.status(400).json({ error: 'Not found' });
-  try {-
+  try {
     const coaches = await db('coaches', 'GET', null, `?id=eq.${req.params.coachId}&select=*`);
     if (!coaches || coaches.length === 0) return res.status(404).json({ error: 'Coach not found' });
     const coach = coaches[0];
