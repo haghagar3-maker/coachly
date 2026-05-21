@@ -295,7 +295,7 @@ app.patch('/api/coach/profile', requireAuth, requireCoach, async (req, res) => {
     res.json(safeCoach);
   } catch (e) {
     logError('PATCH /api/coach/profile', e.message, e.stack);
-    res.status(500).json({ error: 'Update failed' });
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -660,7 +660,7 @@ app.patch('/api/user/profile', requireAuth, requireUser, async (req, res) => {
     const { password_hash: _h, ...safe } = (user || {});
     res.json(safe);
   } catch (e) {
-    res.status(500).json({ error: 'Update failed' });
+    res.status(500).json({ error: e.message });
   }
 });
 
