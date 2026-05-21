@@ -19,7 +19,7 @@ export default function UserLogin() {
     if (mode === 'signup' && !form.name) { showToast('Enter your name', 'error'); return; }
     setLoading(true);
     try {
-      const endpoint = mode === 'login' ? '/api/user/login' : '/api/user/register';
+      const endpoint = mode === 'login' ? '/api/user/login' : '/api/user/signup';
       const body = mode === 'login'
         ? { email: form.email, password: form.password }
         : { name: form.name, email: form.email, password: form.password };
