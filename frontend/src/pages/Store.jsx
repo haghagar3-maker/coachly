@@ -307,10 +307,12 @@ export default function Store() {
 
   function getPlanPrice(months) {
     if (!coach) return null;
-    if (months === 3) return coach.price_3m || null;
-    if (months === 6) return coach.price_6m || null;
-    if (months === 12) return coach.price_12m || null;
-    return null;
+    const base = parseFloat(coach.plan_price) || null;
+    if (!base) return null;
+    if (months === 3) return base * 3;
+    if (months === 6) return base * 6;
+    if (months === 12) return base * 12;
+    return base;
   }
 
   function handleSubscribeClick() {
