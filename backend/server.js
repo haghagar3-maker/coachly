@@ -1550,7 +1550,7 @@ app.post('/api/program/generate', requireAuth, requireUser, async (req, res) => 
     const subs = await db('subscriptions', 'GET', null, `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&status=eq.active&select=intake`);
     const coach = coaches[0];
     const user = { ...users[0], ...(subs?.[0]?.intake || {}) };
-    const prompt = `You are ${coach.name}, a ${coach.sport || 'fitness'} coach. Create a 5-day workout program for a client. Coach method: ${coach.ai_method || 'progressive overload'}. Client goal: ${user.goal || 'general fitness'}. Respond ONLY with a JSON array, no markdown: [{"day_name":"Monday","session_title":"Upper Body","exercises":[{"name":"Push-ups","sets":3,"reps":"12","rest":"60s"}]}]`;
+    const prompt = `Create a 5-day workout program. Respond ONLY with a JSON array, nothing else, no text before or after:\n[{"day_name":"Monday","session_title":"Full Body","exercises":[{"name":"Squats","sets":3,"reps":"12","rest":"60s"}]},{"day_name":"Tuesday","session_title":"Cardio","exercises":[{"name":"Running","sets":1,"reps":"30 min","rest":"none"}]},{"day_name":"Wednesday","session_title":"Upper Body","exercises":[{"name":"Push-ups","sets":3,"reps":"15","rest":"45s"}]},{"day_name":"Thursday","session_title":"Rest","exercises":[]},{"day_name":"Friday","session_title":"Lower Body","exercises":[{"name":"Lunges","sets":3,"reps":"12","rest":"60s"}]}]\nNow create a similar 5-day program for a ${coach.sport || 'fitness'} client whose goal is ${user.goal || 'lose weight'}. Return ONLY the JSON array.`;
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GROQ_KEY}` },
