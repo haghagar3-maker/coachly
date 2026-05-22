@@ -850,7 +850,7 @@ app.post('/api/chat', requireAuth, requireUser, async (req, res) => {
     if (e.message.includes('Queue timeout')) {
       return res.status(503).json({ error: 'AI is busy — please try again in a moment', retry: true });
     }
-    res.status(500).json({ error: 'Chat failed — please try again' });
+    res.status(500).json({ error: 'Chat failed: ' + e.message });
   }
 });
 
