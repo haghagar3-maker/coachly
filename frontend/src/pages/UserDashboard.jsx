@@ -471,6 +471,7 @@ function GenerateProgram({ coach, onGenerated }) {
     </div>
   );
 }
+function SectionStrategy({ coach }) {
   const [program, setProgram] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
