@@ -3,7 +3,7 @@
 // Never one giant prompt. Fix one modal without touching the others.
 
 const GROQ_KEY = process.env.GROQ_KEY;
-const MODEL = 'llama3-70b-8192';
+const MODEL = 'llama-3.3-70b-versatile';
 
 async function callGroq(systemPrompt, userMessage, maxTokens = 400) {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
