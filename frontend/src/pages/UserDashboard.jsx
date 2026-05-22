@@ -448,7 +448,29 @@ function SectionDM({ user, coach }) {
 // ═══════════════════════════════════════════════════════════════
 // SECTION: STRATEGY (workout program)
 // ═══════════════════════════════════════════════════════════════
-function SectionStrategy({ coach }) {
+function GenerateProgram({ coach, onGenerated }) {
+  const [generating, setGenerating] = useState(false);
+  async function generate() {
+    setGenerating(true);
+    try {
+      const { generateProgram } = await import('../api');
+      const result = await generateProgram(coach.id);
+      onGenerated(result);
+      showToast('Program generated!', 'success');
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { setGenerating(false); }
+  }
+  return (
+    <div style={{ textAlign: 'center', padding: '48px 20px' }}>
+      <div style={{ fontSize: '40px', marginBottom: '16px' }}>🏋️</div>
+      <div style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>No program yet</div>
+      <div style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' }}>Generate a personalized workout program based on your coach's method and your goals.</div>
+      <button className="btn-primary" onClick={generate} disabled={generating}>
+        {generating ? 'Generating your program…' : '✨ Generate my program'}
+      </button>
+    </div>
+  );
+}
   const [program, setProgram] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -481,7 +503,7 @@ function SectionStrategy({ coach }) {
   }
 
   if (loading) return <LoadingSkeleton type="card" count={4} />;
-  if (program.length === 0) return <EmptyState message="Your coach hasn't assigned a program yet. They'll add it soon." />;
+  if (program.length === 0) return <GenerateProgram coach={coach} onGenerated={setProgram} />;
 
   // Group by week
   const weeks = {};

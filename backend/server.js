@@ -1542,6 +1542,40 @@ app.patch('/api/admin/settings', requireAuth, requireAdmin, async (req, res) => 
 // START
 // ─────────────────────────────────────────────
 
+app.post('/api/program/generate', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { coachId } = req.body;
+    const coaches = await db('coaches', 'GET', null, `?id=eq.${coachId}&select=*`);
+    const users = await db('users', 'GET', null, `?id=eq.${req.session.user_id}&select=*`);
+    const subs = await db('subscriptions', 'GET', null, `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&status=eq.active&select=intake`);
+    const coach = coaches[0];
+    const user = { ...users[0], ...(subs?.[0]?.intake || {}) };
+    const prompt = `You are ${coach.name}, a ${coach.sport || 'fitness'} coach. Create a 5-day workout program for a client. Coach method: ${coach.ai_method || 'progressive overload'}. Client goal: ${user.goal || 'general fitness'}. Respond ONLY with a JSON array, no markdown: [{"day_name":"Monday","session_title":"Upper Body","exercises":[{"name":"Push-ups","sets":3,"reps":"12","rest":"60s"}]}]`;
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GROQ_KEY}` },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }], max_tokens: 1500 }),
+    });
+    const groqData = await groqRes.json();
+    const text = groqData.choices?.[0]?.message?.content || '[]';
+    const days = JSON.parse(text.replace(/```json|```/g, '').trim());
+    const saved = await Promise.all(days.map((day) =>
+      db('programs', 'POST', {
+        coach_id: coachId,
+        user_id: req.session.user_id,
+        week_number: 1,
+        day_name: day.day_name,
+        session_title: day.session_title,
+        exercises: day.exercises || [],
+      })
+    ));
+    res.json(saved);
+  } catch (e) {
+    logError('POST /api/program/generate', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to generate: ' + e.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });

@@ -342,3 +342,6 @@ export async function adminLogout() {
     clearAdminToken();
   }
 }
+export function generateProgram(coachId) {
+  return request('/api/program/generate', { method: 'POST', body: { coachId } });
+}
