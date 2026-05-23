@@ -1576,13 +1576,16 @@ app.post('/api/program/generate', requireAuth, requireUser, async (req, res) => 
   }
 });
 
-app.listen(PORT, () => {
-  app.post('/api/food/analyze', requireAuth, requireUser, async (req, res) => {
+app.post('/api/food/analyze', requireAuth, requireUser, async (req, res) => {
   try {
     const { imageBase64, coachId } = req.body;
     const coaches = await db('coaches', 'GET', null, `?id=eq.${coachId}&select=*`);
     const coach = coaches[0];
-    const prompt = `You are a nutrition expert. Analyze this meal photo and estimate its nutritional content. Coach style: ${coach?.ai_tone || 'supportive and direct'}.
+    const recentLogs = await db('food_logs', 'GET', null, `?user_id=eq.${req.session.user_id}&order=created_at.desc&limit=5`);
+    const recentMeals = (recentLogs || []).map(l => `${l.meal_name} (${l.calories}kcal, score ${l.health_score}/10)`).join(', ') || 'none yet';
+    const prompt = `You are ${coach?.name || 'a coach'}, a fitness coach. Analyze this meal and give a comment referencing their recent eating history: ${recentMeals}. Be warm and motivating. Respond ONLY with JSON, no newlines inside strings:
+{"meal_name":"Grilled chicken with rice","calories":520,"protein":42,"carbs":48,"fat":12,"coach_comment":"You had pizza yesterday so this is a great recovery meal!","health_score":8}`;
+    const unusedPrompt = `You are a nutrition expert. Analyze this meal photo and estimate its nutritional content. Coach style: ${coach?.ai_tone || 'supportive and direct'}.
 Respond ONLY with a JSON object, no markdown:
 {"meal_name":"Grilled chicken with rice","calories":520,"protein":42,"carbs":48,"fat":12,"coach_comment":"Good protein choice! Watch the rice portion if you're cutting.","health_score":8}`;
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -1592,7 +1595,8 @@ Respond ONLY with a JSON object, no markdown:
     });
     const groqData = await groqRes.json();
     const text = groqData.choices?.[0]?.message?.content || '{}';
-    const analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
+    const cleanText = text.replace(/```json|```/g, '').replace(/[\n\r]/g, ' ').trim();
+    const analysis = JSON.parse(cleanText);
     await db('food_logs', 'POST', {
       user_id: req.session.user_id,
       coach_id: coachId,
@@ -1620,5 +1624,7 @@ app.get('/api/food/history', requireAuth, requireUser, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });
