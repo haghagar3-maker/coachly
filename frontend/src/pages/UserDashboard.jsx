@@ -836,15 +836,20 @@ function SectionFoodScan({ user, coach }) {
         {loading ? <LoadingSkeleton type="list" /> : history.length === 0 ? (
           <EmptyState message="No food scans yet. Take a photo of your next meal!" />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
             {history.map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                {item.image_base64 ? <img src={item.image_base64} alt="" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} /> : <div style={{ fontSize: '24px' }}>🍽️</div>}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600' }}>{item.meal_name || 'Meal'}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{item.calories} kcal · {item.protein}g protein · {timeAgo(item.created_at)}</div>
+              <div key={i} style={{ background: 'var(--card)', borderRadius: '14px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '120px', overflow: 'hidden', background: 'var(--border)' }}>
+                  {item.image_base64 ? <img src={item.image_base64} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>🍽️</div>}
                 </div>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: item.health_score >= 7 ? '#2ecc6a' : '#ff4d1c' }}>{item.health_score}/10</div>
+                <div style={{ padding: '10px 12px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '700', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.meal_name || 'Meal'}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px' }}>{item.calories} kcal · {item.protein}g protein</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--muted)' }}>{timeAgo(item.created_at)}</div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: item.health_score >= 7 ? '#2ecc6a' : '#ff4d1c' }}>{item.health_score}/10</div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
