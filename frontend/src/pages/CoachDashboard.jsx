@@ -1162,27 +1162,7 @@ function SectionNutrition({ coach }) {
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
 
-  if (!selected) return (
-    <div>
-      <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>Click a client to see their food scan history and AI nutrition comments.</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {clients.length === 0 ? (
-          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No clients yet.</div>
-        ) : clients.map(c => (
-          <div key={c.id} onClick={() => viewClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', cursor: 'pointer' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarBg(c.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user?.name)}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || '?'}</div>
-              <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.plan_months} month plan · {c.status || 'active'}</div>
-            </div>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)"><path d="M9 18l6-6-6-6"/></svg>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  return (
+  if (selected) return (
     <div>
       <button className="btn-secondary" onClick={() => setSelected(null)} style={{ marginBottom: '16px' }}>← Back</button>
       <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>{selected.user?.name || '?'} — Food Scan History</div>
@@ -1212,8 +1192,27 @@ function SectionNutrition({ coach }) {
       )}
     </div>
   );
+
+  return (
+    <div>
+      <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>Click a client to see their food scan history and AI nutrition comments.</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {clients.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No clients yet.</div>
+        ) : clients.map(c => (
+          <div key={c.id} onClick={() => viewClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', cursor: 'pointer' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarBg(c.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user?.name)}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || '?'}</div>
+              <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.plan_months} month plan · {c.status || 'active'}</div>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
-  
 
 // ═══════════════════════════════════════════════════════════════
 // CLIENT STRATEGY
@@ -1262,7 +1261,7 @@ function SectionStrategy({ coach }) {
 
   if (selected) return (
     <div>
-      <button className="btn-secondary" onClick={() => { setSelected(null); setEditingDay(null); setSaving(false); }} style={{ marginBottom: '16px' }}>← Back</button>
+      <button className="btn-secondary" onClick={() => { setSelected(null); setEditingDay(null); }} style={{ marginBottom: '16px' }}>← Back</button>
       <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>{selected.user?.name || '?'} — Workout Program</div>
       <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '16px' }}>You can edit any day or exercise below. Changes save immediately.</div>
       {loadingProgram ? (
@@ -1314,6 +1313,26 @@ function SectionStrategy({ coach }) {
           )}
         </div>
       ))}
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>Click a client to view and edit their workout program.</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {clients.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No clients yet.</div>
+        ) : clients.map(c => (
+          <div key={c.id} onClick={() => viewClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', cursor: 'pointer' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarBg(c.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user?.name)}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || '?'}</div>
+              <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.plan_months} month plan · {c.status || 'active'}</div>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
