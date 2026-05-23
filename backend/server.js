@@ -1585,13 +1585,13 @@ app.post('/api/food/analyze', requireAuth, requireUser, async (req, res) => {
     const recentMeals = (recentLogs || []).map(l => `${l.meal_name} (${l.calories}kcal, score ${l.health_score}/10)`).join(', ') || 'none yet';
     const prompt = `You are ${coach?.name || 'a coach'}, a fitness coach. Analyze this meal and give a comment referencing their recent eating history: ${recentMeals}. Be warm and motivating. Respond ONLY with JSON, no newlines inside strings:
 {"meal_name":"Lamb tajine with prunes","calories":650,"protein":38,"carbs":55,"fat":22,"coach_comment":"Great choice after your recent meals!","health_score":7}`;
-    const unusedPrompt = `You are a nutrition expert. Analyze this meal photo and estimate its nutritional content. Coach style: ${coach?.ai_tone || 'supportive and direct'}.
+    const _unused = `You are a nutrition expert. Analyze this meal photo and estimate its nutritional content. Coach style: ${coach?.ai_tone || 'supportive and direct'}.
 Respond ONLY with a JSON object, no markdown:
 {"meal_name":"Grilled chicken with rice","calories":520,"protein":42,"carbs":48,"fat":12,"coach_comment":"Good protein choice! Watch the rice portion if you're cutting.","health_score":8}`;
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GROQ_KEY}` },
-      body: JSON.stringify({ model: 'llama-3.2-11b-vision-preview', messages: [{ role: 'user', content: `${prompt}\n\nMeal description from image: ${imageBase64 ? 'User uploaded a food photo' : 'unknown meal'}` }], max_tokens: 400 }),
+      body: JSON.stringify({ model: 'llama-3.2-11b-vision-preview', messages: [{ role: 'user', content: imageBase64 ? [{ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }, { type: 'text', text: prompt }] : prompt }], max_tokens: 400 }),
     });
     const groqData = await groqRes.json();
     const text = groqData.choices?.[0]?.message?.content || '{}';
