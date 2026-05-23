@@ -1577,5 +1577,48 @@ app.post('/api/program/generate', requireAuth, requireUser, async (req, res) => 
 });
 
 app.listen(PORT, () => {
+  app.post('/api/food/analyze', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { imageBase64, coachId } = req.body;
+    const coaches = await db('coaches', 'GET', null, `?id=eq.${coachId}&select=*`);
+    const coach = coaches[0];
+    const prompt = `You are a nutrition expert. Analyze this meal photo and estimate its nutritional content. Coach style: ${coach?.ai_tone || 'supportive and direct'}.
+Respond ONLY with a JSON object, no markdown:
+{"meal_name":"Grilled chicken with rice","calories":520,"protein":42,"carbs":48,"fat":12,"coach_comment":"Good protein choice! Watch the rice portion if you're cutting.","health_score":8}`;
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GROQ_KEY}` },
+      body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: `${prompt}\n\nMeal description from image: ${imageBase64 ? 'User uploaded a food photo' : 'unknown meal'}` }], max_tokens: 400 }),
+    });
+    const groqData = await groqRes.json();
+    const text = groqData.choices?.[0]?.message?.content || '{}';
+    const analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
+    await db('food_logs', 'POST', {
+      user_id: req.session.user_id,
+      coach_id: coachId,
+      meal_name: analysis.meal_name,
+      calories: analysis.calories,
+      protein: analysis.protein,
+      carbs: analysis.carbs,
+      fat: analysis.fat,
+      coach_comment: analysis.coach_comment,
+      health_score: analysis.health_score,
+    });
+    res.json(analysis);
+  } catch (e) {
+    logError('POST /api/food/analyze', e.message, e.stack);
+    res.status(500).json({ error: 'Analysis failed: ' + e.message });
+  }
+});
+
+app.get('/api/food/history', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { coachId } = req.query;
+    const logs = await db('food_logs', 'GET', null, `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&order=created_at.desc&limit=20`);
+    res.json(logs);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
   console.log(`Coachly backend running on port ${PORT}`);
 });
