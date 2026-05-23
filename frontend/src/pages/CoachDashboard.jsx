@@ -442,7 +442,7 @@ function SectionAI({ coach }) {
               <div className="msg-av" style={{ background: m.role === 'assistant' ? 'linear-gradient(135deg,#1e3a2a,#2d6b47)' : avatarBg(activeConv.user?.name || '?') }}>
                 {m.role === 'assistant' ? 'AI' : initials(activeConv.user?.name || '?')}
               </div>
-              <div className={`bubble ${m.role === 'assistant' ? 'coach-b' : 'user-b'}`}>{m.content}</div>
+              <div className={`bubble ${m.role === 'assistant' ? 'coach-bubble' : 'user-bubble'}`}>{m.content}</div>
             </div>
           ))}
         </div>
