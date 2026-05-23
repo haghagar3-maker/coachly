@@ -472,7 +472,7 @@ function SectionAI({ coach }) {
               {c.has_flagged && <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: '700', background: 'var(--coral-bg)', color: 'var(--coral)', padding: '2px 8px', borderRadius: '100px' }}>Flagged</span>}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-              {c.last_message || 'No messages yet'}
+              {c.last_message?.content || 'No messages yet'}
             </div>
           </div>
         ))}
