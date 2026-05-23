@@ -439,8 +439,8 @@ function SectionAI({ coach }) {
         <div className="chat-messages" style={{ maxHeight: '60vh', overflowY: 'auto', padding: '16px' }}>
           {(activeConv.messages || []).map(m => (
             <div key={m.id} className={`msg-wrap${m.role === 'user' ? ' user-msg' : ''}`}>
-              <div className="msg-av" style={{ background: m.role === 'assistant' ? 'linear-gradient(135deg,#1e3a2a,#2d6b47)' : avatarBg(activeConv.user_name) }}>
-                {m.role === 'assistant' ? 'AI' : initials(activeConv.user_name)}
+              <div className="msg-av" style={{ background: m.role === 'assistant' ? 'linear-gradient(135deg,#1e3a2a,#2d6b47)' : avatarBg(activeConv.user?.name || '?') }}>
+                {m.role === 'assistant' ? 'AI' : initials(activeConv.user?.name || '?')}
               </div>
               <div className={`bubble ${m.role === 'assistant' ? 'coach-b' : 'user-b'}`}>{m.content}</div>
             </div>
