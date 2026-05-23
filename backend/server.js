@@ -1583,15 +1583,14 @@ app.post('/api/food/analyze', requireAuth, requireUser, async (req, res) => {
     const coach = coaches[0];
     const recentLogs = await db('food_logs', 'GET', null, `?user_id=eq.${req.session.user_id}&order=created_at.desc&limit=5`);
     const recentMeals = (recentLogs || []).map(l => `${l.meal_name} (${l.calories}kcal, score ${l.health_score}/10)`).join(', ') || 'none yet';
-    const prompt = `You are ${coach?.name || 'a coach'}, a fitness coach. Analyze this meal and give a comment referencing their recent eating history: ${recentMeals}. Be warm and motivating. Respond ONLY with JSON, no newlines inside strings:
-{"meal_name":"Lamb tajine with prunes","calories":650,"protein":38,"carbs":55,"fat":22,"coach_comment":"Great choice after your recent meals!","health_score":7}`;
+    const prompt = `You are ${coach?.name || 'a coach'}, a fitness coach. Look at this food image and identify exactly what food it is. Then estimate its nutritional content. Client's recent meals: ${recentMeals}. Give a warm personalized comment referencing their history. Respond ONLY with valid JSON, no newlines inside string values: {"meal_name":"exact name of food in image","calories":500,"protein":35,"carbs":45,"fat":15,"coach_comment":"personalized comment here","health_score":7}`;
     const _unused = `You are a nutrition expert. Analyze this meal photo and estimate its nutritional content. Coach style: ${coach?.ai_tone || 'supportive and direct'}.
 Respond ONLY with a JSON object, no markdown:
 {"meal_name":"Grilled chicken with rice","calories":520,"protein":42,"carbs":48,"fat":12,"coach_comment":"Good protein choice! Watch the rice portion if you're cutting.","health_score":8}`;
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GROQ_KEY}` },
-      body: JSON.stringify({ model: 'llama-3.2-11b-vision-preview', messages: [{ role: 'user', content: imageBase64 ? [{ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }, { type: 'text', text: prompt }] : prompt }], max_tokens: 400 }),
+      body: JSON.stringify({ model: 'meta-llama/llama-4-scout-17b-16e-instruct', messages: [{ role: 'user', content: imageBase64 ? [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }] : [{ type: 'text', text: prompt }] }], max_tokens: 400 }),
     });
     const groqData = await groqRes.json();
     const text = groqData.choices?.[0]?.message?.content || '{}';
