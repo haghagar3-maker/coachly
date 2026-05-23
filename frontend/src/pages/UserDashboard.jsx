@@ -746,6 +746,114 @@ function SectionNutrition({ user, coach }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// SECTION: FOOD SCAN
+// ═══════════════════════════════════════════════════════════════
+function SectionFoodScan({ user, coach }) {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [result, setResult] = useState(null);
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    if (!coach) return;
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/food/history?coachId=${coach.id}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+    }).then(r => r.json()).then(setHistory).catch(() => {}).finally(() => setLoading(false));
+  }, [coach]);
+
+  async function analyze(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAnalyzing(true);
+    setResult(null);
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/food/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        body: JSON.stringify({ imageBase64: base64, coachId: coach.id }),
+      });
+      if (!res.ok) throw new Error('Analysis failed');
+      const data = await res.json();
+      setResult(data);
+      setHistory(prev => [{ ...data, created_at: new Date().toISOString() }, ...prev]);
+      showToast('Meal analyzed!', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  return (
+    <div>
+      <Section title="Food Scan">
+        <div style={{ textAlign: 'center', padding: '32px 20px', background: 'var(--card)', borderRadius: '16px', border: '2px dashed var(--border)', marginBottom: '20px', cursor: 'pointer' }}
+          onClick={() => fileRef.current?.click()}>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📸</div>
+          <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '6px' }}>
+            {analyzing ? 'Analyzing your meal…' : 'Take a photo of your meal'}
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+            AI will estimate calories, protein, carbs & fat
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={analyze} disabled={analyzing} />
+        </div>
+
+        {result && (
+          <div style={{ background: 'var(--card)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700' }}>{result.meal_name}</div>
+              <div style={{ fontSize: '12px', fontWeight: '700', background: result.health_score >= 7 ? 'rgba(46,204,106,0.15)' : 'rgba(255,77,28,0.12)', color: result.health_score >= 7 ? '#2ecc6a' : '#ff4d1c', padding: '4px 12px', borderRadius: '100px' }}>
+                {result.health_score}/10
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '16px' }}>
+              {[['🔥', result.calories, 'kcal'], ['💪', `${result.protein}g`, 'protein'], ['🌾', `${result.carbs}g`, 'carbs'], ['🧈', `${result.fat}g`, 'fat']].map(([icon, val, label]) => (
+                <div key={label} style={{ textAlign: 'center', background: 'var(--bg)', borderRadius: '10px', padding: '10px 6px' }}>
+                  <div style={{ fontSize: '18px' }}>{icon}</div>
+                  <div style={{ fontSize: '15px', fontWeight: '700' }}>{val}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{label}</div>
+                </div>
+              ))}
+            </div>
+            {result.coach_comment && (
+              <div style={{ background: 'rgba(200,255,0,0.07)', border: '1px solid rgba(200,255,0,0.15)', borderRadius: '10px', padding: '12px 14px', fontSize: '13px', color: 'var(--muted)' }}>
+                <strong style={{ color: 'var(--lime)' }}>{coach?.name?.split(' ')[0]}:</strong> {result.coach_comment}
+              </div>
+            )}
+          </div>
+        )}
+      </Section>
+
+      <Section title="Recent scans">
+        {loading ? <LoadingSkeleton type="list" /> : history.length === 0 ? (
+          <EmptyState message="No food scans yet. Take a photo of your next meal!" />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {history.map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '24px' }}>🍽️</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600' }}>{item.meal_name || 'Meal'}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{item.calories} kcal · {item.protein}g protein · {timeAgo(item.created_at)}</div>
+                </div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: item.health_score >= 7 ? '#2ecc6a' : '#ff4d1c' }}>{item.health_score}/10</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+}
+// ═══════════════════════════════════════════════════════════════
 // SECTION: COMMUNITY
 // ═══════════════════════════════════════════════════════════════
 function SectionCommunity({ user, coach }) {
@@ -1331,7 +1439,7 @@ export default function UserDashboard() {
   const sectionTitles = {
     home: 'Dashboard', chat: 'AI Coach', dm: 'Message Coach',
     strategy: 'My Strategy', nutrition: 'Nutrition', community: 'Community',
-    progress: 'My Progress', content: 'Content Library', 'switch-coach': 'My Coaches', profile: 'My Profile',
+    progress: 'My Progress', content: 'Content Library', 'switch-coach': 'My Coaches', profile: 'My Profile', foodscan: 'Food Scan 📸',
   };
 
   return (
@@ -1380,6 +1488,7 @@ export default function UserDashboard() {
           {section === 'dm' && <SectionDM user={user} coach={coach} />}
           {section === 'strategy' && <SectionStrategy coach={coach} />}
           {section === 'nutrition' && <SectionNutrition user={user} coach={coach} />}
+          {section === 'foodscan' && <SectionFoodScan user={user} coach={coach} />}
           {section === 'community' && <SectionCommunity user={user} coach={coach} />}
           {section === 'progress' && <SectionProgress user={user} coach={coach} />}
           {section === 'content' && <SectionContent coach={coach} />}
