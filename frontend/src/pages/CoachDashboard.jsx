@@ -424,7 +424,7 @@ function SectionAI({ coach }) {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    getCoachAiConversations().then(setConversations).catch(console.error).finally(() => setLoading(false));
+    getCoachAiConversations().then(d => setConversations(Array.isArray(d) ? d : [])).catch(e => { console.error(e); setConversations([]); }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
