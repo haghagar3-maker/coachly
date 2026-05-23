@@ -836,7 +836,7 @@ function SectionFoodScan({ user, coach }) {
         {loading ? <LoadingSkeleton type="list" /> : history.length === 0 ? (
           <EmptyState message="No food scans yet. Take a photo of your next meal!" />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
             {history.map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                 {item.image_base64 ? <img src={item.image_base64} alt="" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} /> : <div style={{ fontSize: '24px' }}>🍽️</div>}
