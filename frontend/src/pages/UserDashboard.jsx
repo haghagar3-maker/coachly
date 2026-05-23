@@ -781,8 +781,9 @@ function SectionFoodScan({ user, coach }) {
       });
       if (!res.ok) throw new Error('Analysis failed');
       const data = await res.json();
-      setResult(data);
-      setHistory(prev => [{ ...data, created_at: new Date().toISOString() }, ...prev]);
+      const imageUrl = `data:image/jpeg;base64,${base64}`;
+      setResult({ ...data, image_base64: imageUrl });
+      setHistory(prev => [{ ...data, image_base64: imageUrl, created_at: new Date().toISOString() }, ...prev]);
       showToast('Meal analyzed!', 'success');
     } catch (err) {
       showToast(err.message, 'error');
