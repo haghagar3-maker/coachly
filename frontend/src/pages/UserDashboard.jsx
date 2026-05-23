@@ -1439,7 +1439,7 @@ export default function UserDashboard() {
   const sectionTitles = {
     home: 'Dashboard', chat: 'AI Coach', dm: 'Message Coach',
     strategy: 'My Strategy', nutrition: 'Nutrition', community: 'Community',
-    progress: 'My Progress', content: 'Content Library', 'switch-coach': 'My Coaches', profile: 'My Profile', foodscan: 'Food Scan 📸',
+    progress: 'My Progress', content: 'Content Library', 'switch-coach': 'My Coaches', profile: 'My Profile', foodscan: 'Food Scan',
   };
 
   return (
