@@ -464,9 +464,9 @@ function SectionAI({ coach }) {
         ) : filtered.map(c => (
           <div key={c.user_id} className="ai-client-card" onClick={() => setActiveConv(c)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarBg(c.user_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user_name)}</div>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarBg(c.user?.name || c.user_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user?.name || c.user_name)}</div>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user_name}</div>
+                <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || c.user_name || 'Unknown'}</div>
                 <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{c.message_count || 0} messages</div>
               </div>
               {c.has_flagged && <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: '700', background: 'var(--coral-bg)', color: 'var(--coral)', padding: '2px 8px', borderRadius: '100px' }}>Flagged</span>}
