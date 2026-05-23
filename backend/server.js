@@ -1625,6 +1625,22 @@ app.get('/api/food/history', requireAuth, requireUser, async (req, res) => {
   }
 });
 
+app.get('/api/coach/client-nutrition', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const logs = await db('food_logs', 'GET', null, `?user_id=eq.${userId}&coach_id=eq.${req.session.coach_id}&order=created_at.desc&limit=30`);
+    res.json(logs || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/coach/client-program', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const programs = await db('programs', 'GET', null, `?user_id=eq.${userId}&coach_id=eq.${req.session.coach_id}&order=week_number.asc,day_name.asc`);
+    res.json(programs || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });

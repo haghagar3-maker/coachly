@@ -65,7 +65,7 @@ export default function CoachDashboard() {
 
   const sectionLabel = {
     overview: 'Overview', clients: 'Clients', messages: 'Messages',
-    ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training',
+    ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training', nutrition: 'Client Nutrition', strategy: 'Client Strategy',
   };
 
   return (
@@ -102,7 +102,9 @@ export default function CoachDashboard() {
             { id: 'overview', label: 'Overview', icon: <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
             { id: 'clients',  label: 'Clients',  icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
             { id: 'messages', label: 'Messages', icon: <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
-            { id: 'ai',       label: 'AI Conversations', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> },
+            { id: 'ai',        label: 'AI Conversations', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> },
+{ id: 'nutrition', label: 'Client Nutrition',  icon: <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg> },
+{ id: 'strategy',  label: 'Client Strategy',   icon: <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
           ].map(({ id, label, icon }) => (
             <button key={id} className={`nav-item${activeSection === id ? ' active' : ''}`} onClick={() => navTo(id)}>
               {icon}{label}
@@ -156,7 +158,9 @@ export default function CoachDashboard() {
           {activeSection === 'ai'        && <SectionAI       coach={coach} />}
           {activeSection === 'store'     && <SectionStore    coach={coach} setCoach={setCoach} />}
           {activeSection === 'content'   && <SectionContent  coach={coach} />}
-          {activeSection === 'training'  && <SectionTraining coach={coach} setCoach={setCoach} />}
+          {activeSection === 'training'   && <SectionTraining   coach={coach} setCoach={setCoach} />}
+          {activeSection === 'nutrition'  && <SectionNutrition  coach={coach} />}
+          {activeSection === 'strategy'   && <SectionStrategy   coach={coach} />}
         </div>
       </main>
     </div>
@@ -225,7 +229,7 @@ function SectionOverview({ coach }) {
               <div key={c.id} className="act-item">
                 <div className="act-av" style={{ background: avatarBg(c.user_name) }}>{initials(c.user_name)}</div>
                 <div className="act-body">
-                  <div className="act-name">{c.user_name}</div>
+                  <div className="act-name">{c.user?.name || c.user_name || 'Unknown'}</div>
                   <div className="act-text">Submitted check-in · Energy {c.energy ?? '?'}/5</div>
                   <div className="act-time">{timeAgo(c.created_at)}</div>
                 </div>
@@ -303,8 +307,8 @@ function SectionClients() {
         ) : filtered.map(c => (
           <div key={c.id} className="ct-row">
             <div className="ct-user">
-              <div className="ct-av" style={{ background: avatarBg(c.name) }}>{initials(c.name)}</div>
-              <div><div className="ct-name">{c.name}</div><div className="ct-email">{c.email}</div></div>
+              <div className="ct-av" style={{ background: avatarBg(c.user?.name || c.name) }}>{initials(c.user?.name || c.name)}</div>
+              <div><div className="ct-name">{c.user?.name || c.name || '?'}</div><div className="ct-email">{c.user?.email || c.email}</div></div>
             </div>
             <div className="ct-cell">{c.plan_months} months</div>
             <div className="ct-cell">
@@ -1125,6 +1129,209 @@ function SectionTraining({ coach, setCoach }) {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+// ═══════════════════════════════════════════════════════════════
+// CLIENT NUTRITION
+// ═══════════════════════════════════════════════════════════════
+function SectionNutrition({ coach }) {
+  const [clients, setClients] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [meals, setMeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMeals, setLoadingMeals] = useState(false);
+
+  useEffect(() => {
+    getCoachClients().then(setClients).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  async function viewClient(c) {
+    setSelected(c);
+    setLoadingMeals(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/client-nutrition?userId=${c.user_id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      });
+      const data = await res.json();
+      setMeals(Array.isArray(data) ? data : []);
+    } catch { setMeals([]); }
+    finally { setLoadingMeals(false); }
+  }
+
+  if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
+
+  if (selected) return (
+    <div>
+      <button className="btn-secondary" onClick={() => setSelected(null)} style={{ marginBottom: '16px' }}>← Back</button>
+      <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>{selected.user?.name || '?'} — Food Scan History</div>
+      {loadingMeals ? (
+        <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>
+      ) : meals.length === 0 ? (
+        <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No food scans yet for this client.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {meals.map((m, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+              {m.image_base64
+                ? <img src={m.image_base64} alt="" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+                : <div style={{ width: 52, height: 52, borderRadius: '10px', background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🍽️</div>}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '3px' }}>{m.meal_name || 'Meal'}</div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>{m.calories} kcal · {m.protein}g protein · {m.carbs}g carbs · {m.fat}g fat</div>
+                {m.coach_comment && <div style={{ fontSize: '12px', color: 'var(--muted)', fontStyle: 'italic' }}>"{m.coach_comment}"</div>}
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: m.health_score >= 7 ? '#2ecc6a' : '#ff4d1c' }}>{m.health_score}/10</div>
+                <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{timeAgo(m.created_at)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>Click a client to see their food scan history and AI nutrition comments.</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {clients.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No clients yet.</div>
+        ) : clients.map(c => (
+          <div key={c.id} onClick={() => viewClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', cursor: 'pointer' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarBg(c.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user?.name)}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || '?'}</div>
+              <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.plan_months} month plan · {c.status || 'active'}</div>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLIENT STRATEGY
+// ═══════════════════════════════════════════════════════════════
+function SectionStrategy({ coach }) {
+  const [clients, setClients] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [program, setProgram] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingProgram, setLoadingProgram] = useState(false);
+  const [editingDay, setEditingDay] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getCoachClients().then(setClients).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  async function viewClient(c) {
+    setSelected(c);
+    setLoadingProgram(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/client-program?userId=${c.user_id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      });
+      const data = await res.json();
+      setProgram(Array.isArray(data) ? data : []);
+    } catch { setProgram([]); }
+    finally { setLoadingProgram(false); }
+  }
+
+  async function saveDay(day) {
+    setSaving(true);
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/program`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        body: JSON.stringify({ userId: selected.user_id, weekNumber: day.week_number, dayName: day.day_name, sessionTitle: day.session_title, exercises: day.exercises }),
+      });
+      setProgram(prev => prev.map(d => d.id === day.id ? day : d));
+      setEditingDay(null);
+    } catch (e) { alert('Save failed'); }
+    finally { setSaving(false); }
+  }
+
+  if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
+
+  if (selected) return (
+    <div>
+      <button className="btn-secondary" onClick={() => { setSelected(null); setEditingDay(null); }} style={{ marginBottom: '16px' }}>← Back</button>
+      <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>{selected.user?.name || '?'} — Workout Program</div>
+      <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '16px' }}>You can edit any day or exercise below. Changes save immediately.</div>
+      {loadingProgram ? (
+        <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>
+      ) : program.length === 0 ? (
+        <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No program generated yet for this client.</div>
+      ) : program.map(day => (
+        <div key={day.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: editingDay?.id === day.id ? '1px solid var(--border)' : 'none' }}>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700' }}>{day.day_name}</div>
+              <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{day.session_title}</div>
+            </div>
+            <button className="content-btn" onClick={() => setEditingDay(editingDay?.id === day.id ? null : { ...day, exercises: day.exercises || [] })}>
+              {editingDay?.id === day.id ? 'Cancel' : 'Edit'}
+            </button>
+          </div>
+          {editingDay?.id === day.id ? (
+            <div style={{ padding: '16px' }}>
+              <div className="field" style={{ marginBottom: '12px' }}>
+                <label>Session title</label>
+                <input type="text" value={editingDay.session_title} onChange={e => setEditingDay(p => ({ ...p, session_title: e.target.value }))} />
+              </div>
+              {editingDay.exercises.map((ex, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px 32px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <input type="text" value={ex.name} placeholder="Exercise" onChange={e => setEditingDay(p => ({ ...p, exercises: p.exercises.map((x, j) => j === i ? { ...x, name: e.target.value } : x) }))} style={{ padding: '7px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
+                  <input type="text" value={ex.sets} placeholder="Sets" onChange={e => setEditingDay(p => ({ ...p, exercises: p.exercises.map((x, j) => j === i ? { ...x, sets: e.target.value } : x) }))} style={{ padding: '7px 8px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', textAlign: 'center' }} />
+                  <input type="text" value={ex.reps} placeholder="Reps" onChange={e => setEditingDay(p => ({ ...p, exercises: p.exercises.map((x, j) => j === i ? { ...x, reps: e.target.value } : x) }))} style={{ padding: '7px 8px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', textAlign: 'center' }} />
+                  <input type="text" value={ex.rest} placeholder="Rest" onChange={e => setEditingDay(p => ({ ...p, exercises: p.exercises.map((x, j) => j === i ? { ...x, rest: e.target.value } : x) }))} style={{ padding: '7px 8px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', textAlign: 'center' }} />
+                  <button onClick={() => setEditingDay(p => ({ ...p, exercises: p.exercises.filter((_, j) => j !== i) }))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff4d1c', fontSize: '16px', padding: 0 }}>×</button>
+                </div>
+              ))}
+              <button onClick={() => setEditingDay(p => ({ ...p, exercises: [...p.exercises, { name: '', sets: 3, reps: '12', rest: '60s' }] }))} style={{ background: 'none', border: '1px dashed var(--border)', borderRadius: '7px', padding: '6px 14px', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit', marginTop: '4px' }}>+ Add exercise</button>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', justifyContent: 'flex-end' }}>
+                <button className="btn-secondary" onClick={() => setEditingDay(null)}>Cancel</button>
+                <button className="btn-save-live" style={{ padding: '8px 18px', fontSize: '12px' }} disabled={saving} onClick={() => saveDay(editingDay)}>{saving ? 'Saving…' : 'Save changes'}</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: '10px 16px 14px' }}>
+              {(day.exercises || []).length === 0 ? (
+                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>Rest day</div>
+              ) : (day.exercises || []).map((ex, i) => (
+                <div key={i} style={{ fontSize: '12px', color: 'var(--muted)', padding: '3px 0', borderBottom: i < day.exercises.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <span style={{ fontWeight: '600', color: 'var(--dark)' }}>{ex.name}</span> — {ex.sets} sets × {ex.reps} · {ex.rest} rest
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>Click a client to view and edit their workout program.</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {clients.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No clients yet.</div>
+        ) : clients.map(c => (
+          <div key={c.id} onClick={() => viewClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', cursor: 'pointer' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarBg(c.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user?.name)}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || '?'}</div>
+              <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.plan_months} month plan · {c.status || 'active'}</div>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        ))}
       </div>
     </div>
   );
