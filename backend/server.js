@@ -410,6 +410,7 @@ app.post('/api/coach/direct-message', requireAuth, requireCoach, async (req, res
 });
 
 app.get('/api/coach/ai-conversations', requireAuth, requireCoach, async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const messages = await db('messages', 'GET', null,
       `?coach_id=eq.${req.session.coach_id}&order=created_at.desc&select=*`
