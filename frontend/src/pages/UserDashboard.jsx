@@ -839,7 +839,7 @@ function SectionFoodScan({ user, coach }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {history.map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '24px' }}>🍽️</div>
+                {item.image_base64 ? <img src={item.image_base64} alt="" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} /> : <div style={{ fontSize: '24px' }}>🍽️</div>}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '13px', fontWeight: '600' }}>{item.meal_name || 'Meal'}</div>
                   <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{item.calories} kcal · {item.protein}g protein · {timeAgo(item.created_at)}</div>

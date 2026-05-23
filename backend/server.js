@@ -1605,6 +1605,7 @@ Respond ONLY with a JSON object, no markdown:
       protein: analysis.protein,
       carbs: analysis.carbs,
       fat: analysis.fat,
+      image_base64: imageBase64 ? `data:image/jpeg;base64,${imageBase64.slice(0, 40000)}` : null,
       coach_comment: analysis.coach_comment,
       health_score: analysis.health_score,
     });
