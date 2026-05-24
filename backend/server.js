@@ -28,7 +28,7 @@ const PORT = process.env.PORT || 3001;
 // MIDDLEWARE
 // ─────────────────────────────────────────────
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
-app.use(express.json({ limit: '10mb' })); // base64 images can be large
+app.use(express.json({ limit: '20mb' })); // base64 images can be large
 
 // In-memory error log (last 100 errors) — also persisted to DB
 const recentErrors = [];
@@ -1606,7 +1606,7 @@ Respond ONLY with a JSON object, no markdown:
       protein: analysis.protein,
       carbs: analysis.carbs,
       fat: analysis.fat,
-      image_base64: imageBase64 ? `data:image/jpeg;base64,${imageBase64.slice(0, 40000)}` : null,
+      image_base64: imageBase64 ? `data:image/jpeg;base64,${imageBase64.slice(0, 200000)}` : null,
       coach_comment: analysis.coach_comment,
       health_score: analysis.health_score,
     });
