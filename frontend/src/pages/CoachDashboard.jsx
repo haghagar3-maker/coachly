@@ -394,8 +394,8 @@ function SectionMessages({ coach }) {
             <div className="chat-messages">
               {messages.map(m => (
                 <div key={m.id} className={`msg-wrap${m.sender_type === 'coach' ? ' user-msg' : ''}`}>
-                  <div className="msg-av" style={{ background: m.sender_type === 'coach' ? 'var(--dark)' : avatarBg(activeThread.user_name) }}>
-                    {m.sender_type === 'coach' ? initials(coach.name) : initials(activeThread.user_name)}
+                  <div className="msg-av" style={{ background: m.sender_type === 'coach' ? 'var(--dark)' : avatarBg(activeThread.user?.name) }}>
+                    {m.sender_type === 'coach' ? initials(coach.name) : initials(activeThread.user?.name)}
                   </div>
                   <div className={`bubble ${m.sender_type === 'coach' ? 'coach-bubble' : 'user-bubble'}`}>{m.content}</div>
                 </div>
