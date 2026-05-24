@@ -507,6 +507,7 @@ function SectionStore({ coach, setCoach }) {
   const [saving, setSaving] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0);
 
   function upd(k, v) { setForm(p => ({ ...p, [k]: v })); }
 
@@ -515,7 +516,7 @@ function SectionStore({ coach, setCoach }) {
     const cleaned = { ...form };
     if (cleaned.years_experience === '') cleaned.years_experience = null;
     if (cleaned.plan_price === '') cleaned.plan_price = null;
-    try { await updateCoachProfile(cleaned); setCoach({ ...coach, ...cleaned }); alert('Saved!'); }
+    try { await updateCoachProfile(cleaned); setCoach({ ...coach, ...cleaned }); setPreviewKey(k => k + 1); }
     catch (err) { alert(err.message); }
     finally { setSaving(false); }
   }
@@ -546,7 +547,8 @@ function SectionStore({ coach, setCoach }) {
   const PRESET_COLORS = ['#C8FF00','#FF6B35','#5C6BC0','#00BCD4','#E91E63','#4CAF50','#FF9800','#ffffff'];
 
   return (
-    <div style={{ maxWidth: '640px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: '32px', alignItems: 'start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* Photos */}
       <div className="field-group">
@@ -714,10 +716,30 @@ function SectionStore({ coach, setCoach }) {
       <div className="save-bar">
         <div className="save-bar-left">Changes are saved live</div>
         <div className="save-bar-right">
-          <button className="btn-save-live" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+          <button className="btn-save-live" onClick={async () => { await save(); setPreviewKey(k => k + 1); }} disabled={saving}>{saving ? 'Saving…' : 'Save & preview'}</button>
         </div>
       </div>
     </div>
+
+    {/* Live preview */}
+    <div style={{ position: 'sticky', top: '20px' }}>
+      <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>Store preview</span>
+        <button onClick={() => setPreviewKey(k => k + 1)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', cursor: 'pointer', color: 'var(--muted)', fontFamily: 'inherit' }}>Refresh</button>
+      </div>
+      <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', background: '#fff', height: '80vh' }}>
+        <iframe
+          key={previewKey}
+          src={`/coach/${coach.id}`}
+          style={{ width: '100%', height: '100%', border: 'none', transform: 'scale(0.75)', transformOrigin: 'top left', width: '133%', height: '133%' }}
+          title="Store preview"
+        />
+      </div>
+      <div style={{ marginTop: '8px', textAlign: 'center', fontSize: '11px', color: 'var(--muted)' }}>
+        Click "Save & preview" to see your changes
+      </div>
+    </div>
+  </div>
   );
 }
 
