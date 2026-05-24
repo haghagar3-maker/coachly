@@ -684,6 +684,12 @@ function SectionNutrition({ user, coach }) {
                 <div className="meal-empty">No meal planned</div>
               )}
               {mealName && <div className="meal-tap">Tap for recipe →</div>}
+              {mealName && (
+                <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }} onClick={e => e.stopPropagation()}>
+                  <button onClick={() => showToast('✅ Logged as followed!', 'success')} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid #2ecc6a', background: 'rgba(46,204,106,0.1)', color: '#2ecc6a', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✓ Followed</button>
+                  <button onClick={() => showToast('❌ Logged as skipped', 'error')} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid rgba(255,77,28,0.4)', background: 'rgba(255,77,28,0.08)', color: '#ff4d1c', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✗ Skipped</button>
+                </div>
+              )}
             </div>
           );
         })}
