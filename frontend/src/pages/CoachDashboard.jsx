@@ -689,7 +689,21 @@ function SectionStore({ coach, setCoach }) {
               <option value="image">Image</option>
               <option value="video">YouTube</option>
             </select>
-            <input type="text" placeholder={m.type === 'video' ? 'YouTube URL' : 'Image URL or paste base64'} value={m.url || ''} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: e.target.value }; upd('media', arr); }} style={{ flex: 1, padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
+            {m.type === 'video'
+              ? <input type="text" placeholder="YouTube URL" value={m.url || ''} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: e.target.value }; upd('media', arr); }} style={{ flex: 1, padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
+              : <div style={{ flex: 1, display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {m.url && m.url.startsWith('data:') && <img src={m.url} alt="" style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />}
+                  <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 10px', borderRadius: '7px', border: '1px dashed var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer' }}>
+                    {m.url ? 'Change image' : '+ Upload image'}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const base64 = await toBase64(file);
+                      const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: base64 }; upd('media', arr);
+                    }} />
+                  </label>
+                </div>
+            }
             <input type="text" placeholder="Caption (optional)" value={m.caption || ''} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], caption: e.target.value }; upd('media', arr); }} style={{ width: '140px', padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
             <button onClick={() => upd('media', (form.media||[]).filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#ff4d1c', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}>×</button>
           </div>
