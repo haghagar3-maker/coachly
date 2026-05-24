@@ -597,7 +597,8 @@ function SectionStrategy({ coach }) {
 function SectionNutrition({ user, coach }) {
   const [meals, setMeals] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [recipeModal, setRecipeModal] = useState(null); // { mealName, recipe, loading }
+  const [recipeModal, setRecipeModal] = useState(null);
+  const [mealStatus, setMealStatus] = useState({}); // { breakfast: 'followed'|'skipped' }
 
   useEffect(() => {
     if (!coach) return;
@@ -664,7 +665,7 @@ function SectionNutrition({ user, coach }) {
       )}
 
       {/* Meal cards */}
-      <div className="meal-grid">
+      <div className="meal-grid" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {mealSlots.map(({ key, label, icon }) => {
           const mealName = meals?.[key];
           return (
@@ -686,8 +687,16 @@ function SectionNutrition({ user, coach }) {
               {mealName && <div className="meal-tap">Tap for recipe →</div>}
               {mealName && (
                 <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }} onClick={e => e.stopPropagation()}>
-                  <button onClick={() => showToast('✅ Logged as followed!', 'success')} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid #2ecc6a', background: 'rgba(46,204,106,0.1)', color: '#2ecc6a', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✓ Followed</button>
-                  <button onClick={() => showToast('❌ Logged as skipped', 'error')} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid rgba(255,77,28,0.4)', background: 'rgba(255,77,28,0.08)', color: '#ff4d1c', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✗ Skipped</button>
+                  {mealStatus[key] ? (
+                    <div style={{ flex: 1, textAlign: 'center', fontSize: '12px', fontWeight: '700', color: mealStatus[key] === 'followed' ? '#2ecc6a' : '#ff4d1c' }}>
+                      {mealStatus[key] === 'followed' ? '✓ Followed' : '✗ Skipped'}
+                    </div>
+                  ) : (
+                    <>
+                      <button onClick={() => { setMealStatus(p => ({ ...p, [key]: 'followed' })); showToast('✅ Logged!', 'success'); }} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid #2ecc6a', background: 'rgba(46,204,106,0.1)', color: '#2ecc6a', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✓ Followed</button>
+                      <button onClick={() => { setMealStatus(p => ({ ...p, [key]: 'skipped' })); showToast('❌ Skipped', 'error'); }} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid rgba(255,77,28,0.4)', background: 'rgba(255,77,28,0.08)', color: '#ff4d1c', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✗ Skipped</button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
