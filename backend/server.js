@@ -1569,7 +1569,7 @@ app.post('/api/program/generate', requireAuth, requireUser, async (req, res) => 
         day_name: day.day_name,
         session_title: day.session_title,
         exercises: day.exercises || [],
-      })
+      }).then(r => Array.isArray(r) ? r[0] : r)
     ));
     res.json(saved);
   } catch (e) {
