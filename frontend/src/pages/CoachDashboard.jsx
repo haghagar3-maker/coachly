@@ -364,10 +364,10 @@ function SectionMessages({ coach }) {
           <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>No messages yet</div>
         ) : threads.map(t => (
           <div key={t.user_id} className={`msg-thread${activeThread?.user_id === t.user_id ? ' active' : ''}`} onClick={() => openThread(t)}>
-            <div className="mt-av" style={{ background: avatarBg(t.user_name) }}>{initials(t.user_name)}</div>
+            <div className="mt-av" style={{ background: avatarBg(t.user?.name || t.user_name) }}>{initials(t.user?.name || t.user_name)}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="mt-name">{t.user_name}</div>
-              <div className="mt-preview">{t.last_message || 'No messages yet'}</div>
+              <div className="mt-name">{t.user?.name || t.user_name || 'Unknown'}</div>
+              <div className="mt-preview">{t.last_message?.content || t.last_message || 'No messages yet'}</div>
             </div>
             <div className="mt-time">{t.last_message_time ? timeAgo(t.last_message_time) : ''}</div>
             {t.unread_count > 0 && <div className="mt-unread" />}
