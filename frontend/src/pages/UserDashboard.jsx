@@ -506,13 +506,14 @@ function SectionStrategy({ coach }) {
   if (loading) return <LoadingSkeleton type="card" count={4} />;
   if (program.length === 0) return <GenerateProgram coach={coach} onGenerated={setProgram} />;
 
-  // Group by week
+  const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   const weeks = {};
   program.forEach((p) => {
     const w = p.week_number || 1;
     if (!weeks[w]) weeks[w] = [];
     weeks[w].push(p);
   });
+  Object.values(weeks).forEach(days => days.sort((a, b) => DAY_ORDER.indexOf(a.day_name) - DAY_ORDER.indexOf(b.day_name)));
 
   return (
     <div>
@@ -535,7 +536,7 @@ function SectionStrategy({ coach }) {
                     <div className="strategy-day-left">
                       <span className="strategy-day-name">{day.day_name}</span>
                       {isToday && <span className="today-badge">Today</span>}
-                      {day.focus && <span className="strategy-focus">{day.focus}</span>}
+                      {day.session_title && <span className="strategy-focus">{day.session_title}</span>}
                     </div>
                     <div className="strategy-day-right">
                       {exercises.length > 0 && (
@@ -543,6 +544,12 @@ function SectionStrategy({ coach }) {
                           {completedCount}/{exercises.length}
                         </span>
                       )}
+                      <button
+                        onClick={e => { e.stopPropagation(); setLoggedIds(prev => { const next = new Set(prev); exercises.forEach((_, idx) => next.add(`${day.id}-${idx}`)); return next; }); showToast('✅ Day completed!', 'success'); }}
+                        style={{ background: completedCount === exercises.length && exercises.length > 0 ? '#2ecc6a' : 'var(--border)', border: 'none', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', color: completedCount === exercises.length && exercises.length > 0 ? '#fff' : 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit', marginRight: '6px' }}
+                      >
+                        {completedCount === exercises.length && exercises.length > 0 ? '✓ Done' : 'Mark done'}
+                      </button>
                       <span className="strategy-chevron">{isOpen ? '▲' : '▼'}</span>
                     </div>
                   </button>
