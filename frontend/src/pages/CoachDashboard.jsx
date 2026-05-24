@@ -687,10 +687,21 @@ function SectionStore({ coach, setCoach }) {
           <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
             <select value={m.type || 'image'} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], type: e.target.value }; upd('media', arr); }} style={{ padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', flexShrink: 0 }}>
               <option value="image">Image</option>
-              <option value="video">YouTube</option>
+              <option value="video">Video</option>
             </select>
             {m.type === 'video'
-              ? <input type="text" placeholder="YouTube URL" value={m.url || ''} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: e.target.value }; upd('media', arr); }} style={{ flex: 1, padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
+              ? <div style={{ flex: 1, display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {m.url && <video src={m.url} style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />}
+                  <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 10px', borderRadius: '7px', border: '1px dashed var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer' }}>
+                    {m.url ? 'Change video' : '+ Upload video'}
+                    <input type="file" accept="video/*" style={{ display: 'none' }} onChange={async e => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const base64 = await toBase64(file);
+                      const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: base64 }; upd('media', arr);
+                    }} />
+                  </label>
+                </div>
               : <div style={{ flex: 1, display: 'flex', gap: '6px', alignItems: 'center' }}>
                   {m.url && m.url.startsWith('data:') && <img src={m.url} alt="" style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />}
                   <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 10px', borderRadius: '7px', border: '1px dashed var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer' }}>

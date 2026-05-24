@@ -407,7 +407,9 @@ export default function Store() {
                 {coach.media.filter(m => m.url).map((m, i) => (
                   <div key={i} style={{ borderRadius: '12px', overflow: 'hidden', background: '#111', aspectRatio: '16/9', position: 'relative' }}>
                     {m.type === 'video'
-                      ? <iframe src={m.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
+                      ? (m.url?.includes('youtube.com') || m.url?.includes('youtu.be')
+                          ? <iframe src={m.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
+                          : <video src={m.url} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />)
                       : <img src={m.url} alt={m.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     }
                     {m.caption && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', padding: '20px 12px 10px', fontSize: '12px', color: '#fff', fontWeight: '600' }}>{m.caption}</div>}
