@@ -377,7 +377,7 @@ function SectionDM({ user, coach }) {
 
     try {
       const msg = await sendDM(coach.id, text);
-      setMessages((prev) => prev.map((m) => m.id === optimistic.id ? { ...msg } : m));
+      setMessages((prev) => prev.map((m) => m.id === optimistic.id ? { ...optimistic, ...msg } : m));
     } catch (err) {
       showToast(err.message, 'error');
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
