@@ -971,6 +971,7 @@ function SectionTraining({ coach, setCoach }) {
     ai_tone: coach.ai_tone || '',
     ai_limits: coach.ai_limits || '',
     ai_examples: coach.ai_examples || '',
+    ai_workout_strategy: coach.ai_workout_strategy || '',
   });
   const [quickUpdate, setQuickUpdate] = useState('');
   const [quickType, setQuickType] = useState('Behavior');
