@@ -499,6 +499,7 @@ function SectionStore({ coach, setCoach }) {
     twitter: coach.twitter || '',
     youtube: coach.youtube || '',
     tiktok: coach.tiktok || '',
+    media: coach.media || [],
     testimonials: coach.testimonials || [],
     credentials: coach.credentials || '',
     coaching_philosophy: coach.coaching_philosophy || '',
@@ -676,6 +677,27 @@ function SectionStore({ coach, setCoach }) {
             <input type="url" value={form[key]} onChange={e => upd(key, e.target.value)} placeholder={placeholder} />
           </div>
         ))}
+      </div>
+
+      {/* Media gallery */}
+      <div className="field-group">
+        <div className="field-group-title">Photos & videos gallery</div>
+        <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '12px' }}>Add images or YouTube links — shown as a gallery on your store page.</div>
+        {(form.media || []).map((m, i) => (
+          <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+            <select value={m.type || 'image'} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], type: e.target.value }; upd('media', arr); }} style={{ padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', flexShrink: 0 }}>
+              <option value="image">Image</option>
+              <option value="video">YouTube</option>
+            </select>
+            <input type="text" placeholder={m.type === 'video' ? 'YouTube URL' : 'Image URL or paste base64'} value={m.url || ''} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: e.target.value }; upd('media', arr); }} style={{ flex: 1, padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
+            <input type="text" placeholder="Caption (optional)" value={m.caption || ''} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], caption: e.target.value }; upd('media', arr); }} style={{ width: '140px', padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
+            <button onClick={() => upd('media', (form.media||[]).filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#ff4d1c', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}>×</button>
+          </div>
+        ))}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => upd('media', [...(form.media||[]), { type: 'image', url: '', caption: '' }])} style={{ flex: 1, background: 'none', border: '1px dashed var(--border)', borderRadius: '8px', padding: '10px', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit' }}>+ Add image</button>
+          <button onClick={() => upd('media', [...(form.media||[]), { type: 'video', url: '', caption: '' }])} style={{ flex: 1, background: 'none', border: '1px dashed var(--border)', borderRadius: '8px', padding: '10px', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit' }}>+ Add video</button>
+        </div>
       </div>
 
       {/* Testimonials */}
