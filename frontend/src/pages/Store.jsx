@@ -213,7 +213,7 @@ export default function Store() {
       <Toast />
 
       {/* ── HERO ── */}
-      <div style={{ position: 'relative', height: '420px', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: '520px', overflow: 'hidden' }}>
         {/* Banner */}
         <div style={{
           position: 'absolute', inset: 0,
@@ -233,22 +233,42 @@ export default function Store() {
         </button>
 
         {/* Hero content */}
-        <div style={{ position: 'absolute', bottom: '32px', left: '28px', right: '28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ position: 'absolute', bottom: '32px', left: '28px', right: '28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
             {/* Avatar */}
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #fff', overflow: 'hidden', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '800', color: '#fff', flexShrink: 0 }}>
+            <div style={{ width: '96px', height: '96px', borderRadius: '16px', border: '3px solid rgba(255,255,255,0.9)', overflow: 'hidden', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', fontWeight: '800', color: '#fff', flexShrink: 0, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
               {coach.photo ? <img src={coach.photo} alt={coach.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(coach.name)}
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#fff', fontFamily: 'Georgia, serif', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{coach.name}</h1>
-              {coach.sport && <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontWeight: '600', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{coach.sport}</div>}
+              <h1 style={{ margin: 0, fontSize: '36px', fontWeight: '900', color: '#fff', letterSpacing: '-0.02em', textShadow: '0 2px 16px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>{coach.name}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                {coach.sport && <div style={{ fontSize: '11px', color: '#fff', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.12em', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', padding: '5px 14px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.25)' }}>{coach.sport}</div>}
+                {coach.location && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{coach.location}</div>}
+                {coach.years_experience && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{coach.years_experience}y exp</div>}
+              </div>
             </div>
           </div>
 
-          {/* CTA */}
-          <button onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '15px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap' }}>
+          {/* Right side — stats + CTA */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {coach.subscriber_count > 0 && (
+                <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '22px', fontWeight: '900', color: '#fff', lineHeight: 1 }}>{coach.subscriber_count}</div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '3px' }}>Clients</div>
+                </div>
+              )}
+              {coach.years_experience && (
+                <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '22px', fontWeight: '900', color: '#fff', lineHeight: 1 }}>{coach.years_experience}y</div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '3px' }}>Exp</div>
+                </div>
+              )}
+            </div>
+            <button onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '15px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap' }}>
             {alreadySubbed ? '✓ Subscribed' : 'Subscribe now'}
           </button>
+          </div>
         </div>
       </div>
 
