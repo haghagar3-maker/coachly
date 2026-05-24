@@ -28,7 +28,7 @@ const PORT = process.env.PORT || 3001;
 // MIDDLEWARE
 // ─────────────────────────────────────────────
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
-app.use(express.json({ limit: '20mb' })); // base64 images can be large
+app.use(express.json({ limit: '100mb' })); // base64 images can be large
 
 // In-memory error log (last 100 errors) — also persisted to DB
 const recentErrors = [];
