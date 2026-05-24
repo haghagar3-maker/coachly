@@ -363,6 +363,7 @@ app.patch('/api/coach/checkin/:id', requireAuth, requireCoach, async (req, res) 
 });
 
 app.get('/api/coach/direct-messages', requireAuth, requireCoach, async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const dms = await db('direct_messages', 'GET', null,
       `?coach_id=eq.${req.session.coach_id}&order=created_at.desc&select=*`
