@@ -384,9 +384,9 @@ function SectionMessages({ coach }) {
           <>
             <div className="chat-head">
               <div className="ch-coach">
-                <div className="ch-av" style={{ background: avatarBg(activeThread.user_name) }}>{initials(activeThread.user_name)}</div>
+                <div className="ch-av" style={{ background: avatarBg(activeThread.user?.name || activeThread.user_name) }}>{initials(activeThread.user?.name || activeThread.user_name)}</div>
                 <div>
-                  <div className="ch-name">{activeThread.user_name}</div>
+                  <div className="ch-name">{activeThread.user?.name || activeThread.user_name || 'Unknown'}</div>
                   <div className="ch-status"><span className="ch-status-dot" />Active subscriber</div>
                 </div>
               </div>
