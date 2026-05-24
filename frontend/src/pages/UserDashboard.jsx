@@ -455,7 +455,8 @@ function GenerateProgram({ coach, onGenerated }) {
     try {
       const { generateProgram } = await import('../api');
       const result = await generateProgram(coach.id);
-      onGenerated(result);
+      const fresh = await getProgram(coach.id);
+      onGenerated(fresh);
       showToast('Program generated!', 'success');
     } catch (e) { showToast(e.message, 'error'); }
     finally { setGenerating(false); }
