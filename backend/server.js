@@ -271,6 +271,21 @@ app.post('/api/coach/login', async (req, res) => {
 // COACH — AUTHENTICATED ROUTES
 // ─────────────────────────────────────────────
 
+app.post('/api/upload-media', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { fileBase64, fileName, fileType } = req.body;
+    const buffer = Buffer.from(fileBase64.split(',')[1], 'base64');
+    const uniqueName = `${Date.now()}_${fileName}`;
+    const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${uniqueName}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.SUPABASE_KEY}`, 'Content-Type': fileType, 'x-upsert': 'true' },
+      body: buffer,
+    });
+    if (!uploadRes.ok) return res.status(500).json({ error: await uploadRes.text() });
+    res.json({ url: `${process.env.SUPABASE_URL}/storage/v1/object/public/coach-media/${uniqueName}` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/coach/me', requireAuth, requireCoach, async (req, res) => {
   try {
     console.log('SESSION:', JSON.stringify(req.session));
