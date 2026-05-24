@@ -499,6 +499,10 @@ function SectionStore({ coach, setCoach }) {
     twitter: coach.twitter || '',
     youtube: coach.youtube || '',
     tiktok: coach.tiktok || '',
+    testimonials: coach.testimonials || [],
+    credentials: coach.credentials || '',
+    coaching_philosophy: coach.coaching_philosophy || '',
+    what_included: coach.what_included || '',
   });
   const [saving, setSaving] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
@@ -670,6 +674,41 @@ function SectionStore({ coach, setCoach }) {
             <input type="url" value={form[key]} onChange={e => upd(key, e.target.value)} placeholder={placeholder} />
           </div>
         ))}
+      </div>
+
+      {/* Testimonials */}
+      <div className="field-group">
+        <div className="field-group-title">Testimonials</div>
+        {(form.testimonials || []).map((t, i) => (
+          <div key={i} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px', marginBottom: '10px' }}>
+            <input type="text" placeholder="Client name" value={t.name || ''} onChange={e => { const arr = [...form.testimonials]; arr[i] = { ...arr[i], name: e.target.value }; upd('testimonials', arr); }} style={{ width: '100%', marginBottom: '8px', padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', boxSizing: 'border-box' }} />
+            <textarea placeholder="What they said…" value={t.text || ''} onChange={e => { const arr = [...form.testimonials]; arr[i] = { ...arr[i], text: e.target.value }; upd('testimonials', arr); }} rows={3} style={{ width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', resize: 'vertical', boxSizing: 'border-box' }} />
+            <button onClick={() => upd('testimonials', form.testimonials.filter((_, j) => j !== i))} style={{ marginTop: '6px', background: 'none', border: 'none', color: 'var(--coral)', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>Remove</button>
+          </div>
+        ))}
+        <button onClick={() => upd('testimonials', [...(form.testimonials || []), { name: '', text: '' }])} style={{ background: 'none', border: '1px dashed var(--border)', borderRadius: '8px', padding: '10px', width: '100%', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit' }}>+ Add testimonial</button>
+      </div>
+
+      {/* Credentials */}
+      <div className="field-group">
+        <div className="field-group-title">Credentials & certifications</div>
+        <div className="field">
+          <label>Your certifications / achievements</label>
+          <textarea value={form.credentials} onChange={e => upd('credentials', e.target.value)} rows={3} placeholder="e.g. NASM Certified PT, 10+ years competitive bodybuilding, worked with 200+ clients…" />
+        </div>
+        <div className="field">
+          <label>Coaching philosophy</label>
+          <textarea value={form.coaching_philosophy} onChange={e => upd('coaching_philosophy', e.target.value)} rows={4} placeholder="What do you believe in? What separates your coaching from everyone else?" />
+        </div>
+      </div>
+
+      {/* What's included */}
+      <div className="field-group">
+        <div className="field-group-title">What's included (customize)</div>
+        <div className="field">
+          <label>Describe what clients get — shown on your store page</label>
+          <textarea value={form.what_included} onChange={e => upd('what_included', e.target.value)} rows={5} placeholder="Custom workout program updated monthly&#10;Daily meal plans tailored to your goals&#10;Direct messaging with me&#10;Weekly check-in reviews…" />
+        </div>
       </div>
 
       <div className="save-bar">
