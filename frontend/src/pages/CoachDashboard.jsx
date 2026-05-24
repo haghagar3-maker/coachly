@@ -690,21 +690,7 @@ function SectionStore({ coach, setCoach }) {
               <option value="video">Video</option>
             </select>
             {m.type === 'video'
-              ? <div style={{ flex: 1, display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  {m.url && <video src={m.url} style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />}
-                  <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 10px', borderRadius: '7px', border: '1px dashed var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer' }}>
-                    {m.url ? 'Change video' : '+ Upload video'}
-                    <input type="file" accept="video/*" style={{ display: 'none' }} onChange={async e => {
-                      const file = e.target.files[0];
-                      if (!file) return;
-                      const base64 = await toBase64(file);
-                      const r = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/upload-media`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('coachly_token')}` }, body: JSON.stringify({ fileBase64: base64, fileName: file.name, fileType: file.type }) });
-                      const d = await r.json();
-                      if (d.url) { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: d.url }; upd('media', arr); }
-                      else alert('Upload failed: ' + d.error);
-                    }} />
-                  </label>
-                </div>
+              ? <input type="text" placeholder="Paste YouTube URL" value={m.url || ''} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: e.target.value }; upd('media', arr); }} style={{ flex: 1, padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
               : <div style={{ flex: 1, display: 'flex', gap: '6px', alignItems: 'center' }}>
                   {m.url && m.url.startsWith('data:') && <img src={m.url} alt="" style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />}
                   <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 10px', borderRadius: '7px', border: '1px dashed var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--muted)', cursor: 'pointer' }}>
