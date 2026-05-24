@@ -1023,6 +1023,7 @@ function SectionTraining({ coach, setCoach }) {
     { key: 'ai_method', title: 'Your coaching method', desc: 'How you actually coach — training philosophy, periodization approach, nutrition principles. The AI answers client questions from this foundation.', placeholder: 'My training is built around 3-4 week progressive blocks…' },
     { key: 'ai_tone', title: 'How you talk to clients', desc: 'Your tone, personality, expressions you use. The AI should sound like you — not like a generic chatbot.', placeholder: "I'm direct but supportive. I use 'we' not 'you should'…" },
     { key: 'ai_examples', title: 'Example conversations', desc: 'Paste 3–5 real conversations (or write examples). The AI learns your exact style from these.', placeholder: 'Client: I missed 3 days this week\nMe: Life happens. What day are we restarting?…' },
+    { key: 'ai_workout_strategy', title: '🏋️ Workout program strategy', desc: 'How you build programs — exercises you prefer, sets/reps, rest times, weekly structure, progressions. The AI generates client programs based on this.', placeholder: 'I always start with compound lifts. 4 sets of 8-12 reps. 60-90s rest. Never 2 leg days back to back. Week 1-2 lighter, Week 3-4 heavier…' },
     { key: 'ai_limits', title: 'What the AI must never say', desc: 'Hard limits — things that go against your method, could harm clients, or that you want to always handle personally.', placeholder: 'Never recommend cutting below 1600 calories…' },
   ];
 
