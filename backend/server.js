@@ -181,7 +181,7 @@ app.get('/api/categories', async (req, res) => {
 app.get('/api/posts/:coachId', async (req, res) => {
   try {
     const posts = await db('posts', 'GET', null,
-      `?coach_id=eq.${req.params.coachPublicId}&order=created_at.desc&limit=50&select=*`
+      `?coach_id=eq.${req.params.coachId}&order=created_at.desc&limit=50&select=*`
     );
     if (!posts) return res.json([]);
 
