@@ -400,25 +400,7 @@ export default function Store() {
           )}
 
           {/* MEDIA GALLERY */}
-          {Array.isArray(coach.media) && coach.media.filter(m => m.url).length > 0 && (
-            <div style={{ marginBottom: '32px' }}>
-              <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>Gallery</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                {coach.media.filter(m => m.url).map((m, i) => (
-                  <div key={i} style={{ borderRadius: '12px', overflow: 'hidden', background: '#111', aspectRatio: '16/9', position: 'relative' }}>
-                    {m.type === 'video'
-                      ? <iframe src={m.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
-                      : <img src={m.url} alt={m.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    }
-                    {m.caption && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', padding: '20px 12px 10px', fontSize: '12px', color: '#fff', fontWeight: '600' }}>{m.caption}</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* MEDIA GALLERY */}
-          {Array.isArray(coach.media) && coach.media.filter(m => m.url).length > 0 && (
+          {activeTab === 'about' && Array.isArray(coach.media) && coach.media.filter(m => m.url).length > 0 && (
             <div style={{ marginBottom: '32px' }}>
               <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>Gallery</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
@@ -436,7 +418,7 @@ export default function Store() {
           )}
 
           {/* TESTIMONIALS */}
-          {Array.isArray(coach.testimonials) && coach.testimonials.length > 0 && (
+          {activeTab === 'about' && Array.isArray(coach.testimonials) && coach.testimonials.length > 0 && (
             <div style={{ marginBottom: '32px' }}>
               <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>What clients say</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
