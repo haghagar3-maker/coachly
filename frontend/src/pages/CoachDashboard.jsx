@@ -1027,6 +1027,30 @@ function SectionTraining({ coach, setCoach }) {
   ];
 
   const tagColors = { Behavior: '#5c6bc0', Nutrition: '#2a9d4e', 'Hard Limit': '#c94e2a', Tone: '#e67e00', General: '#888' };
+  const [docs, setDocs] = useState(coach.ai_docs || []);
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadDoc(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const text = await file.text();
+      const entry = { id: Date.now(), name: file.name, type: file.type, content: text.slice(0, 5000), time: new Date().toISOString() };
+      const newDocs = [entry, ...docs];
+      await updateCoachAiTraining({ ...form, ai_docs: newDocs });
+      setDocs(newDocs);
+      setCoach({ ...coach, ai_docs: newDocs });
+      alert('Document uploaded! AI will use this content.');
+    } catch (err) { alert('Upload failed: ' + err.message); }
+    finally { setUploading(false); e.target.value = ''; }
+  }
+
+  async function removeDoc(id) {
+    const newDocs = docs.filter(d => d.id !== id);
+    await updateCoachAiTraining({ ...form, ai_docs: newDocs });
+    setDocs(newDocs);
+  }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
@@ -1083,6 +1107,30 @@ function SectionTraining({ coach, setCoach }) {
                 Improve: {Object.entries(health).filter(([,v]) => v < 50).map(([k]) => k).join(', ')}
               </div>
               <div style={{ color: 'var(--muted)' }}>Add more detail to improve AI accuracy.</div>
+            </div>
+          )}
+        </div>
+
+        {/* Document upload */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '6px' }}>📄 Upload documents</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '12px' }}>Upload PDFs, guides, or text files. The AI will read and learn from them.</div>
+          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: '1px dashed var(--border)', cursor: 'pointer', fontSize: '13px', color: 'var(--muted)' }}>
+            {uploading ? 'Reading file…' : '+ Upload file (PDF, TXT)'}
+            <input type="file" accept=".pdf,.txt,.md,.doc,.docx" style={{ display: 'none' }} onChange={uploadDoc} disabled={uploading} />
+          </label>
+          {docs.length > 0 && (
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {docs.map(d => (
+                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '16px' }}>📄</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--muted)' }}>{timeAgo(d.time)}</div>
+                  </div>
+                  <button onClick={() => removeDoc(d.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff4d1c', fontSize: '14px' }}>×</button>
+                </div>
+              ))}
             </div>
           )}
         </div>
