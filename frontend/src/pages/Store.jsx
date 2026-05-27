@@ -144,6 +144,43 @@ function IntakeModal({ coach, planMonths, planPrice, onClose, onDone }) {
 }
 
 // ─── Main Store ──────────────────────────────────────────────────
+function TestimonialsCarousel({ testimonials, accentColor }) {
+  const [current, setCurrent] = useState(0);
+  const colors = ['#111', '#1a1a2e', '#0f2027', '#16213e', '#1b1b2f'];
+
+  useEffect(() => {
+    const t = setInterval(() => setCurrent(c => (c + 1) % testimonials.length), 3500);
+    return () => clearInterval(t);
+  }, [testimonials.length]);
+
+  return (
+    <div style={{ marginBottom: '32px' }}>
+      <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>What clients say</div>
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '20px' }}>
+        <div style={{ display: 'flex', transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)', transform: `translateX(-${current * 100}%)` }}>
+          {testimonials.map((t, i) => (
+            <div key={i} style={{ minWidth: '100%', background: colors[i % colors.length], borderRadius: '20px', padding: '32px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '-20px', left: '20px', fontSize: '120px', color: accentColor, opacity: 0.15, fontFamily: 'Georgia', lineHeight: 1 }}>"</div>
+              <div style={{ fontSize: '13px', color: accentColor, fontWeight: '800', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '14px' }}>★★★★★</div>
+              <p style={{ fontSize: '15px', lineHeight: '1.8', color: '#fff', margin: '0 0 20px', fontStyle: 'italic', position: 'relative', zIndex: 1 }}>"{t.text}"</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: '#111', flexShrink: 0 }}>
+                  {t.name?.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>{t.name}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '12px' }}>
+        {testimonials.map((_, i) => (
+          <div key={i} onClick={() => setCurrent(i)} style={{ width: i === current ? '20px' : '6px', height: '6px', borderRadius: '100px', background: i === current ? accentColor : '#ddd', cursor: 'pointer', transition: 'all 0.3s' }} />
+        ))}
+      </div>
+    </div>
+  );
+}
 export default function Store() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -366,9 +403,16 @@ export default function Store() {
                 <div style={{ marginBottom: '32px' }}>
                   <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>Credentials</div>
                   {coach.credentials && (
-                    <div style={{ background: '#fff', border: '1px solid #eee', borderRadius: '14px', padding: '20px', marginBottom: '12px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: '10px' }}>Certifications & achievements</div>
-                      <p style={{ fontSize: '14px', lineHeight: '1.7', color: '#333', margin: 0 }}>{coach.credentials}</p>
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: '12px' }}>Certifications & achievements</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {coach.credentials.split('·').map((c, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 14px', borderRadius: '100px', background: '#111', border: `1px solid ${accentColor}33` }}>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: accentColor, flexShrink: 0 }} />
+                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#fff', whiteSpace: 'nowrap' }}>{c.trim()}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {coach.coaching_philosophy && (
@@ -441,17 +485,7 @@ export default function Store() {
 
           {/* TESTIMONIALS */}
           {activeTab === 'about' && Array.isArray(coach.testimonials) && coach.testimonials.length > 0 && (
-            <div style={{ marginBottom: '32px' }}>
-              <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>What clients say</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {coach.testimonials.map((t, i) => (
-                  <div key={i} style={{ background: '#fff', border: '1px solid #eee', borderRadius: '14px', padding: '20px' }}>
-                    <p style={{ fontSize: '14px', lineHeight: '1.7', color: '#333', margin: '0 0 12px', fontStyle: 'italic' }}>"{t.text}"</p>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#111' }}>— {t.name}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TestimonialsCarousel testimonials={coach.testimonials} accentColor={accentColor} />
           )}
 
           {/* COMMUNITY TAB */}
