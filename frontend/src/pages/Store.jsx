@@ -268,7 +268,7 @@ export default function Store() {
         <div style={{ position: 'absolute', bottom: '32px', left: '28px', right: '28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
             {/* Avatar */}
-            <div style={{ width: '96px', height: '96px', borderRadius: '16px', border: '3px solid rgba(255,255,255,0.9)', overflow: 'hidden', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', fontWeight: '800', color: '#fff', flexShrink: 0, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+            <div style={{ width: '110px', height: '110px', borderRadius: '50%', border: '4px solid rgba(255,255,255,0.95)', overflow: 'hidden', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '800', color: '#fff', flexShrink: 0, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
               {coach.photo ? <img src={coach.photo} alt={coach.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(coach.name)}
             </div>
             <div>
