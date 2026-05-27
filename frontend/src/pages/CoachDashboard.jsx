@@ -364,7 +364,9 @@ function SectionMessages({ coach }) {
           <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>No messages yet</div>
         ) : threads.map(t => (
           <div key={t.user_id} className={`msg-thread${activeThread?.user_id === t.user_id ? ' active' : ''}`} onClick={() => openThread(t)}>
-            <div className="mt-av" style={{ background: avatarBg(t.user?.name || t.user_name) }}>{initials(t.user?.name || t.user_name)}</div>
+            <div className="mt-av" style={{ background: t.user?.photo ? 'transparent' : avatarBg(t.user?.name || t.user_name), padding: 0, overflow: 'hidden' }}>
+  {t.user?.photo ? <img src={t.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : initials(t.user?.name || t.user_name)}
+</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="mt-name">{t.user?.name || t.user_name || 'Unknown'}</div>
               <div className="mt-preview">{t.last_message?.content || t.last_message || 'No messages yet'}</div>
@@ -384,7 +386,9 @@ function SectionMessages({ coach }) {
           <>
             <div className="chat-head">
               <div className="ch-coach">
-                <div className="ch-av" style={{ background: avatarBg(activeThread.user?.name || activeThread.user_name) }}>{initials(activeThread.user?.name || activeThread.user_name)}</div>
+                <div className="ch-av" style={{ background: activeThread.user?.photo ? 'transparent' : avatarBg(activeThread.user?.name), padding: 0, overflow: 'hidden' }}>
+  {activeThread.user?.photo ? <img src={activeThread.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : initials(activeThread.user?.name)}
+</div>
                 <div>
                   <div className="ch-name">{activeThread.user?.name || activeThread.user_name || 'Unknown'}</div>
                   <div className="ch-status"><span className="ch-status-dot" />Active subscriber</div>
