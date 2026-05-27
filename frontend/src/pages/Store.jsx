@@ -311,7 +311,7 @@ export default function Store() {
             { label: 'Clients', value: fmt(coach.subscriber_count || 0) },
             { label: 'Experience', value: coach.years_experience ? `${coach.years_experience}y` : '—' },
             { label: 'Location', value: coach.location || '—' },
-            { label: 'Rating', value: '5.0' },
+            { label: 'Rating', value: coach.rating ? `${coach.rating}` : '—' },
           ].map(({ label, value }, i) => (
             <div key={label} style={{ padding: '18px 32px', textAlign: 'center', borderRight: i < 3 ? '1px solid #eee' : 'none', flexShrink: 0 }}>
               <div style={{ fontSize: '20px', fontWeight: '800', color: '#111' }}>{value}</div>
