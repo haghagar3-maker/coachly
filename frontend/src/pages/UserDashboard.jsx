@@ -545,7 +545,7 @@ function SectionStrategy({ coach }) {
                         </span>
                       )}
                       <button
-                        onClick={e => { e.stopPropagation(); setLoggedIds(prev => { const next = new Set(prev); exercises.forEach((_, idx) => next.add(`${day.id}-${idx}`)); return next; }); showToast('✅ Day completed!', 'success'); }}
+                        onClick={async e => { e.stopPropagation(); setLoggedIds(prev => { const next = new Set(prev); exercises.forEach((_, idx) => next.add(`${day.id}-${idx}`)); return next; }); showToast('✅ Day completed!', 'success'); await Promise.all(exercises.map((_,idx) => logWorkout(day.id, idx).catch(()=>{}))); }}
                         style={{ background: completedCount === exercises.length && exercises.length > 0 ? '#2ecc6a' : 'var(--border)', border: 'none', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', color: completedCount === exercises.length && exercises.length > 0 ? '#fff' : 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit', marginRight: '6px' }}
                       >
                         {completedCount === exercises.length && exercises.length > 0 ? '✓ Done' : 'Mark done'}
@@ -700,8 +700,8 @@ function SectionNutrition({ user, coach }) {
                     </div>
                   ) : (
                     <>
-                      <button onClick={() => { setMealStatus(p => ({ ...p, [key]: 'followed' })); showToast('✅ Logged!', 'success'); }} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid #2ecc6a', background: 'rgba(46,204,106,0.1)', color: '#2ecc6a', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✓ Followed</button>
-                      <button onClick={() => { setMealStatus(p => ({ ...p, [key]: 'skipped' })); showToast('❌ Skipped', 'error'); }} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid rgba(255,77,28,0.4)', background: 'rgba(255,77,28,0.08)', color: '#ff4d1c', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✗ Skipped</button>
+                      <button onClick={async () => { setMealStatus(p => ({ ...p, [key]: 'followed' })); showToast('✅ Logged!', 'success'); fetch(`${import.meta.env.VITE_API_URL||''}/api/meals/status`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('coachly_token')}`},body:JSON.stringify({coachId:coach.id,meal:key,status:'followed'})}).catch(()=>{}); }} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid #2ecc6a', background: 'rgba(46,204,106,0.1)', color: '#2ecc6a', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✓ Followed</button>
+                      <button onClick={async () => { setMealStatus(p => ({ ...p, [key]: 'skipped' })); showToast('❌ Skipped', 'error'); fetch(`${import.meta.env.VITE_API_URL||''}/api/meals/status`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${localStorage.getItem('coachly_token')}`},body:JSON.stringify({coachId:coach.id,meal:key,status:'skipped'})}).catch(()=>{}); }} style={{ flex: 1, padding: '5px 8px', borderRadius: '8px', border: '1px solid rgba(255,77,28,0.4)', background: 'rgba(255,77,28,0.08)', color: '#ff4d1c', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>✗ Skipped</button>
                     </>
                   )}
                 </div>
