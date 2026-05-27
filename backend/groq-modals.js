@@ -101,7 +101,7 @@ RULES:
 // MODAL 2 — Nutrition Questions
 // Triggered when user asks about food, macros, calories, meal timing, supplements
 // ─────────────────────────────────────────────
-async function nutritionModal({ user, coach, message, todayMeals }) {
+async function nutritionModal({ user, coach, message, todayMeals, foodLogs }) {
   const system = `You are the AI coaching assistant for ${coach.name}, a ${coach.sport || 'fitness'} coach.
 You speak in ${coach.name}'s voice and coaching style.
 
@@ -117,7 +117,8 @@ FOOD RESTRICTIONS: ${user.food_restrictions || 'None noted'}
 CURRENT CALORIE TARGET: ${user.calorie_target || 'Not set'}
 
 TODAY'S MEAL PLAN:
-${todayMeals ? `Breakfast: ${todayMeals.breakfast || 'N/A'}, Lunch: ${todayMeals.lunch || 'N/A'}, Snack: ${todayMeals.snack || 'N/A'}, Dinner: ${todayMeals.dinner || 'N/A'} | Total: ${todayMeals.total_calories || '?'} kcal, ${todayMeals.total_protein || '?'}g protein` : 'No meal plan for today yet.'}
+${todayMeals ? `Breakfast: ${todayMeals.breakfast||'N/A'} [${todayMeals.breakfast_status||'pending'}], Lunch: ${todayMeals.lunch||'N/A'} [${todayMeals.lunch_status||'pending'}], Snack: ${todayMeals.snack||'N/A'} [${todayMeals.snack_status||'pending'}], Dinner: ${todayMeals.dinner||'N/A'} [${todayMeals.dinner_status||'pending'}] | ${todayMeals.total_calories||'?'} kcal, ${todayMeals.total_protein||'?'}g protein` : 'No meal plan yet.'}
+RECENT FOOD SCANS: ${foodLogs?.length ? foodLogs.slice(0,3).map(f=>`${f.meal_name}(${f.calories}kcal,${f.protein}g protein,score ${f.health_score}/10)`).join(', ') : 'none'}
 
 RULES:
 - Answer in 3-4 sentences max. Be practical and specific.
@@ -290,7 +291,7 @@ Reply with ONLY the category word, nothing else:
 // ─────────────────────────────────────────────
 // GENERAL MODAL — fallback for unclassified messages
 // ─────────────────────────────────────────────
-async function generalModal({ user, coach, message }) {
+async function generalModal({ user, coach, message, foodLogs, todayMealPlan }) {
   const system = `You are the AI coaching assistant for ${coach.name}, a ${coach.sport || 'fitness'} coach.
 You speak in ${coach.name}'s voice and coaching style.
 
@@ -302,6 +303,8 @@ ${coach.ai_tone || 'Helpful, direct, and encouraging.'}
 
 CLIENT: ${user.name}
 CLIENT GOAL: ${user.goal || 'General fitness'}
+RECENT FOOD SCANS: ${foodLogs?.length ? foodLogs.slice(0,3).map(f=>`${f.meal_name}(${f.calories}kcal,score ${f.health_score}/10)`).join(', ') : 'none'}
+TODAY MEALS: ${todayMealPlan ? `B:${todayMealPlan.breakfast}[${todayMealPlan.breakfast_status||'?'}] L:${todayMealPlan.lunch}[${todayMealPlan.lunch_status||'?'}] S:${todayMealPlan.snack}[${todayMealPlan.snack_status||'?'}] D:${todayMealPlan.dinner}[${todayMealPlan.dinner_status||'?'}]` : 'none'}
 
 Answer the client's question helpfully in 2-4 sentences. Stay in character.`;
 

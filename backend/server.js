@@ -830,12 +830,18 @@ app.post('/api/chat', requireAuth, requireUser, async (req, res) => {
         `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&order=created_at.desc&limit=7&select=created_at`
       ).then(r => r || []).catch(() => []);
 
+      const foodLogs = await db('food_logs', 'GET', null,
+        `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&order=created_at.desc&limit=5&select=meal_name,calories,protein,carbs,fat,health_score,created_at`
+      ).then(r => r || []).catch(() => []);
+
+      const todayMealPlan = todayMeals;
+
       // Step 4: Route to the right modal
       let aiReply;
       if (topic === 'workout') {
         aiReply = await workoutModal({ user, coach, message, currentProgram: programs });
       } else if (topic === 'nutrition') {
-        aiReply = await nutritionModal({ user, coach, message, todayMeals });
+        aiReply = await nutritionModal({ user, coach, message, todayMeals: todayMealPlan, foodLogs });
       } else if (topic === 'motivation') {
         const weekStreak = checkins.filter(c => {
           const d = new Date(c.created_at);
@@ -845,7 +851,7 @@ app.post('/api/chat', requireAuth, requireUser, async (req, res) => {
       } else if (topic === 'schedule') {
         aiReply = await scheduleModal({ user, coach, message, weekProgram: programs });
       } else {
-        aiReply = await generalModal({ user, coach, message });
+        aiReply = await generalModal({ user, coach, message, foodLogs, todayMealPlan });
       }
 
       // Step 5: Save AI response
@@ -977,7 +983,16 @@ app.get('/api/meals/today', requireAuth, requireUser, async (req, res) => {
     res.status(500).json({ error: 'Failed to get meal plan' });
   }
 });
-
+app.patch('/api/meals/status', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { coachId, meal, status } = req.body; // meal: 'breakfast'|'lunch'|'snack'|'dinner', status: 'followed'|'skipped'
+    const today = new Date().toISOString().slice(0, 10);
+    await db('meal_plans', 'PATCH', { [`${meal}_status`]: status },
+      `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&date=eq.${today}`
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 // Recipe detail
 app.post('/api/meals/recipe', requireAuth, requireUser, async (req, res) => {
   try {
