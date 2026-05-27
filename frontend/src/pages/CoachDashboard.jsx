@@ -440,7 +440,8 @@ function SectionAI({ coach }) {
       <button className="btn-secondary" onClick={() => setActiveConv(null)} style={{ marginBottom: '16px' }}>← Back</button>
       <div className="card">
         <div className="card-head"><div className="card-title">{activeConv.user?.name || 'Client'} · AI conversation</div></div>
-        <div className="chat-messages" style={{ maxHeight: '60vh', overflowY: 'auto', padding: '16px' }}>
+        <div style={{ position: 'relative' }}>
+<div className="chat-messages" id="ai-conv-messages" style={{ maxHeight: '60vh', overflowY: 'auto', padding: '16px' }}>
           {[...(activeConv.messages || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(m => (
             <div key={m.id} className={`msg-wrap${m.role === 'user' ? ' user-msg' : ''}`}>
               <div className="msg-av" style={{ background: m.role === 'assistant' ? 'linear-gradient(135deg,#1e3a2a,#2d6b47)' : activeConv.user?.photo ? 'transparent' : avatarBg(activeConv.user?.name || '?'), overflow: 'hidden', padding: m.role !== 'assistant' && activeConv.user?.photo ? 0 : undefined }}>
@@ -450,6 +451,10 @@ function SectionAI({ coach }) {
             </div>
           ))}
         </div>
+        </div>
+        <button onClick={() => { const el = document.getElementById('ai-conv-messages'); if(el) el.scrollTop = el.scrollHeight; }} style={{ position: 'absolute', bottom: '16px', right: '16px', width: '32px', height: '32px', borderRadius: '50%', background: 'var(--dark)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </button>
       </div>
     </div>
   );
