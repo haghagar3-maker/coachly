@@ -103,8 +103,8 @@ function SectionHome({ user, coach, subscription, onNavigate }) {
       setProgram(prog);
       setCheckins(chk);
       setLogs(wl);
+      console.log('WORKOUT LOGS:', JSON.stringify(wl));
       const ids = new Set(wl.map((l) => `${l.program_id}-${l.exercise_index}`));
-      // Restore rest-day completions (saved as exercise_index -1)
       wl.filter(l => parseInt(l.exercise_index) === -1).forEach(l => ids.add(`rest-${l.program_id}`));
       setLoggedIds(ids);
     }).finally(() => setLoading(false));
