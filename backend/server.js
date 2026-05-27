@@ -840,7 +840,8 @@ app.post('/api/chat', requireAuth, requireUser, async (req, res) => {
         `?user_id=eq.${req.session.user_id}&select=program_id,exercise_index`
       ).then(r => r || []).catch(() => []);
 
-      const todayDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+      const userTimezone = req.body.timezone || 'UTC';
+      const todayDayName = new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: userTimezone });
       const todayProgram = programs.find(p => p.day_name === todayDayName) || null;
 
       // Step 4: Route to the right modal

@@ -264,7 +264,8 @@ function SectionChat({ user, coach }) {
     setMessages((prev) => [...prev, optimistic]);
 
     try {
-      const res = await sendChatMessage(text, coach.id);
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const res = await sendChatMessage(text, coach.id, timezone);
       const aiMsg = { id: `ai-${Date.now()}`, role: 'assistant', content: res.reply, flagged: res.flagged, created_at: new Date().toISOString() };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {

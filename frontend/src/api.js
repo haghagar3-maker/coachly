@@ -184,8 +184,8 @@ export function cancelSubscription(id) {
 }
 
 // ─── AI CHAT ────────────────────────────────────────────────────
-export function sendChatMessage(message, coachId) {
-  return request('/api/chat', { method: 'POST', body: { message, coachId } });
+export function sendChatMessage(message, coachId, timezone) {
+  return request('/api/chat', { method: 'POST', body: { message, coachId, timezone } });
 }
 
 export function getChatHistory(coachId) {
