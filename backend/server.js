@@ -1617,7 +1617,7 @@ app.post('/api/food/analyze', requireAuth, requireUser, async (req, res) => {
     const coach = coaches[0];
     const recentLogs = await db('food_logs', 'GET', null, `?user_id=eq.${req.session.user_id}&order=created_at.desc&limit=5`);
     const recentMeals = (recentLogs || []).map(l => `${l.meal_name} (${l.calories}kcal, score ${l.health_score}/10)`).join(', ') || 'none yet';
-    const prompt = `You are a precise nutrition analyst. Look at this food image carefully. Identify the exact food and estimate a REALISTIC serving size you can see in the image. Use accurate nutritional data — do NOT round to nice numbers like 500, 30, 10, 20. Be specific (e.g. 347 kcal, 28g protein). Client's recent meals: ${recentMeals}. Coach name: ${coach?.name || 'Coach'}. Give a short warm comment referencing their history. Respond ONLY with valid JSON, no newlines inside string values: {"meal_name":"exact food name","calories":347,"protein":28,"carbs":22,"fat":14,"coach_comment":"short comment here","health_score":7}`;
+    const prompt = `You are a precise nutrition analyst. Identify the exact food in this image and estimate realistic nutritional values for the visible portion — use specific numbers not round ones (e.g. 347 not 350). Client's recent meals: ${recentMeals}. Coach: ${coach?.name || 'Coach'}. Respond ONLY with this exact JSON: {"meal_name":"food name","calories":347,"protein":28,"carbs":22,"fat":14,"coach_comment":"short warm comment referencing history","health_score":7}`;
     const _unused = `You are a nutrition expert. Analyze this meal photo and estimate its nutritional content. Coach style: ${coach?.ai_tone || 'supportive and direct'}.
 Respond ONLY with a JSON object, no markdown:
 {"meal_name":"Grilled chicken with rice","calories":520,"protein":42,"carbs":48,"fat":12,"coach_comment":"Good protein choice! Watch the rice portion if you're cutting.","health_score":8}`;
@@ -1629,7 +1629,9 @@ Respond ONLY with a JSON object, no markdown:
     const groqData = await groqRes.json();
     const text = groqData.choices?.[0]?.message?.content || '{}';
     const cleanText = text.replace(/```json|```/g, '').replace(/[\n\r]/g, ' ').trim();
-    const analysis = JSON.parse(cleanText);
+    const jsonMatch = cleanText.match(/\{.*\}/);
+    if (!jsonMatch) throw new Error('No JSON found in response');
+    const analysis = JSON.parse(jsonMatch[0]);
     await db('food_logs', 'POST', {
       user_id: req.session.user_id,
       coach_id: coachId,
