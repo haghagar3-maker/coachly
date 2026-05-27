@@ -1659,7 +1659,30 @@ app.get('/api/coach/client-program', requireAuth, requireCoach, async (req, res)
     res.json(programs || []);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+app.post('/api/review', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { coachId, rating } = req.body;
+    if (!coachId || !rating) return res.status(400).json({ error: 'coachId and rating required' });
+    const existing = await db('reviews', 'GET', null, `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&select=id`);
+    if (existing && existing.length > 0) {
+      await db('reviews', 'PATCH', { rating }, `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}`);
+    } else {
+      await db('reviews', 'POST', { user_id: req.session.user_id, coach_id: coachId, rating });
+    }
+    const all = await db('reviews', 'GET', null, `?coach_id=eq.${coachId}&select=rating`);
+    const avg = (all.reduce((s, r) => s + r.rating, 0) / all.length).toFixed(1);
+    await db('coaches', 'PATCH', { rating: avg }, `?id=eq.${coachId}`);
+    res.json({ success: true, avg });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
+app.get('/api/review', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { coachId } = req.query;
+    const existing = await db('reviews', 'GET', null, `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&select=rating`);
+    res.json({ rating: existing?.[0]?.rating || null });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });
