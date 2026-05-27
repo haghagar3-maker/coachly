@@ -1181,7 +1181,6 @@ app.post('/api/workout-log', requireAuth, requireUser, async (req, res) => {
       user_id: req.session.user_id,
       program_id: programId,
       exercise_index: exerciseIndex,
-      completed_at: new Date().toISOString(),
     });
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
