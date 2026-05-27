@@ -104,6 +104,7 @@ function SectionHome({ user, coach, subscription, onNavigate }) {
       setCheckins(chk);
       setLogs(wl);
       console.log('WORKOUT LOGS:', JSON.stringify(wl));
+      console.log('PROGRAMS:', JSON.stringify(prog.map(p => ({id: p.id, day: p.day_name}))));
       const ids = new Set(wl.map((l) => `${l.program_id}-${l.exercise_index}`));
       wl.filter(l => parseInt(l.exercise_index) === -1).forEach(l => ids.add(`rest-${l.program_id}`));
       setLoggedIds(ids);
