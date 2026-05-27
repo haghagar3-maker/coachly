@@ -649,7 +649,7 @@ function SectionStore({ coach, setCoach }) {
       <div className="field-group">
         <div className="field-group-title">Intro video</div>
         <div className="field">
-          <label>YouTube or Vimeo URL</label>
+          <label>YouTube URL <span style={{ fontWeight: '400', color: 'var(--muted)', fontSize: '11px' }}>— must be a public video, no playlist links</span></label>
           <input type="url" value={form.intro_video_url} onChange={e => upd('intro_video_url', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
           {form.intro_video_url && (
             <div style={{ marginTop: '8px', borderRadius: '8px', overflow: 'hidden', aspectRatio: '16/9' }}>
