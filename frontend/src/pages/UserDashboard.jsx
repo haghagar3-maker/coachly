@@ -870,7 +870,9 @@ function SectionFoodScan({ user, coach }) {
             {history.map((item, i) => (
               <div key={i} style={{ background: 'var(--card)', borderRadius: '14px', border: '1px solid var(--border)', overflow: 'hidden' }}>
                 <div style={{ width: '100%', height: '120px', overflow: 'hidden', background: 'var(--border)' }}>
-                  {item.image_base64 ? <img src={item.image_base64} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>🍽️</div>}
+                  {item.image_base64 && item.image_base64.length > 100
+  ? <img src={item.image_base64} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>🍽️</div>}
                 </div>
                 <div style={{ padding: '10px 12px' }}>
                   <div style={{ fontSize: '12px', fontWeight: '700', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.meal_name || 'Meal'}</div>
