@@ -163,12 +163,7 @@ function TestimonialsCarousel({ testimonials, accentColor }) {
               <div style={{ position: 'absolute', top: '-20px', left: '20px', fontSize: '120px', color: accentColor, opacity: 0.15, fontFamily: 'Georgia', lineHeight: 1 }}>"</div>
               <div style={{ fontSize: '13px', color: accentColor, fontWeight: '800', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '14px' }}>★★★★★</div>
               <p style={{ fontSize: '15px', lineHeight: '1.8', color: '#fff', margin: '0 0 20px', fontStyle: 'italic', position: 'relative', zIndex: 1 }}>"{t.text}"</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: '#111', flexShrink: 0 }}>
-                  {t.name?.charAt(0).toUpperCase()}
-                </div>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>{t.name}</div>
-              </div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: accentColor }}>— {t.name}</div>
             </div>
           ))}
         </div>
@@ -407,9 +402,9 @@ export default function Store() {
                       <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: '12px' }}>Certifications & achievements</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {coach.credentials.split('·').map((c, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 14px', borderRadius: '100px', background: '#111', border: `1px solid ${accentColor}33` }}>
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 14px', borderRadius: '100px', background: '#fff', border: `1.5px solid ${accentColor}` }}>
                             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: accentColor, flexShrink: 0 }} />
-                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#fff', whiteSpace: 'nowrap' }}>{c.trim()}</span>
+                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#111', whiteSpace: 'nowrap' }}>{c.trim()}</span>
                           </div>
                         ))}
                       </div>
