@@ -1194,17 +1194,8 @@ app.post('/api/workout-log', requireAuth, requireUser, async (req, res) => {
 
 app.get('/api/workout-logs', requireAuth, requireUser, async (req, res) => {
   try {
-    const { coachId } = req.query;
-
-    // Get all program IDs for this user + coach
-    const programs = await db('programs', 'GET', null,
-      `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&select=id`
-    );
-    if (!programs || programs.length === 0) return res.json([]);
-
-    const programIds = programs.map(p => p.id);
     const logs = await db('workout_logs', 'GET', null,
-      `?user_id=eq.${req.session.user_id}&program_id=in.(${programIds.join(',')})&select=*`
+      `?user_id=eq.${req.session.user_id}&select=*`
     );
     res.json(logs || []);
   } catch (e) {
