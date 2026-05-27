@@ -68,7 +68,7 @@ Answer NO for:
 // MODAL 1 — Workout Questions
 // Triggered when user asks about training, exercises, sets, reps, form, pain during training
 // ─────────────────────────────────────────────
-async function workoutModal({ user, coach, message, currentProgram, workoutLogs }) {
+async function workoutModal({ user, coach, message, currentProgram, workoutLogs, todayProgram, todayDayName }) {
   const system = `You are the AI coaching assistant for ${coach.name}, a ${coach.sport || 'fitness'} coach.
 You speak in ${coach.name}'s voice and coaching style.
 
@@ -87,7 +87,8 @@ CLIENT INJURIES/LIMITATIONS: ${user.injuries || 'None noted'}
 
 CURRENT PROGRAM THIS WEEK:
 ${currentProgram ? JSON.stringify(currentProgram).slice(0, 800) : 'No program assigned yet.'}
-COMPLETED SESSIONS: ${workoutLogs?.length ? workoutLogs.filter(l=>l.exercise_index===-1||l.exercise_index===-1).length + ' rest days + ' + workoutLogs.filter(l=>l.exercise_index>=0).length + ' exercises logged' : 'none yet'}
+TODAY (${todayDayName}): ${todayProgram ? (todayProgram.exercises?.length === 0 ? 'REST DAY' : `${todayProgram.session_title} — ${todayProgram.exercises?.length} exercises`) : 'no session planned'}
+COMPLETED SESSIONS: ${workoutLogs?.filter(l=>l.exercise_index===-1).length || 0} rest days + ${workoutLogs?.filter(l=>l.exercise_index>=0).length || 0} exercises logged
 
 RULES:
 - Answer in 3-4 sentences max. Be practical and specific.

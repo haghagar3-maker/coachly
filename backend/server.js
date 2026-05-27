@@ -840,10 +840,13 @@ app.post('/api/chat', requireAuth, requireUser, async (req, res) => {
         `?user_id=eq.${req.session.user_id}&select=program_id,exercise_index`
       ).then(r => r || []).catch(() => []);
 
+      const todayDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+      const todayProgram = programs.find(p => p.day_name === todayDayName) || null;
+
       // Step 4: Route to the right modal
       let aiReply;
       if (topic === 'workout') {
-        aiReply = await workoutModal({ user, coach, message, currentProgram: programs, workoutLogs });
+        aiReply = await workoutModal({ user, coach, message, currentProgram: programs, workoutLogs, todayProgram, todayDayName });
       } else if (topic === 'nutrition') {
         aiReply = await nutritionModal({ user, coach, message, todayMeals: todayMealPlan, foodLogs });
       } else if (topic === 'motivation') {
