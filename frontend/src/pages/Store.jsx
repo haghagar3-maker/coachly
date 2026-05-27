@@ -176,7 +176,7 @@ function TestimonialsCarousel({ testimonials, accentColor }) {
     </div>
   );
 }
-function StarRating({ coachId, accentColor }) {
+function StarRating({ coachId, accentColor, onRated }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -191,11 +191,13 @@ function StarRating({ coachId, accentColor }) {
     setRating(val);
     setSubmitted(true);
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/review`, {
+      const r = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
         body: JSON.stringify({ coachId, rating: val }),
       });
+      const d = await r.json();
+      if (d.avg) onRated(d.avg);
       showToast('Thanks for your rating!', 'success');
     } catch { showToast('Failed to submit', 'error'); }
   }
@@ -230,6 +232,7 @@ export default function Store() {
   const [currentUser, setCurrentUser] = useState(null);
   const [alreadySubbed, setAlreadySubbed] = useState(false);
   const [activeTab, setActiveTab] = useState('about');
+  const [coachRating, setCoachRating] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -353,7 +356,7 @@ export default function Store() {
             { label: 'Clients', value: fmt(coach.subscriber_count || 0) },
             { label: 'Experience', value: coach.years_experience ? `${coach.years_experience}y` : '—' },
             { label: 'Location', value: coach.location || '—' },
-            { label: 'Rating', value: coach.rating ? `${coach.rating}` : '—' },
+            { label: 'Rating', value: (coachRating || coach.rating) ? `${coachRating || coach.rating}` : '—' },
           ].map(({ label, value }, i) => (
             <div key={label} style={{ padding: '18px 32px', textAlign: 'center', borderRight: i < 3 ? '1px solid #eee' : 'none', flexShrink: 0 }}>
               <div style={{ fontSize: '20px', fontWeight: '800', color: '#111' }}>{value}</div>
@@ -381,7 +384,7 @@ export default function Store() {
         <div>
           {/* STAR RATING */}
           {currentUser && (
-            <StarRating coachId={coach.id} currentUser={currentUser} accentColor={accentColor} />
+            <StarRating coachId={coach.id} currentUser={currentUser} accentColor={accentColor} onRated={setCoachRating} />
           )}
           {/* Tagline */}
           {coach.tagline && (
