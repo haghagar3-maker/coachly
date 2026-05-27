@@ -116,7 +116,7 @@ export default function ProfileSection({ user, subscriptions = [], onUpdate, onL
     setSaving(true);
     try {
       const payload = { name: name.trim(), bio: bio.trim(), goal: goal.trim() };
-      if (avatarBase64) payload.avatar_url = avatarBase64;
+      if (avatarBase64) payload.photo = avatarBase64;
       await updateUserProfile(payload);
       showToast('Profile updated ✓', 'success');
       if (onUpdate) onUpdate({ ...user, ...payload });
