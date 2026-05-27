@@ -176,6 +176,48 @@ function TestimonialsCarousel({ testimonials, accentColor }) {
     </div>
   );
 }
+function StarRating({ coachId, accentColor }) {
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/review?coachId=${coachId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` }
+    }).then(r => r.json()).then(d => { if (d.rating) { setRating(d.rating); setSubmitted(true); } }).catch(() => {});
+  }, [coachId]);
+
+  async function submit(val) {
+    setRating(val);
+    setSubmitted(true);
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        body: JSON.stringify({ coachId, rating: val }),
+      });
+      showToast('Thanks for your rating!', 'success');
+    } catch { showToast('Failed to submit', 'error'); }
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eee', borderRadius: '16px', padding: '18px 24px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div>
+        <div style={{ fontSize: '13px', fontWeight: '700', color: '#111', marginBottom: '2px' }}>Rate this coach</div>
+        <div style={{ fontSize: '12px', color: '#888' }}>{submitted ? `You rated ${rating} star${rating > 1 ? 's' : ''}` : 'Tap a star to rate'}</div>
+      </div>
+      <div style={{ display: 'flex', gap: '4px' }}>
+        {[1,2,3,4,5].map(star => (
+          <span key={star}
+            onMouseEnter={() => !submitted && setHover(star)}
+            onMouseLeave={() => !submitted && setHover(0)}
+            onClick={() => !submitted && submit(star)}
+            style={{ fontSize: '28px', cursor: submitted ? 'default' : 'pointer', color: star <= (hover || rating) ? accentColor : '#ddd', transition: 'color 0.15s' }}>★</span>
+        ))}
+      </div>
+    </div>
+  );
+}
 export default function Store() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -337,6 +379,10 @@ export default function Store() {
 
         {/* LEFT COLUMN */}
         <div>
+          {/* STAR RATING */}
+          {currentUser && (
+            <StarRating coachId={coach.id} currentUser={currentUser} accentColor={accentColor} />
+          )}
           {/* Tagline */}
           {coach.tagline && (
             <div style={{ fontSize: '22px', fontWeight: '700', color: '#111', marginBottom: '24px', fontFamily: 'Georgia, serif', lineHeight: '1.4', fontStyle: 'italic' }}>
