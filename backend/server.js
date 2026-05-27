@@ -1702,6 +1702,64 @@ app.get('/api/review', requireAuth, requireUser, async (req, res) => {
     res.json({ rating: existing?.[0]?.rating || null });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+// Weekly cleanup — null out food scan images older than 7 days
+const CLEANUP_INTERVAL = 7 * 24 * 60 * 60 * 1000;
+async function cleanOldFoodImages() {
+  try {
+    const cutoff = new Date(Date.now() - CLEANUP_INTERVAL).toISOString();
+    await db('food_logs', 'PATCH', { image_base64: null }, `?created_at=lt.${cutoff}&image_base64=not.is.null`);
+    console.log('Food scan images cleanup done');
+  } catch (e) {
+    console.error('Cleanup error:', e.message);
+  }
+}
+setInterval(cleanOldFoodImages, CLEANUP_INTERVAL);
+cleanOldFoodImages(); // run once on startup too
+// Delete user account — wipe personal data, keep email + behavioral data
+app.delete('/api/user/account', requireAuth, requireUser, async (req, res) => {
+  try {
+    const userId = req.session.user_id;
+    await db('messages', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('direct_messages', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('checkins', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('food_logs', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('workout_logs', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('posts', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('comments', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('reviews', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('sessions', 'DELETE', null, `?user_id=eq.${userId}`);
+    await db('users', 'PATCH', {
+      name: null,
+      email: `deleted_${userId}@anon.com`,
+      password_hash: null,
+      photo: null,
+      deleted_at: new Date().toISOString(),
+    }, `?id=eq.${userId}`);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete coach account — wipe personal data, keep sport/niche/pricing data
+app.delete('/api/coach/account', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const coachId = req.session.coach_id;
+    await db('messages', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('direct_messages', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('content', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('programs', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('sessions', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('coaches', 'PATCH', {
+      name: null,
+      email: `deleted_${coachId}@anon.com`,
+      password_hash: null,
+      photo: null,
+      banner: null,
+      deleted_at: new Date().toISOString(),
+      is_active: false,
+    }, `?id=eq.${coachId}`);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });
