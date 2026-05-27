@@ -343,7 +343,7 @@ function SectionMessages({ coach }) {
     getCoachDirectMessages().then(setThreads).catch(console.error).finally(() => setLoading(false));
   }, []);
 
-  function openThread(t) { setActiveThread(t); setMessages(t.messages || []); }
+  function openThread(t) { setActiveThread(t); setMessages([...(t.messages || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))); }
 
   async function send() {
     if (!input.trim() || !activeThread) return;
@@ -441,7 +441,7 @@ function SectionAI({ coach }) {
       <div className="card">
         <div className="card-head"><div className="card-title">{activeConv.user?.name || 'Client'} · AI conversation</div></div>
         <div className="chat-messages" style={{ maxHeight: '60vh', overflowY: 'auto', padding: '16px' }}>
-          {(activeConv.messages || []).map(m => (
+          {[...(activeConv.messages || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(m => (
             <div key={m.id} className={`msg-wrap${m.role === 'user' ? ' user-msg' : ''}`}>
               <div className="msg-av" style={{ background: m.role === 'assistant' ? 'linear-gradient(135deg,#1e3a2a,#2d6b47)' : avatarBg(activeConv.user?.name || '?') }}>
                 {m.role === 'assistant' ? 'AI' : initials(activeConv.user?.name || '?')}
@@ -1353,7 +1353,7 @@ function SectionNutrition({ coach }) {
           <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No clients yet.</div>
         ) : clients.map(c => (
           <div key={c.id} onClick={() => viewClient(c)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', cursor: 'pointer' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: avatarBg(c.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user?.name)}</div>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: c.user?.photo ? 'transparent' : avatarBg(c.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0, overflow: 'hidden' }}>{c.user?.photo ? <img src={c.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(c.user?.name)}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || '?'}</div>
               <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{c.plan_months} month plan · {c.status || 'active'}</div>
