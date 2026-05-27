@@ -100,7 +100,11 @@ export default function Sidebar({
         {/* User info */}
         {user && (
           <div className="sb-user">
-            <div className="sb-user-av">{initials(user.name)}</div>
+            <div className="sb-user-av" style={{ padding: 0, overflow: 'hidden' }}>
+              {user.photo
+                ? <img src={user.photo} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                : initials(user.name)}
+            </div>
             <div>
               <div className="sb-user-name">{user.name}</div>
               <div className="sb-user-plan">
