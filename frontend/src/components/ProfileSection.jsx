@@ -100,7 +100,7 @@ export default function ProfileSection({ user, subscriptions = [], onUpdate, onL
   const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [goal, setGoal] = useState(user?.goal || '');
-  const [avatarPreview, setAvatarPreview] = useState(user?.avatar_url || user?.photo || null);
+  const [avatarPreview, setAvatarPreview] = useState(user?.photo || null);
   const [avatarBase64, setAvatarBase64] = useState(null);
 
   function handleAvatarChange(e) {
