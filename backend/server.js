@@ -836,10 +836,14 @@ app.post('/api/chat', requireAuth, requireUser, async (req, res) => {
 
       const todayMealPlan = todayMeals;
 
+      const workoutLogs = await db('workout_logs', 'GET', null,
+        `?user_id=eq.${req.session.user_id}&select=program_id,exercise_index`
+      ).then(r => r || []).catch(() => []);
+
       // Step 4: Route to the right modal
       let aiReply;
       if (topic === 'workout') {
-        aiReply = await workoutModal({ user, coach, message, currentProgram: programs });
+        aiReply = await workoutModal({ user, coach, message, currentProgram: programs, workoutLogs });
       } else if (topic === 'nutrition') {
         aiReply = await nutritionModal({ user, coach, message, todayMeals: todayMealPlan, foodLogs });
       } else if (topic === 'motivation') {
