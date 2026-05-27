@@ -545,10 +545,10 @@ function SectionStrategy({ coach }) {
                         </span>
                       )}
                       <button
-                        onClick={async e => { e.stopPropagation(); setLoggedIds(prev => { const next = new Set(prev); exercises.forEach((_, idx) => next.add(`${day.id}-${idx}`)); return next; }); showToast('✅ Day completed!', 'success'); await Promise.all(exercises.map((_,idx) => logWorkout(day.id, idx).catch(()=>{}))); }}
-                        style={{ background: completedCount === exercises.length && exercises.length > 0 ? '#2ecc6a' : 'var(--border)', border: 'none', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', color: completedCount === exercises.length && exercises.length > 0 ? '#fff' : 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit', marginRight: '6px' }}
+                        onClick={async e => { e.stopPropagation(); setLoggedIds(prev => { const next = new Set(prev); exercises.forEach((_, idx) => next.add(`${day.id}-${idx}`)); next.add(`rest-${day.id}`); return next; }); showToast('✅ Day completed!', 'success'); await Promise.all(exercises.map((_,idx) => logWorkout(day.id, idx).catch(()=>{}))); }}
+                        style={{ background: (completedCount === exercises.length && exercises.length > 0) || loggedIds.has(`rest-${day.id}`) ? '#2ecc6a' : 'var(--border)', border: 'none', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', color: (completedCount === exercises.length && exercises.length > 0) || loggedIds.has(`rest-${day.id}`) ? '#fff' : 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit', marginRight: '6px' }}
                       >
-                        {completedCount === exercises.length && exercises.length > 0 ? '✓ Done' : 'Mark done'}
+                        {(completedCount === exercises.length && exercises.length > 0) || loggedIds.has(`rest-${day.id}`) ? '✓ Done' : 'Mark done'}
                       </button>
                       <span className="strategy-chevron">{isOpen ? '▲' : '▼'}</span>
                     </div>
