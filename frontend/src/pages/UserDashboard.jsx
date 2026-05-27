@@ -489,7 +489,9 @@ function SectionStrategy({ coach }) {
       getWorkoutLogs(coach.id).catch(() => []),
     ]).then(([prog, wl]) => {
       setProgram(prog);
-      setLoggedIds(new Set(wl.map((l) => `${l.program_id}-${l.exercise_index}`)));
+      const ids = new Set(wl.map((l) => `${l.program_id}-${l.exercise_index}`));
+      wl.filter(l => parseInt(l.exercise_index) === -1).forEach(l => ids.add(`rest-${l.program_id}`));
+      setLoggedIds(ids);
       // Auto-open today's day
       const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
       const todayProg = prog.find((p) => p.day_name?.toLowerCase() === todayDay.toLowerCase());
