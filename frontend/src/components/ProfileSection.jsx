@@ -119,7 +119,7 @@ export default function ProfileSection({ user, subscriptions = [], onUpdate, onL
       if (avatarBase64) payload.photo = avatarBase64;
       await updateUserProfile(payload);
       showToast('Profile updated ✓', 'success');
-      if (onUpdate) onUpdate({ ...user, ...payload });
+      if (onUpdate) onUpdate({ ...user, name: name.trim(), bio: bio.trim(), goal: goal.trim(), photo: avatarBase64 || user?.photo });
     } catch (err) {
       showToast(err.message || 'Failed to save', 'error');
     } finally {
