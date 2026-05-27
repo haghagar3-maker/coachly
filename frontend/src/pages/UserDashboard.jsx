@@ -103,7 +103,10 @@ function SectionHome({ user, coach, subscription, onNavigate }) {
       setProgram(prog);
       setCheckins(chk);
       setLogs(wl);
-      setLoggedIds(new Set(wl.map((l) => `${l.program_id}-${l.exercise_index}`)));
+      const ids = new Set(wl.map((l) => `${l.program_id}-${l.exercise_index}`));
+      // Restore rest-day completions (saved as exercise_index -1)
+      wl.filter(l => l.exercise_index === -1).forEach(l => ids.add(`rest-${l.program_id}`));
+      setLoggedIds(ids);
     }).finally(() => setLoading(false));
   }, [coach]);
 
@@ -545,7 +548,7 @@ function SectionStrategy({ coach }) {
                         </span>
                       )}
                       <button
-                        onClick={async e => { e.stopPropagation(); setLoggedIds(prev => { const next = new Set(prev); exercises.forEach((_, idx) => next.add(`${day.id}-${idx}`)); next.add(`rest-${day.id}`); return next; }); showToast('✅ Day completed!', 'success'); await Promise.all(exercises.map((_,idx) => logWorkout(day.id, idx).catch(()=>{}))); }}
+                        onClick={async e => { e.stopPropagation(); setLoggedIds(prev => { const next = new Set(prev); exercises.forEach((_, idx) => next.add(`${day.id}-${idx}`)); next.add(`rest-${day.id}`); return next; }); showToast('✅ Day completed!', 'success'); if (exercises.length === 0) { await logWorkout(day.id, -1).catch(()=>{}); } else { await Promise.all(exercises.map((_,idx) => logWorkout(day.id, idx).catch(()=>{}))); } }}
                         style={{ background: (completedCount === exercises.length && exercises.length > 0) || loggedIds.has(`rest-${day.id}`) ? '#2ecc6a' : 'var(--border)', border: 'none', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', color: (completedCount === exercises.length && exercises.length > 0) || loggedIds.has(`rest-${day.id}`) ? '#fff' : 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit', marginRight: '6px' }}
                       >
                         {(completedCount === exercises.length && exercises.length > 0) || loggedIds.has(`rest-${day.id}`) ? '✓ Done' : 'Mark done'}

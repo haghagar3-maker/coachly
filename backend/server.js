@@ -1175,7 +1175,7 @@ app.get('/api/program', requireAuth, requireUser, async (req, res) => {
 app.post('/api/workout-log', requireAuth, requireUser, async (req, res) => {
   try {
     const { programId, exerciseIndex } = req.body;
-    if (!programId && exerciseIndex === undefined) return res.status(400).json({ error: 'programId and exerciseIndex required' });
+    if (!programId) return res.status(400).json({ error: 'programId required' });
 
     const result = await db('workout_logs', 'POST', {
       user_id: req.session.user_id,
