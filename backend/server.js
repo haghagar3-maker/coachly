@@ -1177,8 +1177,12 @@ app.post('/api/workout-log', requireAuth, requireUser, async (req, res) => {
     const { programId, exerciseIndex } = req.body;
     if (!programId) return res.status(400).json({ error: 'programId required' });
 
+    // Get coach_id from program
+    const prog = await db('programs', 'GET', null, `?id=eq.${programId}&select=coach_id`).catch(() => []);
+    const coachId = prog?.[0]?.coach_id || null;
     const result = await db('workout_logs', 'POST', {
       user_id: req.session.user_id,
+      coach_id: coachId,
       program_id: programId,
       exercise_index: exerciseIndex,
     });
