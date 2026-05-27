@@ -105,7 +105,7 @@ function SectionHome({ user, coach, subscription, onNavigate }) {
       setLogs(wl);
       const ids = new Set(wl.map((l) => `${l.program_id}-${l.exercise_index}`));
       // Restore rest-day completions (saved as exercise_index -1)
-      wl.filter(l => l.exercise_index === -1).forEach(l => ids.add(`rest-${l.program_id}`));
+      wl.filter(l => parseInt(l.exercise_index) === -1).forEach(l => ids.add(`rest-${l.program_id}`));
       setLoggedIds(ids);
     }).finally(() => setLoading(false));
   }, [coach]);
