@@ -227,7 +227,7 @@ function SectionOverview({ coach }) {
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No recent check-ins</div>
             ) : checkins.map(c => (
               <div key={c.id} className="act-item">
-                <div className="act-av" style={{ background: avatarBg(c.user_name) }}>{initials(c.user_name)}</div>
+                <div className="act-av" style={{ background: c.user?.photo ? 'transparent' : avatarBg(c.user_name), overflow: 'hidden', padding: 0 }}>{c.user?.photo ? <img src={c.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : initials(c.user_name)}</div>
                 <div className="act-body">
                   <div className="act-name">{c.user?.name || c.user_name || 'Unknown'}</div>
                   <div className="act-text">Submitted check-in · Energy {c.energy ?? '?'}/5</div>
@@ -307,7 +307,7 @@ function SectionClients() {
         ) : filtered.map(c => (
           <div key={c.id} className="ct-row">
             <div className="ct-user">
-              <div className="ct-av" style={{ background: avatarBg(c.user?.name || c.name) }}>{initials(c.user?.name || c.name)}</div>
+              <div className="ct-av" style={{ background: c.user?.photo ? 'transparent' : avatarBg(c.user?.name || c.name), overflow: 'hidden', padding: 0 }}>{c.user?.photo ? <img src={c.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : initials(c.user?.name || c.name)}</div>
               <div><div className="ct-name">{c.user?.name || c.name || '?'}</div><div className="ct-email">{c.user?.email || c.email}</div></div>
             </div>
             <div className="ct-cell">{c.plan_months} months</div>
@@ -443,8 +443,8 @@ function SectionAI({ coach }) {
         <div className="chat-messages" style={{ maxHeight: '60vh', overflowY: 'auto', padding: '16px' }}>
           {[...(activeConv.messages || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(m => (
             <div key={m.id} className={`msg-wrap${m.role === 'user' ? ' user-msg' : ''}`}>
-              <div className="msg-av" style={{ background: m.role === 'assistant' ? 'linear-gradient(135deg,#1e3a2a,#2d6b47)' : avatarBg(activeConv.user?.name || '?') }}>
-                {m.role === 'assistant' ? 'AI' : initials(activeConv.user?.name || '?')}
+              <div className="msg-av" style={{ background: m.role === 'assistant' ? 'linear-gradient(135deg,#1e3a2a,#2d6b47)' : activeConv.user?.photo ? 'transparent' : avatarBg(activeConv.user?.name || '?'), overflow: 'hidden', padding: m.role !== 'assistant' && activeConv.user?.photo ? 0 : undefined }}>
+                {m.role === 'assistant' ? 'AI' : activeConv.user?.photo ? <img src={activeConv.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : initials(activeConv.user?.name || '?')}
               </div>
               <div className={`bubble ${m.role === 'assistant' ? 'coach-bubble' : 'user-bubble'}`}>{m.content}</div>
             </div>
@@ -468,7 +468,7 @@ function SectionAI({ coach }) {
         ) : filtered.map(c => (
           <div key={c.user_id} className="ai-client-card" onClick={() => setActiveConv(c)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarBg(c.user?.name || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>{initials(c.user?.name || '?')}</div>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: c.user?.photo ? 'transparent' : avatarBg(c.user?.name || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0, overflow: 'hidden', padding: 0 }}>{c.user?.photo ? <img src={c.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : initials(c.user?.name || '?')}</div>
               <div>
                 <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || 'Unknown'}</div>
                 <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{c.message_count || 0} messages</div>
