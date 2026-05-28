@@ -278,7 +278,7 @@ app.post('/api/upload-content', requireAuth, requireCoach, async (req, res) => {
     const uniqueName = `${Date.now()}_${fileName}`;
     const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${uniqueName}`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${process.env.SUPABASE_KEY}`, 'Content-Type': fileType, 'x-upsert': 'true' },
+      headers: { 'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`, 'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY, 'Content-Type': fileType, 'x-upsert': 'true' },
       body: buffer,
     });
     if (!uploadRes.ok) return res.status(500).json({ error: await uploadRes.text() });
