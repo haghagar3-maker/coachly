@@ -1044,12 +1044,19 @@ function ContentModal({ item, onClose, onSave }) {
                   upd('_uploading', true);
                   try {
                     const reader = new FileReader();
-                    reader.onload = () => { upd('url', reader.result); upd('_uploading', false); upd('type', file.type.startsWith('video') ? 'video' : file.type === 'application/pdf' ? 'pdf' : form.type); };
+                    reader.onload = async () => {
+                      const base64 = reader.result;
+                      const res = await fetch(`${import.meta.env.VITE_API_URL||''}/api/upload-content`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` }, body: JSON.stringify({ fileBase64: base64, fileName: file.name, fileType: file.type }) });
+                      const data = await res.json();
+                      if (data.url) { upd('url', data.url); upd('_uploading', false); upd('type', file.type.startsWith('video') ? 'video' : file.type === 'application/pdf' ? 'pdf' : form.type); }
+                      else { upd('_uploading', false); alert('Upload failed: ' + (data.error || 'Unknown error')); }
+                    };
                     reader.readAsDataURL(file);
                   } catch { upd('_uploading', false); alert('Upload failed'); }
                 }} />
               </label>
-              {form.url && form.url.startsWith('data:') && <div style={{ fontSize: '11px', color: '#2ecc6a', marginTop: '4px' }}>✓ File ready to save</div>}
+              {form.url && !form.url.startsWith('http') && !form.url.startsWith('data:') && <div style={{ fontSize: '11px', color: '#2ecc6a', marginTop: '4px' }}>✓ File uploaded to storage</div>}
+              {form._uploading && <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Uploading to storage…</div>}
             </div>
           </div>
           <div className="field">

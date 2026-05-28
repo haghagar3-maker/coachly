@@ -271,7 +271,20 @@ app.post('/api/coach/login', async (req, res) => {
 // COACH — AUTHENTICATED ROUTES
 // ─────────────────────────────────────────────
 
-app.post('/api/upload-media', requireAuth, requireCoach, async (req, res) => {
+app.post('/api/upload-content', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { fileBase64, fileName, fileType } = req.body;
+    const buffer = Buffer.from(fileBase64.split(',')[1], 'base64');
+    const uniqueName = `${Date.now()}_${fileName}`;
+    const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${uniqueName}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.SUPABASE_KEY}`, 'Content-Type': fileType, 'x-upsert': 'true' },
+      body: buffer,
+    });
+    if (!uploadRes.ok) return res.status(500).json({ error: await uploadRes.text() });
+    res.json({ url: `${process.env.SUPABASE_URL}/storage/v1/object/public/coach-media/${uniqueName}` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+}); async (req, res) => {
   try {
     const { fileBase64, fileName, fileType } = req.body;
     const buffer = Buffer.from(fileBase64.split(',')[1], 'base64');
@@ -493,7 +506,7 @@ app.post('/api/coach/content', requireAuth, requireCoach, async (req, res) => {
 app.patch('/api/coach/content/:id', requireAuth, requireCoach, async (req, res) => {
   try {
     const result = await db('content', 'PATCH', req.body,
-      `?id=eq.${req.params.coachPublicId}&coach_id=eq.${req.session.coach_id}`
+      `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`
     );
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
