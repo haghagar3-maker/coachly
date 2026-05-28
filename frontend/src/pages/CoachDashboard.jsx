@@ -1032,8 +1032,25 @@ function ContentModal({ item, onClose, onSave }) {
             </select>
           </div>
           <div className="field">
-            <label>URL / Link</label>
-            <input type="url" value={form.url} onChange={e => upd('url', e.target.value)} placeholder="https://..." />
+            <label>URL / Link <span style={{ fontWeight: '400', color: 'var(--muted)', fontSize: '11px' }}>— or upload a file below</span></label>
+            <input type="url" value={form.url} onChange={e => upd('url', e.target.value)} placeholder="https://youtube.com/watch?v=..." />
+            <div style={{ marginTop: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '8px', border: '1px dashed var(--border)', cursor: 'pointer', fontSize: '13px', color: 'var(--muted)', background: 'var(--bg)' }}>
+                {form._uploading ? 'Uploading…' : form.url && !form.url.startsWith('http') ? '✓ File uploaded — click to replace' : '+ Upload file (PDF, MP4, MOV, JPG…)'}
+                <input type="file" accept="video/*,application/pdf,image/*,audio/*" style={{ display: 'none' }} disabled={form._uploading} onChange={async e => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  if (file.size > 50 * 1024 * 1024) { alert('Max file size is 50MB'); return; }
+                  upd('_uploading', true);
+                  try {
+                    const reader = new FileReader();
+                    reader.onload = () => { upd('url', reader.result); upd('_uploading', false); upd('type', file.type.startsWith('video') ? 'video' : file.type === 'application/pdf' ? 'pdf' : form.type); };
+                    reader.readAsDataURL(file);
+                  } catch { upd('_uploading', false); alert('Upload failed'); }
+                }} />
+              </label>
+              {form.url && form.url.startsWith('data:') && <div style={{ fontSize: '11px', color: '#2ecc6a', marginTop: '4px' }}>✓ File ready to save</div>}
+            </div>
           </div>
           <div className="field">
             <label>Duration</label>
