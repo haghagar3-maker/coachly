@@ -617,7 +617,16 @@ function SectionNutrition({ user, coach }) {
   useEffect(() => {
     if (!coach) return;
     getTodayMeals(coach.id)
-      .then(setMeals)
+      .then((m) => {
+        setMeals(m);
+        if (m) {
+          const saved = {};
+          ['breakfast','lunch','snack','dinner'].forEach(k => {
+            if (m[`${k}_status`] && m[`${k}_status`] !== 'pending') saved[k] = m[`${k}_status`];
+          });
+          setMealStatus(saved);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [coach]);
