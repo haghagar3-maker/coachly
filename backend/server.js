@@ -1136,15 +1136,14 @@ app.post('/api/comments', requireAuth, requireUser, async (req, res) => {
 
 app.get('/api/content/:coachId', requireAuth, requireUser, async (req, res) => {
   try {
-    // Determine user's current week based on subscription start
     const subs = await db('subscriptions', 'GET', null,
-      `?user_id=eq.${req.session.user_id}&coach_id=eq.${req.params.coachPublicId}&status=eq.active&select=plan_start`
+      `?user_id=eq.${req.session.user_id}&coach_id=eq.${req.params.coachId}&status=eq.active&select=plan_start`
     );
     const planStart = subs?.[0]?.plan_start ? new Date(subs[0].plan_start) : new Date();
     const currentWeek = Math.floor((Date.now() - planStart.getTime()) / (7 * 86400000)) + 1;
 
     const content = await db('content', 'GET', null,
-      `?coach_id=eq.${req.params.coachPublicId}&order=week_number.asc&select=*`
+      `?coach_id=eq.${req.params.coachId}&order=week_number.asc&select=*`
     );
 
     // Mark locked/unlocked based on week
