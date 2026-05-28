@@ -492,7 +492,8 @@ app.post('/api/coach/content', requireAuth, requireCoach, async (req, res) => {
 
 app.patch('/api/coach/content/:id', requireAuth, requireCoach, async (req, res) => {
   try {
-    const result = await db('content', 'PATCH', req.body,
+    const { _uploading, ...cleanBody } = req.body;
+    const result = await db('content', 'PATCH', cleanBody,
       `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`
     );
     res.json(Array.isArray(result) ? result[0] : result);
