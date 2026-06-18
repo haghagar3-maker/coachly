@@ -148,7 +148,7 @@ app.get('/health', (req, res) => {
 // GET /api/coaches — all active approved coaches, optional ?category=slug filter
 app.get('/api/coaches', async (req, res) => {
   try {
-    let query = '?is_active=eq.true&is_approved=eq.true&select=id,name,photo,banner,sport,tagline,plan_price,category_id,years_experience,location,specialties';
+    let query = '?is_active=eq.true&is_approved=eq.true&select=id,name,slug,photo,banner,sport,tagline,plan_price,category_id,years_experience,location,specialties,subscriber_count';
     if (req.query.category) {
       // Join with categories to filter by slug
       const cats = await db('categories', 'GET', null, `?slug=eq.${req.query.category}&select=id`);
@@ -158,13 +158,7 @@ app.get('/api/coaches', async (req, res) => {
     }
     const coaches = await db('coaches', 'GET', null, query);
 
-    // For each coach, get subscriber count
-    const enriched = await Promise.all(coaches.map(async (coach) => {
-      const subs = await db('subscriptions', 'GET', null, `?coach_id=eq.${coach.id}&status=eq.active&select=id`);
-      return { ...coach, subscriber_count: subs.length };
-    }));
-
-    res.json(enriched);
+    res.json(coaches);
   } catch (e) {
     logError('GET /api/coaches', e.message, e.stack);
     res.status(500).json({ error: 'Failed to fetch coaches' });
