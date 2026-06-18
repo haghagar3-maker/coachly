@@ -432,7 +432,7 @@ export default function Store() {
               {/* Highlights */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
                 {[
-                  { title: 'Personalised program', desc: 'AI-generated workout plan based on your goals' },
+                  { title: 'Personalised program', desc: 'Custom workout plan built around your coach\'s exact method and your goals' },
                   { title: 'Daily meal plans', desc: 'Custom nutrition guidance every day' },
                   { title: 'AI coach 24/7', desc: 'Ask anything, get answers instantly' },
                   { title: 'Progress tracking', desc: 'Weekly check-ins and detailed analytics' },
@@ -537,7 +537,9 @@ export default function Store() {
 
           {/* COMMUNITY TAB */}
           {activeTab === 'community' && (
-            <div>
+            <div style={{ position: 'relative' }}>
+              {/* Blurred preview */}
+              <div style={{ filter: !currentUser ? 'blur(6px)' : 'none', pointerEvents: !currentUser ? 'none' : 'auto', userSelect: 'none' }}>
               {posts.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#888', fontSize: '14px' }}>No community posts yet.</div>
               ) : (
@@ -561,6 +563,22 @@ export default function Store() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              </div>
+              {/* Lock overlay for non-subscribers */}
+              {!currentUser && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '40px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px' }}>🔒</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#111', fontFamily: 'Georgia, serif' }}>
+                    "The people around you shape who you become."
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#888', maxWidth: '300px', lineHeight: '1.6' }}>
+                    Join the community — share your wins, get support, and stay accountable.
+                  </div>
+                  <button onClick={handleSubscribeClick} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: `0 4px 20px ${accentColor}66` }}>
+                    Subscribe to join →
+                  </button>
                 </div>
               )}
             </div>
@@ -607,7 +625,7 @@ export default function Store() {
 
             {/* Trust signals */}
             <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {['Cancel anytime', 'AI coach available 24/7', 'Personalised from day 1'].map(t => (
+              {['AI coach available 24/7', 'Personalised from day 1'].map(t => (
                 <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#666' }}>
                   <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', flexShrink: 0 }}>✓</div>
                   {t}
