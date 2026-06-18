@@ -299,7 +299,7 @@ export default function Home() {
 
   useEffect(() => {
     setLoadingCoaches(true);
-    (activeCategory ? getCoaches(activeCategory) : getRankedCoaches())
+    (activeCategory ? getCoaches(activeCategory) : getRankedCoaches().catch(() => getCoaches(null)))
       .then(setCoaches)
       .catch(() => { setCoaches([]); showToast('Failed to load coaches', 'error'); })
       .finally(() => setLoadingCoaches(false));
