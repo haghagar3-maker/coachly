@@ -1938,6 +1938,11 @@ app.get('/sitemap.xml', async (req, res) => {
     res.status(500).send('Sitemap error');
   }
 });
+// GET /robots.txt
+app.get('/robots.txt', (req, res) => {
+  res.set('Content-Type', 'text/plain');
+  res.send(`User-agent: *\nAllow: /\nSitemap: ${process.env.FRONTEND_URL || 'https://coachly-two.vercel.app'}/sitemap.xml`);
+});
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });
