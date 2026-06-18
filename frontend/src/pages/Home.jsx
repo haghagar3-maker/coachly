@@ -137,7 +137,7 @@ function CoachCard({ coach, onView, delay = 0 }) {
           )}
         </div>
         <button
-          onClick={(e) => { e.stopPropagation(); onView(coach.id); }}
+          onClick={(e) => { e.stopPropagation(); onView(coach.slug || coach.id); }}
           style={{
             width: '100%', padding: '10px', borderRadius: '100px',
             border: '1.5px solid var(--dark)', background: 'none',

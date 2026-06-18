@@ -331,9 +331,11 @@ app.get('/api/coach/me', requireAuth, requireCoach, async (req, res) => {
 app.patch('/api/coach/profile', requireAuth, requireCoach, async (req, res) => {
   try {
     const { password_hash: _, email: __, ...updates } = req.body;
+    // Fetch existing coach to merge before scoring
+    const existing = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=*`);
+    const merged = { ...(existing?.[0] || {}), ...updates };
     // Calculate SEO score
     let seoScore = 0;
-    const merged = { ...updates };
     if (merged.name) seoScore += 10;
     if (merged.photo) seoScore += 15;
     if (merged.banner) seoScore += 10;
