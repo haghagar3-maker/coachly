@@ -29,6 +29,7 @@ import EmptyState from '../components/EmptyState';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
 import ProfileSection from '../components/ProfileSection';
+import NotificationBell from '../components/NotificationBell';
 
 // ─── helpers ────────────────────────────────────────────────────
 const AVATAR_COLORS = ['#E8633A','#2a7a4f','#5a5ac8','#c94e2a','#2d6b47','#8b5cf6','#0891b2','#b45309','#be185d','#065f46'];
@@ -1386,6 +1387,9 @@ export default function UserDashboard() {
 
   // DM unread badge
   const [dmUnread, setDmUnread] = useState(0);
+  const [mutedTypes, setMutedTypes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('coachly_muted') || '[]'); } catch { return []; }
+  });
 
   // Load user + subscriptions on mount
   useEffect(() => {
@@ -1514,6 +1518,13 @@ export default function UserDashboard() {
             </svg>
           </button>
           <div className="topbar-title">{sectionTitles[section] || ''}</div>
+          <NotificationBell
+            token={localStorage.getItem('coachly_token')}
+            mutedTypes={mutedTypes}
+            onMuteToggle={(type) => setMutedTypes(prev =>
+              prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+            )}
+          />
           <button
             className="topbar-logout"
             onClick={async () => { await logout().catch(() => {}); navigate('/'); }}

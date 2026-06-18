@@ -18,6 +18,7 @@ import {
   updateCoachAiTraining,
   clearToken,
 } from '../api';
+import NotificationBell from '../components/NotificationBell';
 
 export default function CoachDashboard() {
   const navigate = useNavigate();
@@ -145,8 +146,9 @@ export default function CoachDashboard() {
             </button>
             <span className="topbar-title">{sectionLabel[activeSection]}</span>
           </div>
-          <div className="topbar-right">
+          <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span className="tb-date">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            <NotificationBell token={localStorage.getItem('coachly_token')} />
           </div>
         </div>
 

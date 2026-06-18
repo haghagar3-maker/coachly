@@ -68,6 +68,23 @@ async function db(table, method = 'GET', body = null, query = '') {
   if (res.status === 204) return {};
   return res.json().catch(() => ({}));
 }
+// ─────────────────────────────────────────────
+// NOTIFICATION HELPER
+// ─────────────────────────────────────────────
+async function createNotification(recipientId, recipientType, type, title, body = null) {
+  try {
+    await db('notifications', 'POST', {
+      recipient_id: recipientId,
+      recipient_type: recipientType,
+      type,
+      title,
+      body,
+    });
+  } catch (e) {
+    // non-blocking — never crash the main request
+    console.error('Notification error:', e.message);
+  }
+}
 
 // ─────────────────────────────────────────────
 // AUTH MIDDLEWARE
@@ -419,6 +436,13 @@ app.post('/api/coach/direct-message', requireAuth, requireCoach, async (req, res
       content,
       is_read: false,
     });
+    await createNotification(
+      userId,
+      'user',
+      'coach_dm',
+      'Message from your coach',
+      content.slice(0, 80)
+    );
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to send message' });
@@ -744,6 +768,13 @@ app.post('/api/user/subscribe', requireAuth, requireUser, async (req, res) => {
       // Activate immediately (no payment provider connected)
       await db('subscriptions', 'PATCH', { status: 'active' }, `?id=eq.${sub.id}`);
       sub.status = 'active';
+      await createNotification(
+        coachId,
+        'coach',
+        'new_subscriber',
+        'New subscriber!',
+        'A new client just joined your program.'
+      );
     }
 
     res.json({ subscription: sub, checkoutUrl, skipPayment });
@@ -930,6 +961,13 @@ app.post('/api/dm', requireAuth, requireUser, async (req, res) => {
       content,
       is_read: false,
     });
+    await createNotification(
+      coachId,
+      'coach',
+      'new_dm',
+      'New message from client',
+      content.slice(0, 80)
+    );
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to send message' });
@@ -1078,6 +1116,14 @@ app.post('/api/posts', requireAuth, requireUser, async (req, res) => {
       photo: photo || null,
       likes: 0,
     });
+    const subs = await db('subscriptions', 'GET', null,
+      `?coach_id=eq.${coachId}&status=eq.active&select=user_id`
+    ).catch(() => []);
+    for (const sub of subs) {
+      if (sub.user_id !== req.session.user_id) {
+        await createNotification(sub.user_id, 'user', 'community_post', 'New community post', content.slice(0, 80));
+      }
+    }
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to create post' });
@@ -1236,6 +1282,12 @@ app.post('/api/webhook', express.raw({ type: '*/*' }), async (req, res) => {
         { status: result.status },
         `?id=eq.${result.subscriptionId}`
       );
+      if (result.status === 'active') {
+        const sub = await db('subscriptions', 'GET', null, `?id=eq.${result.subscriptionId}&select=coach_id`).catch(() => []);
+        if (sub?.[0]?.coach_id) {
+          await createNotification(sub[0].coach_id, 'coach', 'new_subscriber', 'New subscriber!', 'A new client joined your program.');
+        }
+      }
     }
     res.json({ received: true });
   } catch (e) {
@@ -1760,6 +1812,44 @@ app.delete('/api/coach/account', requireAuth, requireCoach, async (req, res) => 
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+// GET /api/notifications
+app.get('/api/notifications', requireAuth, async (req, res) => {
+  try {
+    const recipientId = req.session.coach_id || req.session.user_id;
+    const recipientType = req.session.type === 'coach' ? 'coach' : 'user';
+    const notifs = await db('notifications', 'GET', null,
+      `?recipient_id=eq.${recipientId}&recipient_type=eq.${recipientType}&order=created_at.desc&limit=20&select=*`
+    );
+    res.json(notifs || []);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// PATCH /api/notifications/read-all
+app.patch('/api/notifications/read-all', requireAuth, async (req, res) => {
+  try {
+    const recipientId = req.session.coach_id || req.session.user_id;
+    const recipientType = req.session.type === 'coach' ? 'coach' : 'user';
+    await db('notifications', 'PATCH', { is_read: true },
+      `?recipient_id=eq.${recipientId}&recipient_type=eq.${recipientType}&is_read=eq.false`
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to mark read' });
+  }
+});
+
+// PATCH /api/notifications/:id/read
+app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
+  try {
+    await db('notifications', 'PATCH', { is_read: true }, `?id=eq.${req.params.id}`);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to mark read' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });
