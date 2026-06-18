@@ -1899,7 +1899,8 @@ app.patch('/api/dm/read-coach', requireAuth, requireCoach, async (req, res) => {
 // GET /api/coaches/ranked — sorted by score for homepage
 app.get('/api/coaches/ranked', async (req, res) => {
   try {
-    let query = '?is_active=eq.true&is_approved=eq.true&select=id,name,slug,photo,banner,sport,tagline,plan_price,years_experience,location,rating,seo_score,subscriber_count';
+    console.log('Ranked endpoint hit');
+    let query = '?is_active=eq.true&is_approved=eq.true&select=id,name,slug,photo,banner,sport,tagline,plan_price,years_experience,location,rating,seo_score';
     const coaches = await db('coaches', 'GET', null, query);
     const enriched = await Promise.all((coaches || []).map(async (coach) => {
       const subs = await db('subscriptions', 'GET', null, `?coach_id=eq.${coach.id}&status=eq.active&select=id`);
