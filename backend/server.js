@@ -250,11 +250,10 @@ app.post('/api/coach/signup', async (req, res) => {
       is_approved: false,
       ...rest,
     });
+
     const coach = Array.isArray(coaches) ? coaches[0] : coaches;
     // Generate SEO slug
     await db('coaches', 'PATCH', { slug: generateSlug(name, coach.id) }, `?id=eq.${coach.id}`);
-
-    const coach = Array.isArray(coaches) ? coaches[0] : coaches;
     const token = crypto.randomBytes(32).toString('hex');
     await db('sessions', 'POST', {
       coach_id: coach.id,
