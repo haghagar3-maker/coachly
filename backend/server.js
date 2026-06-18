@@ -68,6 +68,10 @@ async function db(table, method = 'GET', body = null, query = '') {
   if (res.status === 204) return {};
   return res.json().catch(() => ({}));
 }
+function generateSlug(name, id) {
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `${base}-${id.slice(0, 6)}`;
+}
 // ─────────────────────────────────────────────
 // NOTIFICATION HELPER
 // ─────────────────────────────────────────────
@@ -168,9 +172,13 @@ app.get('/api/coaches', async (req, res) => {
 });
 
 // GET /api/coach/:id — public coach profile
-app.get('/api/coach/:coachPublicId([0-9a-f-]{36})', async (req, res) => {
+app.get('/api/coach/:identifier', async (req, res) => {
   try {
-    const coaches = await db('coaches', 'GET', null, `?id=eq.${req.params.coachPublicId}&select=*`);
+    const { identifier } = req.params;
+    // Support both UUID and slug
+    const isUUID = /^[0-9a-f-]{36}$/.test(identifier);
+    const query = isUUID ? `?id=eq.${identifier}&select=*` : `?slug=eq.${identifier}&select=*`;
+    const coaches = await db('coaches', 'GET', null, query);
     if (!coaches || coaches.length === 0) return res.status(404).json({ error: 'Coach not found' });
     const coach = coaches[0];
     if (!coach.is_approved || !coach.is_active) return res.status(404).json({ error: 'Coach not found' });
@@ -242,6 +250,9 @@ app.post('/api/coach/signup', async (req, res) => {
       is_approved: false,
       ...rest,
     });
+    const coach = Array.isArray(coaches) ? coaches[0] : coaches;
+    // Generate SEO slug
+    await db('coaches', 'PATCH', { slug: generateSlug(name, coach.id) }, `?id=eq.${coach.id}`);
 
     const coach = Array.isArray(coaches) ? coaches[0] : coaches;
     const token = crypto.randomBytes(32).toString('hex');
@@ -321,6 +332,21 @@ app.get('/api/coach/me', requireAuth, requireCoach, async (req, res) => {
 app.patch('/api/coach/profile', requireAuth, requireCoach, async (req, res) => {
   try {
     const { password_hash: _, email: __, ...updates } = req.body;
+    // Calculate SEO score
+    let seoScore = 0;
+    const merged = { ...updates };
+    if (merged.name) seoScore += 10;
+    if (merged.photo) seoScore += 15;
+    if (merged.banner) seoScore += 10;
+    if (merged.bio && merged.bio.length > 100) seoScore += 20;
+    if (merged.tagline) seoScore += 10;
+    if (merged.sport) seoScore += 10;
+    if (merged.location) seoScore += 5;
+    if (merged.years_experience) seoScore += 5;
+    if (merged.credentials) seoScore += 5;
+    if (merged.coaching_philosophy) seoScore += 5;
+    if (merged.testimonials && merged.testimonials.length > 0) seoScore += 5;
+    updates.seo_score = seoScore;
     const result = await db('coaches', 'PATCH', updates, `?id=eq.${req.session.coach_id}`);
     const coach = Array.isArray(result) ? result[0] : result;
     const { password_hash: _h, ...safeCoach } = (coach || {});
@@ -1869,6 +1895,47 @@ app.patch('/api/dm/read-coach', requireAuth, requireCoach, async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to mark read' });
+  }
+});
+// GET /api/coaches/ranked — sorted by score for homepage
+app.get('/api/coaches/ranked', async (req, res) => {
+  try {
+    let query = '?is_active=eq.true&is_approved=eq.true&select=id,name,slug,photo,banner,sport,tagline,plan_price,years_experience,location,rating,seo_score,subscriber_count';
+    const coaches = await db('coaches', 'GET', null, query);
+    const enriched = await Promise.all((coaches || []).map(async (coach) => {
+      const subs = await db('subscriptions', 'GET', null, `?coach_id=eq.${coach.id}&status=eq.active&select=id`);
+      const subCount = subs.length;
+      const rating = parseFloat(coach.rating) || 0;
+      const seoScore = coach.seo_score || 0;
+      const score = subCount * 3 + rating * 20 + seoScore;
+      return { ...coach, subscriber_count: subCount, _score: score };
+    }));
+    enriched.sort((a, b) => b._score - a._score);
+    res.json(enriched);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch ranked coaches' });
+  }
+});
+
+// GET /sitemap.xml — for Google indexing
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const coaches = await db('coaches', 'GET', null, '?is_active=eq.true&is_approved=eq.true&select=slug,id,updated_at');
+    const base = process.env.FRONTEND_URL || 'https://coachly-two.vercel.app';
+    const urls = (coaches || []).map(c => `
+  <url>
+    <loc>${base}/coach/${c.slug || c.id}</loc>
+    <lastmod>${(c.updated_at || new Date().toISOString()).slice(0, 10)}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`).join('');
+    res.set('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${base}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>${urls}
+</urlset>`);
+  } catch (e) {
+    res.status(500).send('Sitemap error');
   }
 });
 app.listen(PORT, () => {

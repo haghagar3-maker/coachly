@@ -60,6 +60,10 @@ export function getCoach(id) {
   return request(`/api/coach/${id}`);
 }
 
+export function getRankedCoaches() {
+  return request('/api/coaches/ranked');
+}
+
 export function getCategories() {
   return request('/api/categories');
 }

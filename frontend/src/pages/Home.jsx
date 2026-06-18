@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCategories, getCoaches } from '../api';
+import { getCategories, getCoaches, getRankedCoaches } from '../api';
 import EmptyState from '../components/EmptyState';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
@@ -123,6 +123,11 @@ function CoachCard({ coach, onView, delay = 0 }) {
           {coach.subscriber_count != null && (
             <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
               <strong style={{ color: 'var(--dark)' }}>{coach.subscriber_count}</strong> subscribers
+            </span>
+          )}
+          {coach.rating > 0 && (
+            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
+              ★ <strong style={{ color: 'var(--dark)' }}>{coach.rating}</strong>
             </span>
           )}
           {coach.years_experience != null && (
@@ -294,7 +299,7 @@ export default function Home() {
 
   useEffect(() => {
     setLoadingCoaches(true);
-    getCoaches(activeCategory)
+    (activeCategory ? getCoaches(activeCategory) : getRankedCoaches())
       .then(setCoaches)
       .catch(() => { setCoaches([]); showToast('Failed to load coaches', 'error'); })
       .finally(() => setLoadingCoaches(false));
@@ -471,7 +476,7 @@ export default function Home() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
             {coaches.map((coach, i) => (
-              <CoachCard key={coach.id} coach={coach} onView={id => navigate(`/coach/${id}`)} delay={i * 60} />
+              <CoachCard key={coach.id} coach={coach} onView={id => navigate(`/coach/${coach.slug || id}`)} delay={i * 60} />
             ))}
           </div>
         )}

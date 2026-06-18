@@ -265,6 +265,33 @@ export default function Store() {
   function onAuthSuccess(user) { setCurrentUser(user); setShowAuth(false); setShowIntake(true); }
   function onSubDone() { setShowIntake(false); setAlreadySubbed(true); showToast('Subscription active! Welcome aboard.', 'success'); setTimeout(() => navigate('/dashboard'), 1500); }
 
+  // Dynamic SEO meta tags
+  useEffect(() => {
+    if (!coach) return;
+    document.title = `${coach.name} — ${coach.sport || 'Fitness'} Coach | Coachly`;
+    const setMeta = (name, content) => {
+      let el = document.querySelector(`meta[name="${name}"]`) || document.querySelector(`meta[property="${name}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(name.startsWith('og:') ? 'property' : 'name', name); document.head.appendChild(el); }
+      el.setAttribute('content', content);
+    };
+    const desc = coach.tagline || coach.bio?.slice(0, 155) || `Train with ${coach.name} on Coachly`;
+    setMeta('description', desc);
+    setMeta('og:title', `${coach.name} — ${coach.sport || 'Coach'} | Coachly`);
+    setMeta('og:description', desc);
+    setMeta('og:image', coach.photo || coach.banner || '');
+    setMeta('og:url', window.location.href);
+    setMeta('og:type', 'profile');
+    // JSON-LD structured data
+    const existing = document.getElementById('coach-jsonld');
+    if (existing) existing.remove();
+    const script = document.createElement('script');
+    script.id = 'coach-jsonld';
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Person', name: coach.name, jobTitle: `${coach.sport || 'Fitness'} Coach`, description: desc, image: coach.photo || '', url: window.location.href, aggregateRating: coach.rating ? { '@type': 'AggregateRating', ratingValue: coach.rating, bestRating: 5 } : undefined });
+    document.head.appendChild(script);
+    return () => { document.title = 'Coachly'; script.remove(); };
+  }, [coach]);
+
   const accentColor = coach?.store_color || '#C8FF00';
   const isDarkAccent = accentColor === '#C8FF00' || accentColor === '#ffffff';
 

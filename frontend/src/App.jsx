@@ -68,6 +68,7 @@ export default function App() {
 
         {/* Coach store — public, must come after /coach/signup and /coach/login */}
         <Route path="/coach/:id" element={<Store />} />
+        <Route path="/c/:slug" element={<Store />} />
 
         {/* Protected — coach */}
         <Route
