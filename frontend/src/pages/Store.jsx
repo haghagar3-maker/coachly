@@ -368,7 +368,10 @@ export default function Store() {
           {socials.length > 0 && (
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 8px', flexShrink: 0 }}>
               {socials.map(s => (
-                <a key={s.key} href={coach[s.key]} target="_blank" rel="noopener noreferrer" style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#f4f4f4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', textDecoration: 'none', border: '1px solid #eee' }} title={s.label}>
+                <a key={s.key} href={coach[s.key]} target="_blank" rel="noopener noreferrer" title={s.label}
+                  style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#fff', flexShrink: 0,
+                    background: s.key === 'instagram' ? 'radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%)' : s.key === 'tiktok' ? '#010101' : s.key === 'youtube' ? '#FF0000' : '#000',
+                  }}>
                   {s.icon}
                 </a>
               ))}
@@ -618,7 +621,10 @@ export default function Store() {
                 <div style={{ fontSize: '11px', fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>Follow {coach.name?.split(' ')[0]}</div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {socials.map(s => (
-                    <a key={s.key} href={coach[s.key]} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '100px', background: '#f4f4f4', fontSize: '12px', fontWeight: '600', color: '#333', textDecoration: 'none', border: '1px solid #eee' }}>
+                    <a key={s.key} href={coach[s.key]} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '100px', fontSize: '12px', fontWeight: '700', color: '#fff', textDecoration: 'none',
+                        background: s.key === 'instagram' ? 'radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%)' : s.key === 'tiktok' ? '#010101' : s.key === 'youtube' ? '#FF0000' : '#000',
+                      }}>
                       {s.icon} {s.label}
                     </a>
                   ))}
