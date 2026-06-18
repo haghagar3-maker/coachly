@@ -795,9 +795,11 @@ app.post('/api/user/subscribe', requireAuth, requireUser, async (req, res) => {
     });
 
     if (skipPayment) {
-      // Activate immediately (no payment provider connected)
       await db('subscriptions', 'PATCH', { status: 'active' }, `?id=eq.${sub.id}`);
       sub.status = 'active';
+      // Keep subscriber_count in sync
+      const activeSubs = await db('subscriptions', 'GET', null, `?coach_id=eq.${coachId}&status=eq.active&select=id`);
+      await db('coaches', 'PATCH', { subscriber_count: activeSubs.length }, `?id=eq.${coachId}`);
       await createNotification(
         coachId,
         'coach',
@@ -1900,16 +1902,15 @@ app.patch('/api/dm/read-coach', requireAuth, requireCoach, async (req, res) => {
 app.get('/api/coaches/ranked', async (req, res) => {
   try {
     console.log('Ranked endpoint hit');
-    let query = '?is_active=eq.true&is_approved=eq.true&select=id,name,slug,photo,banner,sport,tagline,plan_price,years_experience,location,rating,seo_score';
+    let query = '?is_active=eq.true&is_approved=eq.true&select=id,name,slug,photo,banner,sport,tagline,plan_price,years_experience,location,rating,seo_score,subscriber_count';
     const coaches = await db('coaches', 'GET', null, query);
-    const enriched = await Promise.all((coaches || []).map(async (coach) => {
-      const subs = await db('subscriptions', 'GET', null, `?coach_id=eq.${coach.id}&status=eq.active&select=id`);
-      const subCount = subs.length;
+    const enriched = (coaches || []).map(coach => {
+      const subCount = coach.subscriber_count || 0;
       const rating = parseFloat(coach.rating) || 0;
       const seoScore = coach.seo_score || 0;
       const score = subCount * 3 + rating * 20 + seoScore;
-      return { ...coach, subscriber_count: subCount, _score: score };
-    }));
+      return { ...coach, _score: score };
+    });
     enriched.sort((a, b) => b._score - a._score);
     res.json(enriched);
   } catch (e) {
