@@ -26,6 +26,7 @@ export default function CoachDashboard() {
   const [coach, setCoach] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [msgUnread, setMsgUnread] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -50,7 +51,27 @@ export default function CoachDashboard() {
     navigate('/coach/login');
   }
 
-  function navTo(s) { setActiveSection(s); setSidebarOpen(false); }
+  function navTo(s) {
+    setActiveSection(s);
+    setSidebarOpen(false);
+    if (s === 'messages') setMsgUnread(0);
+  }
+
+  useEffect(() => {
+    async function pollUnread() {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/notifications`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        });
+        const data = await res.json();
+        const unread = Array.isArray(data) ? data.filter(n => !n.is_read && n.type === 'new_dm').length : 0;
+        setMsgUnread(unread);
+      } catch {}
+    }
+    pollUnread();
+    const interval = setInterval(pollUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -102,13 +123,22 @@ export default function CoachDashboard() {
           {[
             { id: 'overview', label: 'Overview', icon: <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
             { id: 'clients',  label: 'Clients',  icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-            { id: 'messages', label: 'Messages', icon: <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+            { id: 'messages', label: 'Messages', icon: <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, badge: msgUnread },
             { id: 'ai',        label: 'AI Conversations', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> },
 { id: 'nutrition', label: 'Client Nutrition',  icon: <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg> },
 { id: 'strategy',  label: 'Client Strategy',   icon: <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
           ].map(({ id, label, icon }) => (
             <button key={id} className={`nav-item${activeSection === id ? ' active' : ''}`} onClick={() => navTo(id)}>
               {icon}{label}
+              {badge > 0 && (
+                <span style={{
+                  marginLeft: 'auto', minWidth: '18px', height: '18px', borderRadius: '9px',
+                  background: '#ff4d1c', color: '#fff', fontSize: '10px', fontWeight: '800',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px',
+                }}>
+                  {badge > 9 ? '9+' : badge}
+                </span>
+              )}
             </button>
           ))}
 
@@ -345,7 +375,17 @@ function SectionMessages({ coach }) {
     getCoachDirectMessages().then(setThreads).catch(console.error).finally(() => setLoading(false));
   }, []);
 
-  function openThread(t) { setActiveThread(t); setMessages([...(t.messages || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))); }
+  function openThread(t) {
+    setActiveThread(t);
+    setMessages([...(t.messages || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+    // Mark as read in DB
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/dm/read-coach?userId=${t.user_id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+    }).catch(() => {});
+    // Clear red dot locally
+    setThreads(prev => prev.map(th => th.user_id === t.user_id ? { ...th, unread_count: 0 } : th));
+  }
 
   async function send() {
     if (!input.trim() || !activeThread) return;

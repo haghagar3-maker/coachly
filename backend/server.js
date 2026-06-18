@@ -71,7 +71,7 @@ async function db(table, method = 'GET', body = null, query = '') {
 // ─────────────────────────────────────────────
 // NOTIFICATION HELPER
 // ─────────────────────────────────────────────
-async function createNotification(recipientId, recipientType, type, title, body = null) {
+async function createNotification(recipientId, recipientType, type, title, body = null, senderName = null, senderPhoto = null) {
   try {
     await db('notifications', 'POST', {
       recipient_id: recipientId,
@@ -79,6 +79,8 @@ async function createNotification(recipientId, recipientType, type, title, body 
       type,
       title,
       body,
+      sender_name: senderName,
+      sender_photo: senderPhoto,
     });
   } catch (e) {
     // non-blocking — never crash the main request
@@ -436,12 +438,15 @@ app.post('/api/coach/direct-message', requireAuth, requireCoach, async (req, res
       content,
       is_read: false,
     });
+    const dmCoach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
     await createNotification(
       userId,
       'user',
       'coach_dm',
-      'Message from your coach',
-      content.slice(0, 80)
+      dmCoach?.name || 'Your coach',
+      content.slice(0, 80),
+      dmCoach?.name || null,
+      dmCoach?.photo || null
     );
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
@@ -961,12 +966,15 @@ app.post('/api/dm', requireAuth, requireUser, async (req, res) => {
       content,
       is_read: false,
     });
+    const dmUser = await db('users', 'GET', null, `?id=eq.${req.session.user_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
     await createNotification(
       coachId,
       'coach',
       'new_dm',
-      'New message from client',
-      content.slice(0, 80)
+      dmUser?.name || 'A client',
+      content.slice(0, 80),
+      dmUser?.name || null,
+      dmUser?.photo || null
     );
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
@@ -1121,7 +1129,8 @@ app.post('/api/posts', requireAuth, requireUser, async (req, res) => {
     ).catch(() => []);
     for (const sub of subs) {
       if (sub.user_id !== req.session.user_id) {
-        await createNotification(sub.user_id, 'user', 'community_post', 'New community post', content.slice(0, 80));
+        const postUser = await db('users', 'GET', null, `?id=eq.${req.session.user_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+        await createNotification(sub.user_id, 'user', 'community_post', postUser?.name || 'Community', content.slice(0, 80), postUser?.name || null, postUser?.photo || null);
       }
     }
     res.json(Array.isArray(result) ? result[0] : result);
@@ -1849,7 +1858,19 @@ app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed to mark read' });
   }
 });
-
+// PATCH /api/dm/read-coach — mark coach-side DMs as read
+app.patch('/api/dm/read-coach', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { userId } = req.query;
+    await db('direct_messages', 'PATCH',
+      { is_read: true },
+      `?coach_id=eq.${req.session.coach_id}&user_id=eq.${userId}&sender_type=eq.user`
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to mark read' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });

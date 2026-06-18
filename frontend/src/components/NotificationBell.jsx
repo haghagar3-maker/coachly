@@ -1,6 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 
 const API = import.meta.env.VITE_API_URL || '';
+const AVATAR_COLORS = ['#E8633A','#2a7a4f','#5a5ac8','#c94e2a','#2d6b47','#8b5cf6','#0891b2'];
+function senderColor(str) {
+  if (!str) return AVATAR_COLORS[0];
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+function initials(name) {
+  if (!name) return '?';
+  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+}
 
 export default function NotificationBell({ token, mutedTypes = [], onMuteToggle }) {
   const [notifs, setNotifs] = useState([]);
@@ -116,13 +127,17 @@ export default function NotificationBell({ token, mutedTypes = [], onMuteToggle 
                 borderBottom: '1px solid var(--border)',
               }}>
                 <div style={{
-                  width: '32px', height: '32px', borderRadius: '8px',
-                  background: 'var(--border)', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', flexShrink: 0,
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  background: n.sender_photo ? 'transparent' : senderColor(n.sender_name),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, overflow: 'hidden',
                 }}>
-                  <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                    {typeLabels[n.type] || 'Note'}
-                  </span>
+                  {n.sender_photo
+                    ? <img src={n.sender_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <span style={{ fontSize: '11px', fontWeight: '700', color: '#fff' }}>
+                        {initials(n.sender_name || typeLabels[n.type] || '?')}
+                      </span>
+                  }
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '12px', fontWeight: n.is_read ? '500' : '700', marginBottom: '2px' }}>{n.title}</div>
