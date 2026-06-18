@@ -70,7 +70,7 @@ function CoachCard({ coach, onView, delay = 0 }) {
         cursor: 'pointer',
         animationDelay: `${delay}ms`,
       }}
-      onClick={() => onView(coach.id)}
+      onClick={() => onView(coach.slug || coach.id)}
     >
       <div style={{
         height: '120px',
