@@ -536,7 +536,26 @@ app.post('/api/coach/content', requireAuth, requireCoach, async (req, res) => {
       ...req.body,
       coach_id: req.session.coach_id,
     });
-    res.json(Array.isArray(result) ? result[0] : result);
+    const content = Array.isArray(result) ? result[0] : result;
+
+    // Notify all active subscribers
+    const subs = await db('subscriptions', 'GET', null,
+      `?coach_id=eq.${req.session.coach_id}&status=eq.active&select=user_id`
+    ).catch(() => []);
+    const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+    for (const sub of subs) {
+      await createNotification(
+        sub.user_id,
+        'user',
+        'new_content',
+        coach?.name || 'Your coach',
+        `New content: ${req.body.title || 'Untitled'}`,
+        coach?.name || null,
+        coach?.photo || null
+      );
+    }
+
+    res.json(content);
   } catch (e) {
     res.status(500).json({ error: 'Failed to create content' });
   }
@@ -2131,6 +2150,20 @@ app.get('/api/meetings', requireAuth, requireUser, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch meetings' });
   }
 });
+// PATCH /api/chat/seen — mark all flagged messages as seen for this client+coach
+app.patch('/api/chat/seen', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { coachId } = req.body;
+    if (!coachId) return res.status(400).json({ error: 'coachId required' });
+    await db('messages', 'PATCH', { seen_by_user: true },
+      `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&flagged=eq.true&seen_by_user=eq.false`
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to mark seen' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });

@@ -1549,6 +1549,10 @@ export default function UserDashboard() {
   // DM unread badge
   const [dmUnread, setDmUnread] = useState(0);
   const [sidebarMeetings, setSidebarMeetings] = useState([]);
+  const [sessionsUnread, setSessionsUnread] = useState(0);
+  const [communityUnread, setCommunityUnread] = useState(0);
+  const [contentUnread, setContentUnread] = useState(0);
+  const [chatFlaggedUnread, setChatFlaggedUnread] = useState(0);
   const [mutedTypes, setMutedTypes] = useState(() => {
     try { return JSON.parse(localStorage.getItem('coachly_muted') || '[]'); } catch { return []; }
   });
@@ -1603,10 +1607,76 @@ export default function UserDashboard() {
     }).catch(() => {});
   }, [coach, section]);
 
+  // Poll all notification-based badges (sessions, community, content)
+  useEffect(() => {
+    async function pollBadges() {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/notifications`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        });
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setSessionsUnread(list.filter(n => !n.is_read && (n.type === 'new_session' || n.type === 'session_cancelled')).length);
+        setCommunityUnread(list.filter(n => !n.is_read && n.type === 'community_post').length);
+        setContentUnread(list.filter(n => !n.is_read && n.type === 'new_content').length);
+      } catch {}
+    }
+    pollBadges();
+    const interval = setInterval(pollBadges, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // AI Coach flagged messages badge
+  useEffect(() => {
+    if (!coach) return;
+    getChatHistory(coach.id).then((msgs) => {
+      const flagged = (msgs || []).filter(m => m.flagged && !m.seen_by_user).length;
+      setChatFlaggedUnread(flagged);
+    }).catch(() => {});
+  }, [coach]);
+
   function navigate2(s) {
     if (s === 'switch-coach') { setSection('switch-coach'); return; }
     setSection(s);
     setSidebarOpen(false);
+    if (s === 'sessions') {
+      setSessionsUnread(0);
+      markBadgeRead('new_session', 'session_cancelled');
+    }
+    if (s === 'community') {
+      setCommunityUnread(0);
+      markBadgeRead('community_post');
+    }
+    if (s === 'content') {
+      setContentUnread(0);
+      markBadgeRead('new_content');
+    }
+    if (s === 'chat') {
+      setChatFlaggedUnread(0);
+      if (coach) {
+        fetch(`${import.meta.env.VITE_API_URL || ''}/api/chat/seen`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+          body: JSON.stringify({ coachId: coach.id }),
+        }).catch(() => {});
+      }
+    }
+  }
+
+  async function markBadgeRead(...types) {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/notifications`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      });
+      const data = await res.json();
+      const toMark = (Array.isArray(data) ? data : []).filter(n => !n.is_read && types.includes(n.type));
+      await Promise.all(toMark.map(n =>
+        fetch(`${import.meta.env.VITE_API_URL || ''}/api/notifications/${n.id}/read`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        }).catch(() => {})
+      ));
+    } catch {}
   }
 
   const activeSub = subscriptions.find((s) => s.coach_id === activeCoachId && s.status === 'active')
@@ -1618,7 +1688,13 @@ export default function UserDashboard() {
     coach: s.coach_id === activeCoachId ? coach : { id: s.coach_id, name: `Coach` },
   }));
 
-  const badges = { dm: dmUnread > 0 ? dmUnread : null };
+  const badges = {
+    dm: dmUnread > 0 ? dmUnread : null,
+    chat: chatFlaggedUnread > 0 ? chatFlaggedUnread : null,
+    sessions: sessionsUnread > 0 ? sessionsUnread : null,
+    community: communityUnread > 0 ? communityUnread : null,
+    content: contentUnread > 0 ? contentUnread : null,
+  };
 
   if (loading) {
     return (
