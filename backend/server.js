@@ -610,9 +610,9 @@ app.post('/api/coach/program', requireAuth, requireCoach, async (req, res) => {
 
 app.patch('/api/coach/ai-training', requireAuth, requireCoach, async (req, res) => {
   try {
-    const { ai_who, ai_method, ai_tone, ai_examples, ai_limits, ai_quick_updates, ai_docs } = req.body;
+    const { ai_who, ai_method, ai_tone, ai_examples, ai_limits, ai_quick_updates, ai_docs, ai_workout_strategy, ai_nutrition_strategy } = req.body;
     const result = await db('coaches', 'PATCH',
-      { ai_who, ai_method, ai_tone, ai_examples, ai_limits, ai_quick_updates, ai_docs },
+      { ai_who, ai_method, ai_tone, ai_examples, ai_limits, ai_quick_updates, ai_docs, ai_workout_strategy, ai_nutrition_strategy },
       `?id=eq.${req.session.coach_id}`
     );
     const coach = Array.isArray(result) ? result[0] : result;

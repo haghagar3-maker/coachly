@@ -1145,6 +1145,7 @@ function SectionTraining({ coach, setCoach }) {
     ai_limits: coach.ai_limits || '',
     ai_examples: coach.ai_examples || '',
     ai_workout_strategy: coach.ai_workout_strategy || '',
+    ai_nutrition_strategy: coach.ai_nutrition_strategy || '',
   });
   const [quickUpdate, setQuickUpdate] = useState('');
   const [quickType, setQuickType] = useState('Behavior');
@@ -1189,6 +1190,7 @@ function SectionTraining({ coach, setCoach }) {
     Method: form.ai_method.length > 100 ? 85 : Math.max(10, Math.floor(form.ai_method.length / 2)),
     Tone: form.ai_tone.length > 80 ? 80 : Math.max(10, Math.floor(form.ai_tone.length / 1.5)),
     Examples: form.ai_examples.length > 200 ? 90 : Math.max(5, Math.floor(form.ai_examples.length / 4)),
+    Nutrition: form.ai_nutrition_strategy.length > 100 ? 90 : Math.max(10, Math.floor(form.ai_nutrition_strategy.length / 2)),
     Limits: form.ai_limits.length > 80 ? 95 : Math.max(5, Math.floor(form.ai_limits.length / 1.5)),
   };
 
@@ -1198,6 +1200,7 @@ function SectionTraining({ coach, setCoach }) {
     { key: 'ai_tone', title: 'How you talk to clients', desc: 'Your tone, personality, expressions you use. The AI should sound like you — not like a generic chatbot.', placeholder: "I'm direct but supportive. I use 'we' not 'you should'…" },
     { key: 'ai_examples', title: 'Example conversations', desc: 'Paste 3–5 real conversations (or write examples). The AI learns your exact style from these.', placeholder: 'Client: I missed 3 days this week\nMe: Life happens. What day are we restarting?…' },
     { key: 'ai_workout_strategy', title: '🏋️ Workout program strategy', desc: 'How you build programs — exercises you prefer, sets/reps, rest times, weekly structure, progressions. The AI generates client programs based on this.', placeholder: 'I always start with compound lifts. 4 sets of 8-12 reps. 60-90s rest. Never 2 leg days back to back. Week 1-2 lighter, Week 3-4 heavier…' },
+    { key: 'ai_nutrition_strategy', title: '🍽️ Nutrition strategy', desc: 'How you set calories and macros — formulas you use, protein targets, foods you push or avoid, meal timing rules. The AI generates client meal plans based on this.', placeholder: 'I set calories at 14x bodyweight (lbs) for cutting, 16x for maintenance. Protein always 1g per lb bodyweight. Carbs around workouts. Avoid: processed sugar, fried foods. Push: lean protein, vegetables, whole grains. 4 meals/day, last meal 3hrs before bed…' },
     { key: 'ai_limits', title: 'What the AI must never say', desc: 'Hard limits — things that go against your method, could harm clients, or that you want to always handle personally.', placeholder: 'Never recommend cutting below 1600 calories…' },
   ];
 
