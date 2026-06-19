@@ -209,9 +209,9 @@ CLIENT WEIGHT: ${user.weight || 'Not provided'}
 FOOD RESTRICTIONS: ${user.food_restrictions || 'None'}
 CALORIE TARGET: ${user.calorie_target || (hasStrategy ? 'Calculate from coach strategy above' : '2000')} kcal
 
-NON-NEGOTIABLE RULE: Breakfast must NEVER be "not applicable", skipped, or merged into another meal — even if the coach's strategy says fewer meals per day or doesn't mention breakfast. Breakfast must always be a real, light, healthy item (e.g. a protein shake, eggs, yogurt, or a healthy juice). If the coach's strategy implies fewer total meals, shrink lunch/snack/dinner portions so breakfast still fits inside the same total calorie and macro target — never add extra calories on top.
+MEAL INCLUSION RULE: By default, breakfast must always be a real, varied, light, healthy item — vary it across days (e.g. fresh juice, smoothie, yogurt with fruit, protein shake, eggs) — never "not applicable" or skipped, even if the coach's strategy mentions fewer total meals per day without naming which meal to drop. The ONLY exception: if the coach's strategy EXPLICITLY names a meal to skip (e.g. "no breakfast", "skip lunch", "no snacks allowed", "skip dinner"), then mark that exact named meal as "Not Applicable" with a short reason, and do not invent a replacement for it. Snacks, when included, should also be varied and healthy (e.g. fruit, nuts, yogurt, veggies with hummus) rather than the same item every day. If meals are reduced (whether by explicit coach instruction or to fit calories), shrink portions of the remaining meals so the total still matches the coach's exact calorie and macro target — never add extra calories on top.
 
-Generate a realistic, practical, tasty meal plan that fits these parameters exactly, always including a real breakfast as described above.${hasStrategy ? ' Strictly follow the coach\'s exact strategy above for calories, macros, and food choices, while still respecting the breakfast rule.' : ''}`;
+Generate a realistic, practical, tasty meal plan that fits these parameters exactly, applying the meal inclusion rule above.${hasStrategy ? ' Strictly follow the coach\'s exact strategy for calories, macros, and food choices, while still respecting the meal inclusion rule.' : ''}`;
 
   const raw = await callGroq(system, 'Generate today\'s meal plan.', 500);
 
