@@ -167,7 +167,7 @@ app.get('/api/coaches', async (req, res) => {
 
 // GET /api/coach/:id — public coach profile
 app.get('/api/coach/:identifier', async (req, res, next) => {
-  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'account'];
+  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'account', 'meeting', 'meetings'];
   if (reserved.includes(req.params.identifier)) return next();
   try {
     const { identifier } = req.params;
