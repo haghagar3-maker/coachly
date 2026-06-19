@@ -1480,77 +1480,7 @@ function SectionSessions({ coach }) {
     </div>
   );
 }
-  const [meetings, setMeetings] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getMeetings()
-      .then(setMeetings)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <LoadingSkeleton type="list" />;
-
-  const now = Date.now();
-  const filtered = meetings.filter(m => m.coach_id === coach?.id);
-  const upcoming = filtered.filter(m => m.status !== 'cancelled' && new Date(m.scheduled_at).getTime() >= now);
-  const past = filtered.filter(m => m.status === 'cancelled' || new Date(m.scheduled_at).getTime() < now);
-
-  function fmtDate(ts) {
-    return new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' }) +
-      ' · ' + new Date(ts).toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' });
-  }
-
-  return (
-    <div>
-      <Section title="Upcoming sessions">
-        {upcoming.length === 0 ? (
-          <EmptyState message="No upcoming sessions scheduled. Your coach will book one when ready." />
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {upcoming.map((m) => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', background: 'var(--card)', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                <div className="chat-av" style={{ background: coach?.photo ? 'transparent' : avatarColor(coach?.id), flexShrink: 0 }}>
-                  {coach?.photo
-                    ? <img src={coach.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                    : initials(coach?.name)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '2px' }}>{m.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{fmtDate(m.scheduled_at)}</div>
-                  {m.notes && <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>{m.notes}</div>}
-                </div>
-                {m.link && (
-                  <a href={m.link} target="_blank" rel="noopener noreferrer" className="btn-primary btn-sm" style={{ flexShrink: 0 }}>
-                    Join call
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
-
-      <Section title="Past sessions">
-        {past.length === 0 ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No past sessions yet.</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {past.map((m) => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', background: 'var(--card)', borderRadius: '10px', border: '1px solid var(--border)', opacity: 0.6 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600' }}>{m.title}{m.status === 'cancelled' ? ' — Cancelled' : ''}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{fmtDate(m.scheduled_at)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
-    </div>
-  );
-}
+  
 
 // ═══════════════════════════════════════════════════════════════
 // SUBSCRIPTION SWITCHER (coach picker)
