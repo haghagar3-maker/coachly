@@ -1367,9 +1367,11 @@ function SectionTraining({ coach, setCoach }) {
 function SectionNutrition({ coach }) {
   const [clients, setClients] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [meals, setMeals] = useState([]);
+  const [tab, setTab] = useState('plans'); // 'plans' | 'scans'
+  const [mealPlans, setMealPlans] = useState([]);
+  const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMeals, setLoadingMeals] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     getCoachClients().then(setClients).catch(console.error).finally(() => setLoading(false));
@@ -1377,53 +1379,131 @@ function SectionNutrition({ coach }) {
 
   async function viewClient(c) {
     setSelected(c);
-    setLoadingMeals(true);
+    setTab('plans');
+    await loadPlans(c);
+  }
+
+  async function loadPlans(c) {
+    setLoadingDetail(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/client-meal-plans?userId=${c.user_id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      });
+      const data = await res.json();
+      setMealPlans(Array.isArray(data) ? data : []);
+    } catch { setMealPlans([]); }
+    finally { setLoadingDetail(false); }
+  }
+
+  async function loadScans(c) {
+    setLoadingDetail(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/client-nutrition?userId=${c.user_id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
       });
       const data = await res.json();
-      setMeals(Array.isArray(data) ? data : []);
-    } catch { setMeals([]); }
-    finally { setLoadingMeals(false); }
+      setScans(Array.isArray(data) ? data : []);
+    } catch { setScans([]); }
+    finally { setLoadingDetail(false); }
+  }
+
+  function switchTab(t) {
+    setTab(t);
+    if (t === 'scans' && scans.length === 0) loadScans(selected);
+    if (t === 'plans' && mealPlans.length === 0) loadPlans(selected);
   }
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
 
+  const today = new Date().toISOString().slice(0, 10);
+
   if (selected) return (
     <div>
       <button className="btn-secondary" onClick={() => setSelected(null)} style={{ marginBottom: '16px' }}>← Back</button>
-      <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>{selected.user?.name || '?'} — Food Scan History</div>
-      {loadingMeals ? (
+      <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>{selected.user?.name || '?'} — Nutrition</div>
+      <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '16px' }}>Audit the AI's meal plans against your nutrition strategy, or review food scan history.</div>
+
+      {/* Tab toggle */}
+      <div style={{ display: 'flex', background: 'var(--card)', borderRadius: '10px', padding: '3px', border: '1px solid var(--border)', marginBottom: '20px', width: 'fit-content' }}>
+        {[['plans', 'AI Meal Plans'], ['scans', 'Food Scans']].map(([v, l]) => (
+          <button key={v} onClick={() => switchTab(v)} style={{
+            padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+            background: tab === v ? 'var(--dark)' : 'transparent',
+            color: tab === v ? '#fff' : 'var(--muted)',
+            fontFamily: 'inherit',
+          }}>{l}</button>
+        ))}
+      </div>
+
+      {loadingDetail ? (
         <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>
-      ) : meals.length === 0 ? (
-        <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No food scans yet for this client.</div>
+      ) : tab === 'plans' ? (
+        mealPlans.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No AI meal plans generated yet for this client.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {mealPlans.map((p, i) => {
+              const isToday = p.date === today;
+              return (
+                <div key={i} style={{
+                  background: 'var(--card)', borderRadius: '14px', border: isToday ? '2px solid var(--lime)' : '1px solid var(--border)',
+                  padding: '16px 18px', position: 'relative',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700' }}>
+                      {new Date(p.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {isToday && <span style={{ marginLeft: '8px', fontSize: '10px', fontWeight: '800', background: 'rgba(200,255,0,0.15)', color: 'var(--lime)', padding: '2px 8px', borderRadius: '100px' }}>TODAY</span>}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{p.total_calories || '—'} kcal · {p.total_protein || '—'} protein</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {[['Breakfast', p.breakfast, p.breakfast_status], ['Lunch', p.lunch, p.lunch_status], ['Snack', p.snack, p.snack_status], ['Dinner', p.dinner, p.dinner_status]].map(([label, val, status]) => (
+                      <div key={label} style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
+                        <span style={{ fontWeight: '700', color: 'var(--muted)', minWidth: '64px', flexShrink: 0 }}>{label}</span>
+                        <span style={{ color: val && /not applicable/i.test(val) ? 'var(--muted)' : 'var(--dark)', fontStyle: val && /not applicable/i.test(val) ? 'italic' : 'normal' }}>{val || '—'}</span>
+                        {status && status !== 'pending' && (
+                          <span style={{ marginLeft: 'auto', fontWeight: '700', color: status === 'followed' ? '#2ecc6a' : '#ff4d1c', flexShrink: 0 }}>
+                            {status === 'followed' ? '✓' : '✗'}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {meals.map((m, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-              {m.image_base64
-                ? <img src={m.image_base64} alt="" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
-                : <div style={{ width: 52, height: 52, borderRadius: '10px', background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🍽️</div>}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '3px' }}>{m.meal_name || 'Meal'}</div>
-                <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>{m.calories} kcal · {m.protein}g protein · {m.carbs}g carbs · {m.fat}g fat</div>
-                {m.coach_comment && <div style={{ fontSize: '12px', color: 'var(--muted)', fontStyle: 'italic' }}>"{m.coach_comment}"</div>}
+        scans.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No food scans yet for this client.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {scans.map((m, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                {m.image_base64
+                  ? <img src={m.image_base64} alt="" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+                  : <div style={{ width: 52, height: 52, borderRadius: '10px', background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🍽️</div>}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '3px' }}>{m.meal_name || 'Meal'}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>{m.calories} kcal · {m.protein}g protein · {m.carbs}g carbs · {m.fat}g fat</div>
+                  {m.coach_comment && <div style={{ fontSize: '12px', color: 'var(--muted)', fontStyle: 'italic' }}>"{m.coach_comment}"</div>}
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: m.health_score >= 7 ? '#2ecc6a' : '#ff4d1c' }}>{m.health_score}/10</div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{timeAgo(m.created_at)}</div>
+                </div>
               </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: m.health_score >= 7 ? '#2ecc6a' : '#ff4d1c' }}>{m.health_score}/10</div>
-                <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{timeAgo(m.created_at)}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
     </div>
   );
 
   return (
     <div>
-      <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>Click a client to see their food scan history and AI nutrition comments.</div>
+      <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>Click a client to audit their AI-generated meal plans or food scan history.</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {clients.length === 0 ? (
           <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No clients yet.</div>
