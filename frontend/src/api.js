@@ -263,6 +263,11 @@ export function getWorkoutLogs(coachId) {
   return request(`/api/workout-logs?coachId=${coachId}`);
 }
 
+// ─── MEETINGS / SESSIONS ────────────────────────────────────────
+export function getMeetings() {
+  return request('/api/meetings');
+}
+
 // ─── ADMIN AUTH ──────────────────────────────────────────────────
 export function adminLogin(email, password) {
   return request('/api/admin/login', { method: 'POST', body: { email, password } });
