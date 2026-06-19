@@ -88,7 +88,7 @@ export default function CoachDashboard() {
     }
     pollUnread();
     pollTodayMeetings();
-    const interval = setInterval(() => { pollUnread(); pollTodayMeetings(); }, 30000);
+    const interval = setInterval(() => { pollUnread(); pollTodayMeetings(); }, 8000);
     return () => clearInterval(interval);
   }, []);
 

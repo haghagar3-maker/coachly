@@ -1622,7 +1622,7 @@ export default function UserDashboard() {
       } catch {}
     }
     pollBadges();
-    const interval = setInterval(pollBadges, 30000);
+    const interval = setInterval(pollBadges, 8000);
     return () => clearInterval(interval);
   }, []);
 

@@ -30,7 +30,7 @@ export default function NotificationBell({ token, mutedTypes = [], onMuteToggle 
 
   useEffect(() => {
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 30000);
+    const interval = setInterval(fetchNotifs, 8000);
     return () => clearInterval(interval);
   }, []);
 
