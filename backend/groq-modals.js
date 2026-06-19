@@ -209,7 +209,15 @@ CLIENT WEIGHT: ${user.weight || 'Not provided'}
 FOOD RESTRICTIONS: ${user.food_restrictions || 'None'}
 CALORIE TARGET: ${user.calorie_target || (hasStrategy ? 'Calculate from coach strategy above' : '2000')} kcal
 
-MEAL INCLUSION RULE: By default, breakfast must always be a real, varied, light, healthy item — vary it across days (e.g. fresh juice, smoothie, yogurt with fruit, protein shake, eggs) — never "not applicable" or skipped, even if the coach's strategy mentions fewer total meals per day without naming which meal to drop. The ONLY exception: if the coach's strategy EXPLICITLY names a meal to skip (e.g. "no breakfast", "skip lunch", "no snacks allowed", "skip dinner"), then mark that exact named meal as "Not Applicable" with a short reason, and do not invent a replacement for it. Snacks, when included, should also be varied and healthy (e.g. fruit, nuts, yogurt, veggies with hummus) rather than the same item every day. If meals are reduced (whether by explicit coach instruction or to fit calories), shrink portions of the remaining meals so the total still matches the coach's exact calorie and macro target — never add extra calories on top.
+MEAL INCLUSION RULE — read carefully:
+Breakfast is INCLUDED BY DEFAULT, always, no matter what. This is non-negotiable.
+A statement like "2 meals per day" or "fewer meals" does NOT name breakfast — it does not tell you which meals to drop, so breakfast stays. You must NOT infer, guess, or decide on your own that breakfast is the meal being dropped.
+The ONLY way breakfast becomes "Not Applicable" is if the coach's strategy contains the literal words "no breakfast" or "skip breakfast" or "without breakfast" referring to breakfast specifically.
+Example of what NOT to do: strategy says "only 2 meals per day" with no meal named → WRONG to skip breakfast. CORRECT: keep breakfast as a light meal, and instead reduce snack and/or another meal to reach 2 main meals while breakfast still exists as a small addition within the same calorie budget.
+Same logic applies to lunch, snack, and dinner: each is only marked "Not Applicable" if the coach's exact text names that specific meal as skipped (e.g. "no snacks allowed", "skip dinner").
+When breakfast is included, make it real, varied, light, and healthy — vary it across days (e.g. fresh juice, smoothie, yogurt with fruit, protein shake, eggs), never the same thing every time.
+Snacks, when included, should also be varied and healthy (e.g. fruit, nuts, yogurt, veggies with hummus) rather than repeating the same item every day.
+Whenever meals are reduced (by explicit coach naming or to fit calories), shrink portions of the remaining/included meals so the total still matches the coach's exact calorie and macro target — never add extra calories on top.
 
 Generate a realistic, practical, tasty meal plan that fits these parameters exactly, applying the meal inclusion rule above.${hasStrategy ? ' Strictly follow the coach\'s exact strategy for calories, macros, and food choices, while still respecting the meal inclusion rule.' : ''}`;
 
