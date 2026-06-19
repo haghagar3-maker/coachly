@@ -692,24 +692,28 @@ function SectionNutrition({ user, coach }) {
       <div className="meal-grid" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {mealSlots.map(({ key, label, icon }) => {
           const mealName = meals?.[key];
+          const isNotApplicable = mealName && /not applicable/i.test(mealName);
+          const hasRealMeal = mealName && !isNotApplicable;
           return (
             <div
               key={key}
-              className={`meal-card${mealName ? ' has-meal' : ''}`}
-              onClick={() => mealName && openRecipe(mealName)}
-              style={{ cursor: mealName ? 'pointer' : 'default' }}
+              className={`meal-card${hasRealMeal ? ' has-meal' : ''}`}
+              onClick={() => hasRealMeal && openRecipe(mealName)}
+              style={{ cursor: hasRealMeal ? 'pointer' : 'default' }}
             >
               <div className="meal-slot-label">
                 <span className="meal-icon">{icon}</span>
                 {label}
               </div>
-              {mealName ? (
+              {hasRealMeal ? (
                 <div className="meal-name">{mealName}</div>
+              ) : isNotApplicable ? (
+                <div className="meal-empty" style={{ fontStyle: 'italic' }}>{mealName}</div>
               ) : (
                 <div className="meal-empty">No meal planned</div>
               )}
-              {mealName && <div className="meal-tap">Tap for recipe →</div>}
-              {mealName && (
+              {hasRealMeal && <div className="meal-tap">Tap for recipe →</div>}
+              {hasRealMeal && (
                 <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }} onClick={e => e.stopPropagation()}>
                   {mealStatus[key] ? (
                     <div style={{ flex: 1, textAlign: 'center', fontSize: '12px', fontWeight: '700', color: mealStatus[key] === 'followed' ? '#2ecc6a' : '#ff4d1c' }}>
