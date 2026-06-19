@@ -1416,11 +1416,11 @@ function SectionSessions({ coach }) {
                   transition: 'background 0.15s',
                 }}
               >
-                <div style={{ fontSize: '13px', fontWeight: isToday || hasSessions ? '700' : '400', color: isSelected ? '#fff' : isToday ? 'var(--lime)' : 'var(--dark)' }}>{day}</div>
+                <div style={{ fontSize: '13px', fontWeight: isToday || hasSessions ? '700' : '400', color: isSelected ? '#fff' : isToday ? '#fff' : hasSessions ? '#ff4d1c' : 'var(--dark)' }}>{day}</div>
                 {hasSessions && (
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '3px' }}>
                     {sessionsByDay[day].slice(0, 3).map((_, i) => (
-                      <div key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', background: isSelected ? '#fff' : 'var(--lime)' }} />
+                      <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: isSelected || isToday ? '#fff' : '#ff4d1c' }} />
                     ))}
                   </div>
                 )}
