@@ -108,7 +108,7 @@ async function nutritionModal({ user, coach, message, todayMeals, foodLogs }) {
 You speak in ${coach.name}'s voice and coaching style.
 
 COACH'S NUTRITION PHILOSOPHY:
-${coach.meal_philosophy || coach.ai_method || 'Whole foods, adequate protein, sustainable approach to eating.'}
+${coach.ai_nutrition_strategy || coach.meal_philosophy || coach.ai_method || 'Whole foods, adequate protein, sustainable approach to eating.'}
 
 COACH'S COMMUNICATION STYLE:
 ${coach.ai_tone || 'Direct, supportive, practical.'}
@@ -186,6 +186,7 @@ RULES:
 // Returns strict JSON
 // ─────────────────────────────────────────────
 async function generateMealPlan({ user, coach }) {
+  const hasStrategy = coach.ai_nutrition_strategy && coach.ai_nutrition_strategy.trim().length > 0;
   const system = `You are a nutrition AI generating a daily meal plan.
 Return ONLY valid JSON. No explanation, no markdown, no extra text.
 The JSON must match this exact shape:
@@ -198,14 +199,17 @@ The JSON must match this exact shape:
   "total_protein": "string (e.g. '165g')"
 }
 
-COACH'S NUTRITION PHILOSOPHY: ${coach.meal_philosophy || 'Balanced macros, whole foods, high protein.'}
+${hasStrategy
+  ? `COACH'S EXACT NUTRITION STRATEGY (follow this precisely — calorie/macro formulas, food preferences, restrictions, meal timing): ${coach.ai_nutrition_strategy}`
+  : `COACH'S NUTRITION PHILOSOPHY: ${coach.meal_philosophy || coach.ai_method || 'Balanced macros, whole foods, high protein.'}`
+}
 CLIENT: ${user.name}
 CLIENT GOAL: ${user.goal || 'General fitness'}
 CLIENT WEIGHT: ${user.weight || 'Not provided'}
 FOOD RESTRICTIONS: ${user.food_restrictions || 'None'}
-CALORIE TARGET: ${user.calorie_target || '2000'} kcal
+CALORIE TARGET: ${user.calorie_target || (hasStrategy ? 'Calculate from coach strategy above' : '2000')} kcal
 
-Generate a realistic, practical, tasty meal plan that fits these parameters exactly.`;
+Generate a realistic, practical, tasty meal plan that fits these parameters exactly.${hasStrategy ? ' Strictly follow the coach\'s exact strategy above for calories, macros, and food choices.' : ''}`;
 
   const raw = await callGroq(system, 'Generate today\'s meal plan.', 500);
 
