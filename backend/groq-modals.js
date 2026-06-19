@@ -231,16 +231,11 @@ Whenever meals are reduced (by explicit coach naming or to fit calories), shrink
 
 Generate a realistic, practical, tasty meal plan that fits these parameters exactly, applying the meal inclusion rule above.${hasStrategy ? ' Strictly follow the coach\'s exact strategy for calories, macros, and food choices, while still respecting the meal inclusion rule.' : ''}`;
 
-  const raw = await callGroq(system, 'Generate today\'s meal plan.', 900);
+  const raw = await callGroq(system, 'Generate today\'s meal plan.', 500);
 
   // Strip any markdown fences before parsing
   const cleaned = raw.replace(/```json|```/g, '').trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    console.error('Meal plan JSON parse failed:', cleaned.slice(0, 300));
-    throw new Error('Meal plan generation returned invalid JSON — try again');
-  }
+  return JSON.parse(cleaned);
 }
 
 // ─────────────────────────────────────────────
