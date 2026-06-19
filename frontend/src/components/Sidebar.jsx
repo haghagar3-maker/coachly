@@ -7,6 +7,7 @@ export default function Sidebar({
   isOpen,
   onClose,
   badges = {},
+  meetings = [],
 }) {
   // Calculate plan progress
   let progressPct = 0;
@@ -205,6 +206,60 @@ export default function Sidebar({
             },
           ])}
         </nav>
+
+        {/* Mini calendar */}
+        {(() => {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = now.getMonth();
+          const firstDay = new Date(year, month, 1).getDay();
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          const startOffset = (firstDay + 6) % 7;
+          const sessionDays = new Set(
+            meetings.filter(m => m.status !== 'cancelled' && m.coach_id === coach?.id).map(m => {
+              const d = new Date(m.scheduled_at);
+              return d.getFullYear() === year && d.getMonth() === month ? d.getDate() : null;
+            }).filter(Boolean)
+          );
+          return (
+            <div style={{ margin: '8px 12px 4px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '10px 8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', padding: '0 4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {now.toLocaleDateString('en-GB', { month: 'long' })}
+                </span>
+                <button onClick={() => { onNavigate('sessions'); if (onClose) onClose(); }} style={{ background: 'none', border: 'none', fontSize: '10px', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  View all →
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', marginBottom: '4px' }}>
+                {['M','T','W','T','F','S','S'].map((d, i) => (
+                  <div key={i} style={{ textAlign: 'center', fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.2)' }}>{d}</div>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px' }}>
+                {Array.from({ length: startOffset }).map((_, i) => <div key={`e${i}`} />)}
+                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                  const isToday = day === now.getDate();
+                  const hasSession = sessionDays.has(day);
+                  return (
+                    <div key={day} style={{ textAlign: 'center', padding: '2px 0', position: 'relative' }}>
+                      <div style={{
+                        width: '22px', height: '22px', borderRadius: '6px', margin: '0 auto',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '10px', fontWeight: isToday || hasSession ? '700' : '400',
+                        background: isToday ? 'var(--lime)' : 'transparent',
+                        color: isToday ? '#000' : hasSession ? 'var(--lime)' : 'rgba(255,255,255,0.35)',
+                      }}>{day}</div>
+                      {hasSession && !isToday && (
+                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--lime)', margin: '1px auto 0' }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Bottom actions */}
         <div className="sb-bottom">

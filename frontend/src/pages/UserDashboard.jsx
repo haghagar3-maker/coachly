@@ -1548,6 +1548,7 @@ export default function UserDashboard() {
 
   // DM unread badge
   const [dmUnread, setDmUnread] = useState(0);
+  const [sidebarMeetings, setSidebarMeetings] = useState([]);
   const [mutedTypes, setMutedTypes] = useState(() => {
     try { return JSON.parse(localStorage.getItem('coachly_muted') || '[]'); } catch { return []; }
   });
@@ -1589,6 +1590,11 @@ export default function UserDashboard() {
   }
 
   // Check DM unread count on section change
+  useEffect(() => {
+    if (!coach) return;
+    getMeetings().then(setSidebarMeetings).catch(() => {});
+  }, [coach]);
+
   useEffect(() => {
     if (!coach || section !== 'dm') return;
     getDMs(coach.id).then((dms) => {
@@ -1666,6 +1672,7 @@ export default function UserDashboard() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         badges={badges}
+        meetings={sidebarMeetings}
       />
 
       <div className="dash-main">
