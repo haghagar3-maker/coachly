@@ -209,6 +209,8 @@ CLIENT WEIGHT: ${user.weight || 'Not provided'}
 FOOD RESTRICTIONS: ${user.food_restrictions || 'None'}
 CALORIE TARGET: ${user.calorie_target || (hasStrategy ? 'Calculate from coach strategy above' : '2000')} kcal
 
+VARIETY RULE: Even when the coach's strategy restricts you to a specific list of foods, you must still vary preparation, combinations, and proportions across breakfast/lunch/dinner so meals don't feel identical. Use the allowed foods in different roles per meal (e.g. eggs as the breakfast protein, chicken as lunch protein, a different cooking style or vegetable pairing for dinner) rather than repeating the exact same dish three times. Never list the same combination of ingredients for two different meals in the same day.
+
 MEAL INCLUSION RULE — read carefully:
 Breakfast is INCLUDED BY DEFAULT, always, no matter what. This is non-negotiable.
 A statement like "2 meals per day" or "fewer meals" does NOT name breakfast — it does not tell you which meals to drop, so breakfast stays. You must NOT infer, guess, or decide on your own that breakfast is the meal being dropped.
