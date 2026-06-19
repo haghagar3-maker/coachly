@@ -1332,6 +1332,156 @@ function ContentCard({ item, locked }) {
 function SectionSessions({ coach }) {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+
+  useEffect(() => {
+    getMeetings()
+      .then(setMeetings)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <LoadingSkeleton type="list" />;
+
+  const now = Date.now();
+  const filtered = meetings.filter(m => m.coach_id === coach?.id);
+  const upcoming = filtered.filter(m => m.status !== 'cancelled' && new Date(m.scheduled_at).getTime() >= now);
+
+  function fmtTime(ts) {
+    return new Date(ts).toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' });
+  }
+  function fmtFull(ts) {
+    return new Date(ts).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + fmtTime(ts);
+  }
+
+  // Build calendar
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startOffset = (firstDay + 6) % 7; // make Mon=0
+
+  // Map sessions by date string
+  const sessionsByDay = {};
+  filtered.filter(m => m.status !== 'cancelled').forEach(m => {
+    const d = new Date(m.scheduled_at);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const key = d.getDate();
+      if (!sessionsByDay[key]) sessionsByDay[key] = [];
+      sessionsByDay[key].push(m);
+    }
+  });
+
+  const today = new Date();
+  const todayKey = today.getFullYear() === year && today.getMonth() === month ? today.getDate() : null;
+
+  const selectedSessions = selectedDay ? (sessionsByDay[selectedDay] || []) : [];
+
+  return (
+    <div>
+      {/* Calendar card */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
+        {/* Month header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+          <button onClick={() => setCurrentMonth(new Date(year, month - 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', padding: '4px 8px' }}>‹</button>
+          <div style={{ fontSize: '15px', fontWeight: '700' }}>
+            {currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+          </div>
+          <button onClick={() => setCurrentMonth(new Date(year, month + 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', padding: '4px 8px' }}>›</button>
+        </div>
+
+        {/* Day labels */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '10px 16px 4px' }}>
+          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
+            <div key={d} style={{ textAlign: 'center', fontSize: '11px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Day grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', padding: '4px 16px 16px' }}>
+          {Array.from({ length: startOffset }).map((_, i) => <div key={`e${i}`} />)}
+          {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+            const hasSessions = !!sessionsByDay[day];
+            const isToday = day === todayKey;
+            const isSelected = day === selectedDay;
+            return (
+              <div
+                key={day}
+                onClick={() => setSelectedDay(isSelected ? null : day)}
+                style={{
+                  position: 'relative', textAlign: 'center', padding: '8px 4px', borderRadius: '10px', cursor: hasSessions ? 'pointer' : 'default',
+                  background: isSelected ? 'var(--dark)' : isToday ? 'rgba(200,255,0,0.12)' : 'transparent',
+                  border: isToday && !isSelected ? '1px solid var(--lime)' : '1px solid transparent',
+                  transition: 'background 0.15s',
+                }}
+              >
+                <div style={{ fontSize: '13px', fontWeight: isToday || hasSessions ? '700' : '400', color: isSelected ? '#fff' : isToday ? 'var(--lime)' : 'var(--dark)' }}>{day}</div>
+                {hasSessions && (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '3px' }}>
+                    {sessionsByDay[day].slice(0, 3).map((_, i) => (
+                      <div key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', background: isSelected ? '#fff' : 'var(--lime)' }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Selected day sessions */}
+      {selectedDay && (
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {new Date(year, month, selectedDay).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </div>
+          {selectedSessions.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>No sessions this day.</div>
+          ) : selectedSessions.map(m => (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', background: 'var(--card)', borderRadius: '14px', border: '1px solid var(--border)', marginBottom: '10px' }}>
+              <div className="chat-av" style={{ background: coach?.photo ? 'transparent' : avatarColor(coach?.id), flexShrink: 0 }}>
+                {coach?.photo ? <img src={coach.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : initials(coach?.name)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '2px' }}>{m.title}</div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{fmtTime(m.scheduled_at)}</div>
+                {m.notes && <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>{m.notes}</div>}
+              </div>
+              {m.link && <a href={m.link} target="_blank" rel="noopener noreferrer" className="btn-primary btn-sm" style={{ flexShrink: 0 }}>Join call</a>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upcoming list */}
+      <Section title="Upcoming sessions">
+        {upcoming.length === 0 ? (
+          <EmptyState message="No upcoming sessions. Your coach will schedule one soon." />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {upcoming.sort((a,b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)).map(m => (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div style={{ flexShrink: 0, textAlign: 'center', width: '44px', padding: '6px', background: 'rgba(200,255,0,0.08)', borderRadius: '10px', border: '1px solid rgba(200,255,0,0.2)' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--lime)', lineHeight: 1 }}>{new Date(m.scheduled_at).getDate()}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--muted)', textTransform: 'uppercase', marginTop: '2px' }}>{new Date(m.scheduled_at).toLocaleDateString('en-GB', { month: 'short' })}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700' }}>{m.title}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{fmtFull(m.scheduled_at)}</div>
+                  {m.notes && <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '3px' }}>{m.notes}</div>}
+                </div>
+                {m.link && <a href={m.link} target="_blank" rel="noopener noreferrer" className="btn-primary btn-sm" style={{ flexShrink: 0 }}>Join</a>}
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+}
+  const [meetings, setMeetings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getMeetings()
