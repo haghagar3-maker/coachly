@@ -209,7 +209,9 @@ CLIENT WEIGHT: ${user.weight || 'Not provided'}
 FOOD RESTRICTIONS: ${user.food_restrictions || 'None'}
 CALORIE TARGET: ${user.calorie_target || (hasStrategy ? 'Calculate from coach strategy above' : '2000')} kcal
 
-Generate a realistic, practical, tasty meal plan that fits these parameters exactly.${hasStrategy ? ' Strictly follow the coach\'s exact strategy above for calories, macros, and food choices.' : ''}`;
+NON-NEGOTIABLE RULE: Breakfast must NEVER be "not applicable", skipped, or merged into another meal — even if the coach's strategy says fewer meals per day or doesn't mention breakfast. Breakfast must always be a real, light, healthy item (e.g. a protein shake, eggs, yogurt, or a healthy juice). If the coach's strategy implies fewer total meals, shrink lunch/snack/dinner portions so breakfast still fits inside the same total calorie and macro target — never add extra calories on top.
+
+Generate a realistic, practical, tasty meal plan that fits these parameters exactly, always including a real breakfast as described above.${hasStrategy ? ' Strictly follow the coach\'s exact strategy above for calories, macros, and food choices, while still respecting the breakfast rule.' : ''}`;
 
   const raw = await callGroq(system, 'Generate today\'s meal plan.', 500);
 
