@@ -167,7 +167,7 @@ app.get('/api/coaches', async (req, res) => {
 
 // GET /api/coach/:id — public coach profile
 app.get('/api/coach/:identifier', async (req, res, next) => {
-  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'account', 'meeting', 'meetings'];
+  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'client-meal-plans', 'account', 'meeting', 'meetings'];
   if (reserved.includes(req.params.identifier)) return next();
   try {
     const { identifier } = req.params;
@@ -1754,6 +1754,15 @@ app.get('/api/coach/client-nutrition', requireAuth, requireCoach, async (req, re
     const { userId } = req.query;
     const logs = await db('food_logs', 'GET', null, `?user_id=eq.${userId}&coach_id=eq.${req.session.coach_id}&order=created_at.desc&limit=30`);
     res.json(logs || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/coach/client-meal-plans — AI-generated meal plan history for audit
+app.get('/api/coach/client-meal-plans', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const plans = await db('meal_plans', 'GET', null, `?user_id=eq.${userId}&coach_id=eq.${req.session.coach_id}&order=date.desc&limit=30`);
+    res.json(plans || []);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
