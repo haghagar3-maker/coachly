@@ -166,7 +166,8 @@ app.get('/api/coaches', async (req, res) => {
 });
 
 // GET /api/coach/:id — public coach profile
-app.get('/api/coach/:identifier', async (req, res) => {
+app.get('/api/coach/:identifier', async (req, res, next) => {
+  if (req.params.identifier === 'me') return next();
   try {
     const { identifier } = req.params;
     // Support both UUID and slug
