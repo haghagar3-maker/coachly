@@ -167,7 +167,8 @@ app.get('/api/coaches', async (req, res) => {
 
 // GET /api/coach/:id — public coach profile
 app.get('/api/coach/:identifier', async (req, res, next) => {
-  if (req.params.identifier === 'me') return next();
+  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'account'];
+  if (reserved.includes(req.params.identifier)) return next();
   try {
     const { identifier } = req.params;
     // Support both UUID and slug
