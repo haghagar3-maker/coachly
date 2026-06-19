@@ -1450,6 +1450,7 @@ function SectionCalendar({ coach }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [isGroup, setIsGroup] = useState(false);
   const [form, setForm] = useState({ userId: '', title: '', notes: '', link: '', date: '', time: '' });
   const [saving, setSaving] = useState(false);
 
@@ -1465,21 +1466,45 @@ function SectionCalendar({ coach }) {
   function upd(k, v) { setForm(p => ({ ...p, [k]: v })); }
 
   async function createMeeting() {
-    if (!form.userId || !form.title || !form.date || !form.time) { alert('Client, title, date and time are required'); return; }
+    if (!isGroup && !form.userId) { alert('Please select a client'); return; }
+    if (!form.title || !form.date || !form.time) { alert('Title, date and time are required'); return; }
     setSaving(true);
     try {
       const scheduledAt = new Date(`${form.date}T${form.time}`).toISOString();
       const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/meeting`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
-        body: JSON.stringify({ userId: form.userId, title: form.title, notes: form.notes, link: form.link, scheduledAt }),
+        body: JSON.stringify({
+          userId: isGroup ? undefined : form.userId,
+          isGroup,
+          title: form.title,
+          notes: form.notes,
+          link: form.link,
+          scheduledAt,
+        }),
       });
-      const meeting = await res.json();
-      const client = clients.find(c => c.user_id === form.userId);
-      setMeetings(prev => [...prev, { ...meeting, user: client?.user || null }].sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to create session');
+      }
+
+      if (isGroup) {
+        const { meetings: created } = await res.json();
+        const enriched = (created || []).map(m => {
+          const client = clients.find(c => c.user_id === m.user_id);
+          return { ...m, user: client?.user || null };
+        });
+        setMeetings(prev => [...prev, ...enriched].sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)));
+      } else {
+        const meeting = await res.json();
+        const client = clients.find(c => c.user_id === form.userId);
+        setMeetings(prev => [...prev, { ...meeting, user: client?.user || null }].sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)));
+      }
+
       setForm({ userId: '', title: '', notes: '', link: '', date: '', time: '' });
+      setIsGroup(false);
       setShowForm(false);
-    } catch (e) { alert('Failed to create session'); }
+    } catch (e) { alert(e.message || 'Failed to create session'); }
     finally { setSaving(false); }
   }
 
@@ -1490,15 +1515,37 @@ function SectionCalendar({ coach }) {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
       });
-      setMeetings(prev => prev.map(m => m.id === id ? { ...m, status: 'cancelled' } : m));
+      const cancelledMeeting = meetings.find(m => m.id === id);
+      if (cancelledMeeting?.group_id) {
+        setMeetings(prev => prev.map(m => m.group_id === cancelledMeeting.group_id ? { ...m, status: 'cancelled' } : m));
+      } else {
+        setMeetings(prev => prev.map(m => m.id === id ? { ...m, status: 'cancelled' } : m));
+      }
     } catch (e) { alert('Failed to cancel'); }
   }
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
 
   const now = Date.now();
-  const upcoming = meetings.filter(m => m.status !== 'cancelled' && new Date(m.scheduled_at).getTime() >= now);
-  const past = meetings.filter(m => m.status === 'cancelled' || new Date(m.scheduled_at).getTime() < now);
+  const oneOnOne = meetings.filter(m => !m.group_id);
+  const groupMeetingsRaw = meetings.filter(m => m.group_id);
+
+  // Collapse group meetings into one card per group_id
+  const groupedByGroupId = {};
+  groupMeetingsRaw.forEach(m => {
+    if (!groupedByGroupId[m.group_id]) {
+      groupedByGroupId[m.group_id] = { ...m, attendees: [m.user].filter(Boolean), ids: [m.id] };
+    } else {
+      groupedByGroupId[m.group_id].attendees.push(m.user);
+      groupedByGroupId[m.group_id].ids.push(m.id);
+    }
+  });
+  const groupCards = Object.values(groupedByGroupId);
+
+  const upcoming1on1 = oneOnOne.filter(m => m.status !== 'cancelled' && new Date(m.scheduled_at).getTime() >= now);
+  const past1on1 = oneOnOne.filter(m => m.status === 'cancelled' || new Date(m.scheduled_at).getTime() < now);
+  const upcomingGroup = groupCards.filter(m => m.status !== 'cancelled' && new Date(m.scheduled_at).getTime() >= now);
+  const pastGroup = groupCards.filter(m => m.status === 'cancelled' || new Date(m.scheduled_at).getTime() < now);
 
   function fmtDate(ts) {
     return new Date(ts).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) +
@@ -1508,23 +1555,41 @@ function SectionCalendar({ coach }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div style={{ fontSize: '13px', color: 'var(--muted)' }}>Schedule and manage 1-on-1 sessions with clients.</div>
+        <div style={{ fontSize: '13px', color: 'var(--muted)' }}>Schedule and manage sessions with clients.</div>
         <button className="btn-save-live" onClick={() => setShowForm(s => !s)}>{showForm ? 'Cancel' : '+ New session'}</button>
       </div>
 
       {showForm && (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px', marginBottom: '24px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div className="field">
-              <label>Client</label>
-              <select value={form.userId} onChange={e => upd('userId', e.target.value)} style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', color: 'var(--dark)' }}>
-                <option value="">Select a client…</option>
-                {clients.map(c => <option key={c.user_id} value={c.user_id}>{c.user?.name || '?'}</option>)}
-              </select>
+
+            {/* Group session toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <input
+                type="checkbox"
+                id="group-toggle"
+                checked={isGroup}
+                onChange={e => { setIsGroup(e.target.checked); upd('userId', ''); }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+              />
+              <label htmlFor="group-toggle" style={{ fontSize: '13px', fontWeight: '600', cursor: 'pointer', margin: 0 }}>
+                Group session — invite all active clients
+              </label>
             </div>
+
+            {!isGroup && (
+              <div className="field">
+                <label>Client</label>
+                <select value={form.userId} onChange={e => upd('userId', e.target.value)} style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', color: 'var(--dark)' }}>
+                  <option value="">Select a client…</option>
+                  {clients.map(c => <option key={c.user_id} value={c.user_id}>{c.user?.name || '?'}</option>)}
+                </select>
+              </div>
+            )}
+
             <div className="field">
               <label>Title</label>
-              <input type="text" value={form.title} onChange={e => upd('title', e.target.value)} placeholder="e.g. Monthly progress review" />
+              <input type="text" value={form.title} onChange={e => upd('title', e.target.value)} placeholder={isGroup ? 'e.g. Live group coaching call' : 'e.g. Monthly progress review'} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div className="field">
@@ -1545,20 +1610,22 @@ function SectionCalendar({ coach }) {
               <textarea value={form.notes} onChange={e => upd('notes', e.target.value)} rows={2} placeholder="What should the client prepare or bring?" />
             </div>
             <button className="btn-save-live" disabled={saving} onClick={createMeeting} style={{ alignSelf: 'flex-start' }}>
-              {saving ? 'Scheduling…' : 'Schedule session'}
+              {saving ? 'Scheduling…' : isGroup ? 'Schedule for all clients' : 'Schedule session'}
             </button>
           </div>
         </div>
       )}
 
-      <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Upcoming sessions</div>
-      {upcoming.length === 0 ? (
-        <div style={{ padding: '32px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
-          No upcoming sessions scheduled.
+      {/* 1-ON-1 SESSIONS */}
+      <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>1-on-1 Sessions</div>
+      <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--muted)', marginBottom: '8px' }}>Upcoming</div>
+      {upcoming1on1.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '20px' }}>
+          No upcoming 1-on-1 sessions.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-          {upcoming.map(m => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+          {upcoming1on1.map(m => (
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
               <div style={{ width: 38, height: 38, borderRadius: '50%', background: m.user?.photo ? 'transparent' : avatarBg(m.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
                 {m.user?.photo ? <img src={m.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(m.user?.name)}
@@ -1575,16 +1642,62 @@ function SectionCalendar({ coach }) {
         </div>
       )}
 
-      <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Past sessions</div>
-      {past.length === 0 ? (
-        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No past sessions yet.</div>
+      <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--muted)', marginBottom: '8px' }}>Past</div>
+      {past1on1.length === 0 ? (
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px', marginBottom: '28px' }}>No past 1-on-1 sessions yet.</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {past.map(m => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '28px' }}>
+          {past1on1.map(m => (
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', background: 'var(--card)', borderRadius: '10px', border: '1px solid var(--border)', opacity: 0.6 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '13px', fontWeight: '600' }}>{m.title}{m.status === 'cancelled' ? ' — Cancelled' : ''}</div>
                 <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{m.user?.name || '?'} · {fmtDate(m.scheduled_at)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* GROUP SESSIONS */}
+      <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Group Sessions</div>
+      <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--muted)', marginBottom: '8px' }}>Upcoming</div>
+      {upcomingGroup.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '20px' }}>
+          No upcoming group sessions.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+          {upcomingGroup.map(m => (
+            <div key={m.group_id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', marginRight: '4px', flexShrink: 0 }}>
+                {m.attendees.slice(0, 4).map((u, i) => (
+                  <div key={i} style={{ width: 32, height: 32, borderRadius: '50%', background: u?.photo ? 'transparent' : avatarBg(u?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: '#fff', overflow: 'hidden', border: '2px solid var(--card)', marginLeft: i > 0 ? '-10px' : 0 }}>
+                    {u?.photo ? <img src={u.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(u?.name)}
+                  </div>
+                ))}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: '700' }}>{m.title} <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--lime)' }}>· {m.attendees.length} attendee{m.attendees.length !== 1 ? 's' : ''}</span></div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{fmtDate(m.scheduled_at)}</div>
+                {m.notes && <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '3px' }}>{m.notes}</div>}
+              </div>
+              {m.link && <a href={m.link} target="_blank" rel="noopener noreferrer" className="content-btn">Join link</a>}
+              <button className="content-btn" style={{ color: 'var(--coral)', borderColor: 'rgba(255,77,28,0.25)' }} onClick={() => cancelMeeting(m.ids[0])}>Cancel</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--muted)', marginBottom: '8px' }}>Past</div>
+      {pastGroup.length === 0 ? (
+        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No past group sessions yet.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {pastGroup.map(m => (
+            <div key={m.group_id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', background: 'var(--card)', borderRadius: '10px', border: '1px solid var(--border)', opacity: 0.6 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: '600' }}>{m.title}{m.status === 'cancelled' ? ' — Cancelled' : ''} <span style={{ fontSize: '11px' }}>· {m.attendees.length} attendee{m.attendees.length !== 1 ? 's' : ''}</span></div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{fmtDate(m.scheduled_at)}</div>
               </div>
             </div>
           ))}

@@ -1963,13 +1963,58 @@ app.get('/api/coach/meetings', requireAuth, requireCoach, async (req, res) => {
   }
 });
 
-// POST /api/coach/meeting — create a new meeting
+// POST /api/coach/meeting — create a new meeting (1-on-1 or group)
 app.post('/api/coach/meeting', requireAuth, requireCoach, async (req, res) => {
   try {
-    const { userId, title, notes, link, scheduledAt } = req.body;
-    if (!userId || !title || !scheduledAt) {
-      return res.status(400).json({ error: 'userId, title, and scheduledAt required' });
+    const { userId, isGroup, title, notes, link, scheduledAt } = req.body;
+    if (!title || !scheduledAt) {
+      return res.status(400).json({ error: 'title and scheduledAt required' });
     }
+    if (!isGroup && !userId) {
+      return res.status(400).json({ error: 'userId required for 1-on-1 sessions' });
+    }
+
+    const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+    const dateLabel = new Date(scheduledAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+    if (isGroup) {
+      // Fetch all active clients for this coach
+      const subs = await db('subscriptions', 'GET', null,
+        `?coach_id=eq.${req.session.coach_id}&status=eq.active&select=user_id`
+      );
+      if (!subs || subs.length === 0) {
+        return res.status(400).json({ error: 'No active clients to invite' });
+      }
+
+      const groupId = crypto.randomUUID();
+      const created = [];
+      for (const sub of subs) {
+        const result = await db('coach_meetings', 'POST', {
+          coach_id: req.session.coach_id,
+          user_id: sub.user_id,
+          group_id: groupId,
+          title,
+          notes: notes || null,
+          link: link || null,
+          scheduled_at: scheduledAt,
+        });
+        const meeting = Array.isArray(result) ? result[0] : result;
+        created.push(meeting);
+
+        await createNotification(
+          sub.user_id,
+          'user',
+          'new_session',
+          coach?.name || 'Your coach',
+          `Group session: ${title} — ${dateLabel}`,
+          coach?.name || null,
+          coach?.photo || null
+        );
+      }
+      return res.json({ group_id: groupId, count: created.length, meetings: created });
+    }
+
+    // 1-on-1 session (existing behavior)
     const result = await db('coach_meetings', 'POST', {
       coach_id: req.session.coach_id,
       user_id: userId,
@@ -1980,8 +2025,6 @@ app.post('/api/coach/meeting', requireAuth, requireCoach, async (req, res) => {
     });
     const meeting = Array.isArray(result) ? result[0] : result;
 
-    const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
-    const dateLabel = new Date(scheduledAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     await createNotification(
       userId,
       'user',
@@ -2018,25 +2061,44 @@ app.patch('/api/coach/meeting/:id', requireAuth, requireCoach, async (req, res) 
   }
 });
 
-// PATCH /api/coach/meeting/:id/cancel — cancel a meeting
+// PATCH /api/coach/meeting/:id/cancel — cancel a meeting (and its whole group, if any)
 app.patch('/api/coach/meeting/:id/cancel', requireAuth, requireCoach, async (req, res) => {
   try {
     const meetings = await db('coach_meetings', 'GET', null, `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}&select=*`);
     const meeting = meetings?.[0];
     if (!meeting) return res.status(404).json({ error: 'Meeting not found' });
 
-    await db('coach_meetings', 'PATCH', { status: 'cancelled' }, `?id=eq.${req.params.id}`);
-
     const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
-    await createNotification(
-      meeting.user_id,
-      'user',
-      'session_cancelled',
-      coach?.name || 'Your coach',
-      `Session cancelled: ${meeting.title}`,
-      coach?.name || null,
-      coach?.photo || null
-    );
+
+    if (meeting.group_id) {
+      // Cancel the whole group
+      const groupMeetings = await db('coach_meetings', 'GET', null,
+        `?group_id=eq.${meeting.group_id}&coach_id=eq.${req.session.coach_id}&select=*`
+      );
+      await db('coach_meetings', 'PATCH', { status: 'cancelled' }, `?group_id=eq.${meeting.group_id}`);
+      for (const m of groupMeetings) {
+        await createNotification(
+          m.user_id,
+          'user',
+          'session_cancelled',
+          coach?.name || 'Your coach',
+          `Group session cancelled: ${m.title}`,
+          coach?.name || null,
+          coach?.photo || null
+        );
+      }
+    } else {
+      await db('coach_meetings', 'PATCH', { status: 'cancelled' }, `?id=eq.${req.params.id}`);
+      await createNotification(
+        meeting.user_id,
+        'user',
+        'session_cancelled',
+        coach?.name || 'Your coach',
+        `Session cancelled: ${meeting.title}`,
+        coach?.name || null,
+        coach?.photo || null
+      );
+    }
 
     res.json({ success: true });
   } catch (e) {
