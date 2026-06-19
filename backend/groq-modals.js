@@ -192,12 +192,20 @@ Return ONLY valid JSON. No explanation, no markdown, no extra text.
 The JSON must match this exact shape:
 {
   "breakfast": "string (meal name and brief description)",
+  "breakfast_time": "string or null (e.g. '11am' — ONLY if the coach's strategy explicitly states a time for this meal, otherwise null)",
   "lunch": "string",
+  "lunch_time": "string or null",
   "snack": "string",
+  "snack_time": "string or null",
   "dinner": "string",
+  "dinner_time": "string or null",
   "total_calories": "string (e.g. '2,100')",
   "total_protein": "string (e.g. '165g')"
 }
+
+RULE LANGUAGE — hard rule vs. soft preference:
+Treat words like "must", "always", "exactly", "never", "completely avoid", "only", "no [X] allowed" as HARD RULES — follow them precisely, no exceptions.
+Treat words like "can", "could", "feel free to", "you may", "if you'd like", "optional" as SOFT PREFERENCES — apply them when they fit naturally, but don't treat them as mandatory on every single meal. For example, "you can add veggies to the plate" means include vegetables when it makes sense, not force vegetables into every single item rigidly.
 
 ${hasStrategy
   ? `COACH'S EXACT NUTRITION STRATEGY (follow this precisely — calorie/macro formulas, food preferences, restrictions, meal timing): ${coach.ai_nutrition_strategy}`
