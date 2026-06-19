@@ -1876,6 +1876,7 @@ app.delete('/api/coach/account', requireAuth, requireCoach, async (req, res) => 
 });
 // GET /api/notifications
 app.get('/api/notifications', requireAuth, async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const recipientId = req.session.coach_id || req.session.user_id;
     const recipientType = req.session.type === 'coach' ? 'coach' : 'user';
