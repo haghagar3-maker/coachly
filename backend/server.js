@@ -1942,6 +1942,124 @@ app.get('/robots.txt', (req, res) => {
   res.set('Content-Type', 'text/plain');
   res.send(`User-agent: *\nAllow: /\nSitemap: ${process.env.FRONTEND_URL || 'https://coachly-two.vercel.app'}/sitemap.xml`);
 });
+// ─────────────────────────────────────────────
+// COACH MEETINGS (calendar/sessions)
+// ─────────────────────────────────────────────
+
+// GET /api/coach/meetings — all upcoming + past meetings for the coach
+app.get('/api/coach/meetings', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const meetings = await db('coach_meetings', 'GET', null,
+      `?coach_id=eq.${req.session.coach_id}&order=scheduled_at.asc&select=*`
+    );
+    if (!meetings) return res.json([]);
+    const enriched = await Promise.all(meetings.map(async (m) => {
+      const users = await db('users', 'GET', null, `?id=eq.${m.user_id}&select=name,photo`);
+      return { ...m, user: users?.[0] || null };
+    }));
+    res.json(enriched);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch meetings' });
+  }
+});
+
+// POST /api/coach/meeting — create a new meeting
+app.post('/api/coach/meeting', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { userId, title, notes, link, scheduledAt } = req.body;
+    if (!userId || !title || !scheduledAt) {
+      return res.status(400).json({ error: 'userId, title, and scheduledAt required' });
+    }
+    const result = await db('coach_meetings', 'POST', {
+      coach_id: req.session.coach_id,
+      user_id: userId,
+      title,
+      notes: notes || null,
+      link: link || null,
+      scheduled_at: scheduledAt,
+    });
+    const meeting = Array.isArray(result) ? result[0] : result;
+
+    const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+    const dateLabel = new Date(scheduledAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    await createNotification(
+      userId,
+      'user',
+      'new_session',
+      coach?.name || 'Your coach',
+      `${title} — ${dateLabel}`,
+      coach?.name || null,
+      coach?.photo || null
+    );
+
+    res.json(meeting);
+  } catch (e) {
+    logError('POST /api/coach/meeting', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to create meeting' });
+  }
+});
+
+// PATCH /api/coach/meeting/:id — edit a meeting
+app.patch('/api/coach/meeting/:id', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { title, notes, link, scheduledAt } = req.body;
+    const updates = {};
+    if (title !== undefined) updates.title = title;
+    if (notes !== undefined) updates.notes = notes;
+    if (link !== undefined) updates.link = link;
+    if (scheduledAt !== undefined) updates.scheduled_at = scheduledAt;
+
+    const result = await db('coach_meetings', 'PATCH', updates,
+      `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`
+    );
+    res.json(Array.isArray(result) ? result[0] : result);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update meeting' });
+  }
+});
+
+// PATCH /api/coach/meeting/:id/cancel — cancel a meeting
+app.patch('/api/coach/meeting/:id/cancel', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const meetings = await db('coach_meetings', 'GET', null, `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}&select=*`);
+    const meeting = meetings?.[0];
+    if (!meeting) return res.status(404).json({ error: 'Meeting not found' });
+
+    await db('coach_meetings', 'PATCH', { status: 'cancelled' }, `?id=eq.${req.params.id}`);
+
+    const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+    await createNotification(
+      meeting.user_id,
+      'user',
+      'session_cancelled',
+      coach?.name || 'Your coach',
+      `Session cancelled: ${meeting.title}`,
+      coach?.name || null,
+      coach?.photo || null
+    );
+
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to cancel meeting' });
+  }
+});
+
+// GET /api/meetings — client's own meetings
+app.get('/api/meetings', requireAuth, requireUser, async (req, res) => {
+  try {
+    const meetings = await db('coach_meetings', 'GET', null,
+      `?user_id=eq.${req.session.user_id}&order=scheduled_at.asc&select=*`
+    );
+    if (!meetings) return res.json([]);
+    const enriched = await Promise.all(meetings.map(async (m) => {
+      const coaches = await db('coaches', 'GET', null, `?id=eq.${m.coach_id}&select=name,photo`);
+      return { ...m, coach: coaches?.[0] || null };
+    }));
+    res.json(enriched);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch meetings' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });
