@@ -60,6 +60,8 @@ export default function CoachDashboard() {
 
   const [clientsUnread, setClientsUnread] = useState(0);
   const [calendarToday, setCalendarToday] = useState(0);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [messagePreselectId, setMessagePreselectId] = useState(null);
 
   useEffect(() => {
     async function pollUnread() {
@@ -205,8 +207,15 @@ export default function CoachDashboard() {
         {/* Content */}
         <div className="page-content">
           {activeSection === 'overview'  && <SectionOverview coach={coach} />}
-          {activeSection === 'clients'   && <SectionClients  coach={coach} />}
-          {activeSection === 'messages'  && <SectionMessages coach={coach} />}
+          {activeSection === 'clients'   && <SectionClients  coach={coach}
+            onViewClient={(c) => { setSelectedClient(c); setActiveSection('client-detail'); }}
+            onMessageClient={(c) => { setMessagePreselectId(c.user_id); setActiveSection('messages'); }}
+          />}
+          {activeSection === 'client-detail' && <SectionClientDetail client={selectedClient} onBack={() => setActiveSection('clients')} />}
+          {activeSection === 'messages'  && <SectionMessages coach={coach}
+            preselectUserId={messagePreselectId}
+            onPreselectHandled={() => setMessagePreselectId(null)}
+          />}
           {activeSection === 'ai'        && <SectionAI       coach={coach} />}
           {activeSection === 'store'     && <SectionStore    coach={coach} setCoach={setCoach} />}
           {activeSection === 'content'   && <SectionContent  coach={coach} />}
@@ -320,7 +329,7 @@ function SectionOverview({ coach }) {
 // ═══════════════════════════════════════════════════════════════
 // CLIENTS
 // ═══════════════════════════════════════════════════════════════
-function SectionClients() {
+function SectionClients({ onViewClient, onMessageClient }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -372,8 +381,8 @@ function SectionClients() {
               <span className={`ct-badge${c.subscription_status === 'active' ? ' badge-active' : ''}`}>{c.subscription_status || 'active'}</span>
             </div>
             <div className="ct-actions">
-              <button className="ct-act-btn" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-              <button className="ct-act-btn" title="Message"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+              <button className="ct-act-btn" title="View" onClick={() => onViewClient(c)}><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button className="ct-act-btn" title="Message" onClick={() => onMessageClient(c)}><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
             </div>
           </div>
         ))}
@@ -383,9 +392,101 @@ function SectionClients() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// CLIENT DETAIL
+// ═══════════════════════════════════════════════════════════════
+function SectionClientDetail({ client, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCoachClient(client.user_id)
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [client]);
+
+  if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
+  if (!data) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--muted)' }}>Could not load client.</div>;
+
+  const { user, checkins, subscription } = data;
+  const intake = subscription?.intake || {};
+
+  return (
+    <div>
+      <button className="btn-secondary" onClick={onBack} style={{ marginBottom: '16px' }}>← Back to Clients</button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: user?.photo ? 'transparent' : avatarBg(user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700', color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
+          {user?.photo ? <img src={user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(user?.name)}
+        </div>
+        <div>
+          <div style={{ fontSize: '18px', fontWeight: '700' }}>{user?.name || '?'}</div>
+          <div style={{ fontSize: '13px', color: 'var(--muted)' }}>{user?.email}</div>
+        </div>
+        {subscription && (
+          <span className={`ct-badge${subscription.status === 'active' ? ' badge-active' : ''}`} style={{ marginLeft: 'auto' }}>{subscription.status}</span>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        {/* Plan info */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '12px' }}>Plan</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>Duration: {subscription?.plan_months || '—'} months</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>Progress: Month {subscription?.current_month || 1} of {subscription?.plan_months || '—'}</div>
+          <div style={{ height: '6px', background: 'var(--border)', borderRadius: '100px', overflow: 'hidden', marginTop: '8px' }}>
+            <div style={{ height: '100%', width: `${((subscription?.current_month || 1) / (subscription?.plan_months || 1)) * 100}%`, background: 'var(--lime)', borderRadius: '100px' }} />
+          </div>
+        </div>
+
+        {/* Intake info */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '12px' }}>What they told us at signup</div>
+          {[
+            ['Goal', intake.goal],
+            ['Current weight', intake.weight],
+            ['Calorie target', intake.calorieTarget || intake.calorie_target],
+            ['Food restrictions', intake.foodRestrictions || intake.food_restrictions],
+            ['Injuries / limitations', intake.injuries],
+          ].map(([label, val]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ color: 'var(--muted)' }}>{label}</span>
+              <span style={{ fontWeight: '600', textAlign: 'right' }}>{val || '—'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Check-in history */}
+      <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Check-in history</div>
+      {(!checkins || checkins.length === 0) ? (
+        <div style={{ padding: '32px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+          No check-ins submitted yet.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {checkins.map(c => (
+            <div key={c.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 16px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>{new Date(c.created_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '12px' }}>
+                {c.weight && <span><strong>{c.weight}kg</strong> <span style={{ color: 'var(--muted)' }}>weight</span></span>}
+                {c.energy != null && <span><strong>{c.energy}/5</strong> <span style={{ color: 'var(--muted)' }}>energy</span></span>}
+                {c.sleep != null && <span><strong>{c.sleep}/5</strong> <span style={{ color: 'var(--muted)' }}>sleep</span></span>}
+                {c.motivation != null && <span><strong>{c.motivation}/5</strong> <span style={{ color: 'var(--muted)' }}>motivation</span></span>}
+              </div>
+              {c.notes && <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', fontStyle: 'italic' }}>"{c.notes}"</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MESSAGES
 // ═══════════════════════════════════════════════════════════════
-function SectionMessages({ coach }) {
+function SectionMessages({ coach, preselectUserId, onPreselectHandled }) {
   const [threads, setThreads] = useState([]);
   const [activeThread, setActiveThread] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -395,6 +496,18 @@ function SectionMessages({ coach }) {
   useEffect(() => {
     getCoachDirectMessages().then(setThreads).catch(console.error).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!preselectUserId || threads.length === 0) return;
+    const t = threads.find(th => th.user_id === preselectUserId);
+    if (t) {
+      openThread(t);
+    } else {
+      // No existing thread yet — create a minimal one to start fresh
+      openThread({ user_id: preselectUserId, user: null, messages: [] });
+    }
+    onPreselectHandled?.();
+  }, [preselectUserId, threads]);
 
   function openThread(t) {
     setActiveThread(t);
