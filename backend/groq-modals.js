@@ -213,7 +213,7 @@ ${hasStrategy
 }
 CLIENT: ${user.name}
 CLIENT GOAL: ${user.goal || 'General fitness'}
-CLIENT WEIGHT: ${user.weight || 'Not provided'}
+CLIENT WEIGHT: ${user.weight ? `${user.weight}kg` : 'Not provided — if the coach strategy includes a per-kg formula (e.g. "1.6g protein per kg bodyweight"), assume a reasonable default of 75kg and state that assumption nowhere in the output, just calculate correctly from it.'}
 FOOD RESTRICTIONS: ${user.food_restrictions || 'None'}
 CALORIE TARGET: ${user.calorie_target || (hasStrategy ? 'Calculate from coach strategy above' : '2000')} kcal
 
