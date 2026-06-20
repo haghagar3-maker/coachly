@@ -10,6 +10,11 @@ import {
   getCoachAiConversations,
   getCoachCheckins,
   replyCheckin,
+  getCoachPosts,
+  createCoachPost,
+  likeCoachPost,
+  createCoachComment,
+  deleteCoachPost,
   updateCoachProfile,
   getCoachContent,
   createCoachContent,
@@ -108,7 +113,7 @@ export default function CoachDashboard() {
 
   const sectionLabel = {
     overview: 'Overview', clients: 'Clients', messages: 'Messages',
-    ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training', nutrition: 'Client Nutrition', strategy: 'Client Strategy', calendar: 'Calendar',
+    ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training', nutrition: 'Client Nutrition', strategy: 'Client Strategy', calendar: 'Calendar', community: 'Community',
   };
 
   return (
@@ -149,6 +154,7 @@ export default function CoachDashboard() {
 { id: 'nutrition', label: 'Client Nutrition',  icon: <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg> },
 { id: 'strategy',  label: 'Client Strategy',   icon: <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
 { id: 'calendar',  label: 'Calendar',          icon: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, badge: calendarToday },
+{ id: 'community', label: 'Community',         icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
           ].map(({ id, label, icon, badge }) => (
             <button key={id} className={`nav-item${activeSection === id ? ' active' : ''}`} onClick={() => navTo(id)}>
               {icon}{label}
@@ -223,6 +229,7 @@ export default function CoachDashboard() {
           {activeSection === 'nutrition'  && <SectionNutrition  coach={coach} />}
           {activeSection === 'strategy'   && <SectionStrategy   coach={coach} />}
           {activeSection === 'calendar'   && <SectionCalendar   coach={coach} />}
+          {activeSection === 'community'  && <SectionCommunity  coach={coach} />}
         </div>
       </main>
     </div>
@@ -1885,6 +1892,175 @@ function SectionNutrition({ coach }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+// ═══════════════════════════════════════════════════════════════
+// COMMUNITY (coach)
+// ═══════════════════════════════════════════════════════════════
+function SectionCommunity({ coach }) {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [openComments, setOpenComments] = useState({});
+  const [comments, setComments] = useState({});
+  const [commentInput, setCommentInput] = useState({});
+  const fileInputRef = useRef(null);
+  const [pendingPhoto, setPendingPhoto] = useState(null);
+
+  useEffect(() => {
+    getCoachPosts().then(setPosts).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  async function handlePickImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file);
+      setPendingPhoto(compressed);
+    } catch { alert('Failed to process image'); }
+    e.target.value = '';
+  }
+
+  async function submitPost() {
+    if (!content.trim() && !pendingPhoto) return;
+    setPosting(true);
+    try {
+      let photoUrl = null;
+      if (pendingPhoto) {
+        photoUrl = await uploadMedia(pendingPhoto, `coachpost_${Date.now()}.jpg`, 'image/jpeg');
+      }
+      const post = await createCoachPost(content.trim(), photoUrl, null);
+      setPosts(prev => [{ ...post, user: { name: coach?.name, photo: coach?.photo, is_coach: true }, comment_count: 0, likes: 0 }, ...prev]);
+      setContent('');
+      setPendingPhoto(null);
+    } catch { alert('Failed to post'); }
+    finally { setPosting(false); }
+  }
+
+  async function toggleComments(postId) {
+    if (openComments[postId]) { setOpenComments(prev => ({ ...prev, [postId]: false })); return; }
+    setOpenComments(prev => ({ ...prev, [postId]: true }));
+    if (!comments[postId]) {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/comments/${postId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      });
+      const data = await res.json();
+      setComments(prev => ({ ...prev, [postId]: Array.isArray(data) ? data : [] }));
+    }
+  }
+
+  async function submitComment(postId) {
+    const text = commentInput[postId]?.trim();
+    if (!text) return;
+    try {
+      const comment = await createCoachComment(postId, text);
+      setComments(prev => ({ ...prev, [postId]: [...(prev[postId] || []), { ...comment, user: { name: coach?.name, photo: coach?.photo, is_coach: true } }] }));
+      setCommentInput(prev => ({ ...prev, [postId]: '' }));
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, comment_count: (p.comment_count || 0) + 1 } : p));
+    } catch { alert('Failed to comment'); }
+  }
+
+  async function handleLike(postId) {
+    try {
+      const { likes } = await likeCoachPost(postId);
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes } : p));
+    } catch {}
+  }
+
+  async function handleDelete(postId) {
+    if (!confirm('Delete this post?')) return;
+    try {
+      await deleteCoachPost(postId);
+      setPosts(prev => prev.filter(p => p.id !== postId));
+    } catch { alert('Failed to delete'); }
+  }
+
+  if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
+
+  return (
+    <div>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '24px' }}>
+        <textarea
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          placeholder="Share something with your clients…"
+          rows={3}
+          style={{ width: '100%', background: 'none', border: 'none', outline: 'none', resize: 'none', fontSize: '14px', fontFamily: 'inherit', color: 'var(--dark)', boxSizing: 'border-box' }}
+        />
+        {pendingPhoto && (
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '10px' }}>
+            <img src={pendingPhoto} alt="" style={{ maxHeight: '160px', borderRadius: '10px', display: 'block' }} />
+            <button onClick={() => setPendingPhoto(null)} style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '22px', height: '22px', color: '#fff', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePickImage} />
+            <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+              <IconImage size={16} /> Photo
+            </button>
+          </div>
+          <button className="btn-save-live" onClick={submitPost} disabled={posting || (!content.trim() && !pendingPhoto)}>
+            {posting ? 'Posting…' : 'Post'}
+          </button>
+        </div>
+      </div>
+
+      {posts.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--muted)', fontSize: '13px' }}>No posts yet. Share something with your clients.</div>
+      ) : posts.map(post => (
+        <div key={post.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: post.user?.photo ? 'transparent' : avatarBg(post.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', overflow: 'hidden', flexShrink: 0 }}>
+              {post.user?.photo ? <img src={post.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(post.user?.name)}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '700' }}>{post.user?.name || 'Unknown'}{post.user?.is_coach ? <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--lime)', marginLeft: '6px' }}>Coach</span> : null}</div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{timeAgo(post.created_at)}</div>
+            </div>
+            <button onClick={() => handleDelete(post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', lineHeight: 1 }}>×</button>
+          </div>
+          {post.content && <div style={{ fontSize: '14px', lineHeight: '1.5', marginBottom: '12px' }}>{post.content}</div>}
+          {post.photo && <img src={post.photo} alt="" style={{ width: '100%', borderRadius: '10px', marginBottom: '12px', maxHeight: '320px', objectFit: 'cover' }} />}
+          <div style={{ display: 'flex', gap: '16px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
+            <button onClick={() => handleLike(post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'inherit' }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              {post.likes || 0}
+            </button>
+            <button onClick={() => toggleComments(post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'inherit' }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              {post.comment_count || 0}
+            </button>
+          </div>
+          {openComments[post.id] && (
+            <div style={{ marginTop: '12px' }}>
+              {(comments[post.id] || []).map((c, i) => (
+                <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: c.user?.photo ? 'transparent' : avatarBg(c.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
+                    {c.user?.photo ? <img src={c.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(c.user?.name)}
+                  </div>
+                  <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '8px 12px', flex: 1 }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '2px' }}>{c.user?.name}{c.user?.is_coach ? <span style={{ color: 'var(--lime)', marginLeft: '4px' }}>Coach</span> : null}</div>
+                    <div style={{ fontSize: '12px' }}>{c.content}</div>
+                  </div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <input
+                  value={commentInput[post.id] || ''}
+                  onChange={e => setCommentInput(prev => ({ ...prev, [post.id]: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && submitComment(post.id)}
+                  placeholder="Write a comment…"
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: '100px', border: '1px solid var(--border)', background: 'var(--bg)', fontSize: '12px', fontFamily: 'inherit', outline: 'none', color: 'var(--dark)' }}
+                />
+                <button onClick={() => submitComment(post.id)} className="btn-save-live" style={{ padding: '8px 14px', fontSize: '12px' }}>Post</button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
