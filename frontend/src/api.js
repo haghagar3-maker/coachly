@@ -201,8 +201,8 @@ export function getDMs(coachId) {
   return request(`/api/dm?coachId=${coachId}`);
 }
 
-export function sendDM(coachId, content) {
-  return request('/api/dm', { method: 'POST', body: { coachId, content } });
+export function sendDM(coachId, content, imageUrl, audioUrl) {
+  return request('/api/dm', { method: 'POST', body: { coachId, content, imageUrl, audioUrl } });
 }
 
 export function markDMsRead(coachId) {
