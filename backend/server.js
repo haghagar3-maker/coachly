@@ -296,6 +296,21 @@ app.post('/api/coach/login', async (req, res) => {
 // COACH — AUTHENTICATED ROUTES
 // ─────────────────────────────────────────────
 
+app.post('/api/upload-media', requireAuth, async (req, res) => {
+  try {
+    const { fileBase64, fileName, fileType } = req.body;
+    const buffer = Buffer.from(fileBase64.split(',')[1], 'base64');
+    const uniqueName = `${Date.now()}_${fileName}`;
+    const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${uniqueName}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`, 'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY, 'Content-Type': fileType, 'x-upsert': 'true' },
+      body: buffer,
+    });
+    if (!uploadRes.ok) return res.status(500).json({ error: await uploadRes.text() });
+    res.json({ url: `${process.env.SUPABASE_URL}/storage/v1/object/public/coach-media/${uniqueName}` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/upload-content', requireAuth, requireCoach, async (req, res) => {
   try {
     const { fileBase64, fileName, fileType } = req.body;
@@ -451,14 +466,16 @@ app.get('/api/coach/direct-messages', requireAuth, requireCoach, async (req, res
 
 app.post('/api/coach/direct-message', requireAuth, requireCoach, async (req, res) => {
   try {
-    const { userId, content } = req.body;
-    if (!userId || !content) return res.status(400).json({ error: 'userId and content required' });
+    const { userId, content, imageUrl, audioUrl } = req.body;
+    if (!userId || (!content && !imageUrl && !audioUrl)) return res.status(400).json({ error: 'userId and content/imageUrl/audioUrl required' });
 
     const result = await db('direct_messages', 'POST', {
       user_id: userId,
       coach_id: req.session.coach_id,
       sender_type: 'coach',
-      content,
+      content: content || null,
+      image_url: imageUrl || null,
+      audio_url: audioUrl || null,
       is_read: false,
     });
     const dmCoach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
@@ -1000,14 +1017,16 @@ app.get('/api/dm', requireAuth, requireUser, async (req, res) => {
 
 app.post('/api/dm', requireAuth, requireUser, async (req, res) => {
   try {
-    const { coachId, content } = req.body;
-    if (!coachId || !content) return res.status(400).json({ error: 'coachId and content required' });
+    const { coachId, content, imageUrl, audioUrl } = req.body;
+    if (!coachId || (!content && !imageUrl && !audioUrl)) return res.status(400).json({ error: 'coachId and content/imageUrl/audioUrl required' });
 
     const result = await db('direct_messages', 'POST', {
       user_id: req.session.user_id,
       coach_id: coachId,
       sender_type: 'user',
-      content,
+      content: content || null,
+      image_url: imageUrl || null,
+      audio_url: audioUrl || null,
       is_read: false,
     });
     const dmUser = await db('users', 'GET', null, `?id=eq.${req.session.user_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
@@ -1158,14 +1177,15 @@ app.get('/api/checkins', requireAuth, requireUser, async (req, res) => {
 
 app.post('/api/posts', requireAuth, requireUser, async (req, res) => {
   try {
-    const { coachId, content, photo } = req.body;
-    if (!coachId || !content) return res.status(400).json({ error: 'coachId and content required' });
+    const { coachId, content, photo, audioUrl } = req.body;
+    if (!coachId || (!content && !photo && !audioUrl)) return res.status(400).json({ error: 'coachId and content/photo/audioUrl required' });
 
     const result = await db('posts', 'POST', {
       user_id: req.session.user_id,
       coach_id: coachId,
-      content,
+      content: content || null,
       photo: photo || null,
+      audio_url: audioUrl || null,
       likes: 0,
     });
     const subs = await db('subscriptions', 'GET', null,
