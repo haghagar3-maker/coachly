@@ -2292,9 +2292,17 @@ app.patch('/api/chat/seen', requireAuth, requireUser, async (req, res) => {
 app.get('/api/coach/analytics', requireAuth, requireCoach, async (req, res) => {
   try {
     const subs = await db('subscriptions', 'GET', null,
-      `?coach_id=eq.${req.session.coach_id}&select=*,users(name,photo,email)`
+      `?coach_id=eq.${req.session.coach_id}&select=*`
     );
-    const all = Array.isArray(subs) ? subs : [];
+    // Enrich with user data
+    const all_raw = Array.isArray(subs) ? subs : [];
+    for (const sub of all_raw) {
+      if (sub.user_id) {
+        const users = await db('users', 'GET', null, `?id=eq.${sub.user_id}&select=name,photo,email`);
+        sub.users = users?.[0] || null;
+      }
+    }
+    const all = all_raw;
 
     const active = all.filter(s => s.status === 'active');
     const cancelled = all.filter(s => s.status === 'cancelled');
