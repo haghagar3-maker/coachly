@@ -2270,9 +2270,15 @@ function SectionPayments({ coach, setCoach }) {
   const [loadingPending, setLoadingPending] = useState(true);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/pending-payments`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
-    }).then(r => r.json()).then(d => setPending(Array.isArray(d) ? d : [])).catch(() => {}).finally(() => setLoadingPending(false));
+    function fetchPending(showLoading) {
+      if (showLoading) setLoadingPending(true);
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/pending-payments`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      }).then(r => r.json()).then(d => setPending(Array.isArray(d) ? d : [])).catch(() => {}).finally(() => setLoadingPending(false));
+    }
+    fetchPending(true);
+    const interval = setInterval(() => fetchPending(false), 8000);
+    return () => clearInterval(interval);
   }, []);
 
   function upd(k, v) { setForm(p => ({ ...p, [k]: v })); }
