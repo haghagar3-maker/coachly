@@ -2084,8 +2084,10 @@ function SectionAnalytics({ coach }) {
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
   if (!data) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Failed to load analytics.</div>;
 
-  const maxRevenue = Math.max(...data.revenue_by_month.map(m => m.revenue), 1);
-  const maxSubs = Math.max(...data.subs_by_month.map(m => m.count), 1);
+  const revenueMonths = data?.revenue_by_month || [];
+  const subsMonths = data?.subs_by_month || [];
+  const maxRevenue = Math.max(...revenueMonths.map(m => m.revenue), 1);
+  const maxSubs = Math.max(...subsMonths.map(m => m.count), 1);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -2109,7 +2111,7 @@ function SectionAnalytics({ coach }) {
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
         <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '20px' }}>Revenue — last 6 months</div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '140px' }}>
-          {data.revenue_by_month.map(({ month, revenue }) => (
+          {revenueMonths.map(({ month, revenue }) => (
             <div key={month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', height: '100%', justifyContent: 'flex-end' }}>
               <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--dark)' }}>${revenue.toFixed(0)}</div>
               <div style={{
@@ -2128,7 +2130,7 @@ function SectionAnalytics({ coach }) {
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
         <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '20px' }}>New subscribers — last 6 months</div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '120px' }}>
-          {data.subs_by_month.map(({ month, count }) => (
+          {subsMonths.map(({ month, count }) => (
             <div key={month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', height: '100%', justifyContent: 'flex-end' }}>
               <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--dark)' }}>{count}</div>
               <div style={{
