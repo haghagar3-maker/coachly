@@ -167,7 +167,7 @@ app.get('/api/coaches', async (req, res) => {
 
 // GET /api/coach/:id — public coach profile
 app.get('/api/coach/:identifier', async (req, res, next) => {
-  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'client-meal-plans', 'account', 'meeting', 'meetings'];
+  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'client-meal-plans', 'account', 'meeting', 'meetings', 'post', 'posts', 'comments'];
   if (reserved.includes(req.params.identifier)) return next();
   try {
     const { identifier } = req.params;
@@ -1224,6 +1224,10 @@ app.get('/api/comments/:postId', requireAuth, async (req, res) => {
     if (!comments) return res.json([]);
 
     const enriched = await Promise.all(comments.map(async (c) => {
+      if (c.sender_type === 'coach') {
+        const coaches = await db('coaches', 'GET', null, `?id=eq.${c.coach_id}&select=name,photo`);
+        return { ...c, user: { ...(coaches?.[0] || {}), is_coach: true } };
+      }
       const users = await db('users', 'GET', null, `?id=eq.${c.user_id}&select=name,photo`);
       return { ...c, user: users?.[0] || null };
     }));
@@ -1246,6 +1250,106 @@ app.post('/api/comments', requireAuth, requireUser, async (req, res) => {
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to post comment' });
+  }
+});
+
+// POST /api/coach/post — coach posts to their own community
+app.post('/api/coach/post', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { content, photo, audioUrl } = req.body;
+    if (!content && !photo && !audioUrl) return res.status(400).json({ error: 'content or media required' });
+
+    const result = await db('posts', 'POST', {
+      coach_id: req.session.coach_id,
+      sender_type: 'coach',
+      content: content || null,
+      photo: photo || null,
+      audio_url: audioUrl || null,
+      likes: 0,
+    });
+    const post = Array.isArray(result) ? result[0] : result;
+
+    const subs = await db('subscriptions', 'GET', null,
+      `?coach_id=eq.${req.session.coach_id}&status=eq.active&select=user_id`
+    ).catch(() => []);
+    const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+    for (const sub of subs) {
+      await createNotification(sub.user_id, 'user', 'community_post', coach?.name || 'Your coach', (content || 'New post').slice(0, 80), coach?.name || null, coach?.photo || null);
+    }
+
+    res.json(post);
+  } catch (e) {
+    logError('POST /api/coach/post', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to create post' });
+  }
+});
+
+// GET /api/coach/posts — coach's own community feed
+app.get('/api/coach/posts', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const posts = await db('posts', 'GET', null,
+      `?coach_id=eq.${req.session.coach_id}&order=created_at.desc&limit=50&select=*`
+    );
+    if (!posts) return res.json([]);
+
+    const enriched = await Promise.all(posts.map(async (post) => {
+      const comments = await db('comments', 'GET', null, `?post_id=eq.${post.id}&select=id`);
+      let sender;
+      if (post.sender_type === 'coach') {
+        const c = await db('coaches', 'GET', null, `?id=eq.${post.coach_id}&select=name,photo`);
+        sender = { ...(c?.[0] || {}), is_coach: true };
+      } else {
+        const u = await db('users', 'GET', null, `?id=eq.${post.user_id}&select=name,photo`);
+        sender = u?.[0] || null;
+      }
+      return { ...post, user: sender, comment_count: comments?.length || 0 };
+    }));
+
+    res.json(enriched);
+  } catch (e) {
+    logError('GET /api/coach/posts', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to fetch posts' });
+  }
+});
+
+// PATCH /api/coach/posts/:id/like
+app.patch('/api/coach/posts/:id/like', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const posts = await db('posts', 'GET', null, `?id=eq.${req.params.id}&select=likes`);
+    if (!posts || posts.length === 0) return res.status(404).json({ error: 'Post not found' });
+    const newLikes = (posts[0].likes || 0) + 1;
+    await db('posts', 'PATCH', { likes: newLikes }, `?id=eq.${req.params.id}`);
+    res.json({ likes: newLikes });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to like post' });
+  }
+});
+
+// POST /api/coach/comments — coach comments on a post
+app.post('/api/coach/comments', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { postId, content } = req.body;
+    if (!postId || !content) return res.status(400).json({ error: 'postId and content required' });
+
+    const result = await db('comments', 'POST', {
+      post_id: postId,
+      coach_id: req.session.coach_id,
+      sender_type: 'coach',
+      content,
+    });
+    res.json(Array.isArray(result) ? result[0] : result);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to post comment' });
+  }
+});
+
+// DELETE /api/coach/post/:id — coach moderates (deletes) a post
+app.delete('/api/coach/post/:id', requireAuth, requireCoach, async (req, res) => {
+  try {
+    await db('posts', 'DELETE', null, `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to delete post' });
   }
 });
 

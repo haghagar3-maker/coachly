@@ -354,3 +354,18 @@ export async function adminLogout() {
 export function generateProgram(coachId) {
   return request('/api/program/generate', { method: 'POST', body: { coachId } });
 }
+export function getCoachPosts() {
+  return request('/api/coach/posts');
+}
+export function createCoachPost(content, photo, audioUrl) {
+  return request('/api/coach/post', { method: 'POST', body: { content, photo, audioUrl } });
+}
+export function likeCoachPost(id) {
+  return request(`/api/coach/posts/${id}/like`, { method: 'PATCH' });
+}
+export function createCoachComment(postId, content) {
+  return request('/api/coach/comments', { method: 'POST', body: { postId, content } });
+}
+export function deleteCoachPost(id) {
+  return request(`/api/coach/post/${id}`, { method: 'DELETE' });
+}
