@@ -338,7 +338,14 @@ export default function Store() {
 
   function onAuthSuccess(user) { setCurrentUser(user); setShowAuth(false); setShowIntake(true); }
   const [showPayment, setShowPayment] = useState(null); // { subId, coach }
-  function onSubDone(subId) { setShowIntake(false); if (coach.payment_method && coach.payment_details) { setShowPayment({ subId, coach }); } else { setAlreadySubbed(true); showToast('Subscription active! Welcome aboard.', 'success'); setTimeout(() => navigate('/dashboard'), 1500); } }
+  function onSubDone(subId) {
+    setShowIntake(false);
+    if (coach.payment_method && coach.payment_details) {
+      setShowPayment({ subId, coach });
+    } else {
+      showToast("This coach hasn't set up a payment method yet. Please message them directly to complete your subscription.", 'error');
+    }
+  }
 
   // Dynamic SEO meta tags
   useEffect(() => {
