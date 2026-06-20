@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getCoachMe,
@@ -247,6 +247,118 @@ function timeAgo(ts) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+// Resize + compress an image file before upload, to save storage
+function compressImage(file, maxDimension = 1280, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDimension) {
+        height = Math.round((height * maxDimension) / width);
+        width = maxDimension;
+      } else if (height > maxDimension) {
+        width = Math.round((width * maxDimension) / height);
+        height = maxDimension;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Upload a base64 file (image or audio) to the backend, returns the public URL
+async function uploadMedia(base64, fileName, fileType) {
+  const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/upload-media`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+    body: JSON.stringify({ fileBase64: base64, fileName, fileType }),
+  });
+  const data = await res.json();
+  if (!data.url) throw new Error(data.error || 'Upload failed');
+  return data.url;
+}
+
+// Shared mic recorder helper
+function createRecorder({ onStop, maxSeconds = 120 }) {
+  let mediaRecorder = null;
+  let chunks = [];
+  let timer = null;
+
+  async function start() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    chunks = [];
+    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      clearTimeout(timer);
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      onStop(blob);
+    };
+    mediaRecorder.start();
+    timer = setTimeout(() => stop(), maxSeconds * 1000);
+  }
+
+  function stop() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  }
+
+  return { start, stop };
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Clean icon set (no emojis)
+function IconCamera({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+function IconImage({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  );
+}
+function IconMic({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+    </svg>
+  );
+}
+function IconPaperclip({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // OVERVIEW
 // ═══════════════════════════════════════════════════════════════
@@ -491,7 +603,16 @@ function SectionMessages({ coach, preselectUserId, onPreselectHandled }) {
   const [activeThread, setActiveThread] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pendingMedia, setPendingMedia] = useState(null); // { type: 'image'|'audio', base64 }
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const recorderRef = useRef(null);
+  const recordIntervalRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   useEffect(() => {
     getCoachDirectMessages().then(setThreads).catch(console.error).finally(() => setLoading(false));
@@ -503,7 +624,6 @@ function SectionMessages({ coach, preselectUserId, onPreselectHandled }) {
     if (t) {
       openThread(t);
     } else {
-      // No existing thread yet — create a minimal one to start fresh
       openThread({ user_id: preselectUserId, user: null, messages: [] });
     }
     onPreselectHandled?.();
@@ -512,22 +632,84 @@ function SectionMessages({ coach, preselectUserId, onPreselectHandled }) {
   function openThread(t) {
     setActiveThread(t);
     setMessages([...(t.messages || [])].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
-    // Mark as read in DB
     fetch(`${import.meta.env.VITE_API_URL || ''}/api/dm/read-coach?userId=${t.user_id}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
     }).catch(() => {});
-    // Clear red dot locally
     setThreads(prev => prev.map(th => th.user_id === t.user_id ? { ...th, unread_count: 0 } : th));
   }
 
-  async function send() {
-    if (!input.trim() || !activeThread) return;
+  async function handlePickImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAttachOpen(false);
     try {
-      await sendCoachDirectMessage(activeThread.user_id, input);
-      setMessages(prev => [...prev, { id: Date.now(), sender_type: 'coach', content: input, created_at: new Date().toISOString() }]);
-      setInput('');
-    } catch (err) { console.error(err); }
+      const compressed = await compressImage(file);
+      setPendingMedia({ type: 'image', base64: compressed });
+    } catch {
+      alert('Failed to process image');
+    }
+    e.target.value = '';
+  }
+
+  async function startRecording() {
+    setAttachOpen(false);
+    try {
+      recorderRef.current = createRecorder({
+        maxSeconds: 120,
+        onStop: async (blob) => {
+          setRecording(false);
+          clearInterval(recordIntervalRef.current);
+          const base64 = await blobToBase64(blob);
+          setPendingMedia({ type: 'audio', base64 });
+        },
+      });
+      await recorderRef.current.start();
+      setRecording(true);
+      setRecordSeconds(0);
+      recordIntervalRef.current = setInterval(() => setRecordSeconds(s => s + 1), 1000);
+    } catch {
+      alert('Microphone access denied');
+    }
+  }
+
+  function stopRecording() {
+    recorderRef.current?.stop();
+  }
+
+  async function send() {
+    if (!input.trim() && !pendingMedia) return;
+    if (!activeThread || sending) return;
+    setSending(true);
+
+    const text = input.trim();
+    const media = pendingMedia;
+    setInput('');
+    setPendingMedia(null);
+
+    const optimistic = {
+      id: `opt-${Date.now()}`, sender_type: 'coach', content: text || null,
+      image_url: media?.type === 'image' ? media.base64 : null,
+      audio_url: media?.type === 'audio' ? media.base64 : null,
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimistic]);
+
+    try {
+      let imageUrl, audioUrl;
+      if (media?.type === 'image') {
+        imageUrl = await uploadMedia(media.base64, `coachdm_${Date.now()}.jpg`, 'image/jpeg');
+      } else if (media?.type === 'audio') {
+        audioUrl = await uploadMedia(media.base64, `coachdm_${Date.now()}.webm`, 'audio/webm');
+      }
+      const msg = await sendCoachDirectMessage(activeThread.user_id, text, imageUrl, audioUrl);
+      setMessages(prev => prev.map(m => m.id === optimistic.id ? { ...optimistic, ...msg, image_url: imageUrl || null, audio_url: audioUrl || null } : m));
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
+    } finally {
+      setSending(false);
+    }
   }
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
@@ -577,15 +759,68 @@ function SectionMessages({ coach, preselectUserId, onPreselectHandled }) {
                   <div className="msg-av" style={{ background: m.sender_type === 'coach' ? 'var(--dark)' : avatarBg(activeThread.user?.name) }}>
                     {m.sender_type === 'coach' ? initials(coach.name) : initials(activeThread.user?.name)}
                   </div>
-                  <div className={`bubble ${m.sender_type === 'coach' ? 'coach-bubble' : 'user-bubble'}`}>{m.content}</div>
+                  <div className={`bubble ${m.sender_type === 'coach' ? 'coach-bubble' : 'user-bubble'}`}>
+                    {m.image_url && (
+                      <img src={m.image_url} alt="" style={{ maxWidth: '220px', borderRadius: '10px', display: 'block', marginBottom: m.content ? '8px' : 0 }} />
+                    )}
+                    {m.audio_url && (
+                      <audio controls src={m.audio_url} style={{ display: 'block', marginBottom: m.content ? '8px' : 0, maxWidth: '220px' }} />
+                    )}
+                    {m.content}
+                  </div>
                 </div>
               ))}
             </div>
-            <div className="chat-input-wrap">
-              <input className="chat-input" placeholder="Type your message…" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} />
-              <button className="chat-send" onClick={send}>
-                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+
+            {/* Pending media preview */}
+            {pendingMedia && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 16px', background: 'var(--card)', borderTop: '1px solid var(--border)' }}>
+                {pendingMedia.type === 'image' ? (
+                  <img src={pendingMedia.base64} alt="" style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }} />
+                ) : (
+                  <audio controls src={pendingMedia.base64} style={{ height: '32px', maxWidth: '200px' }} />
+                )}
+                <span style={{ fontSize: '12px', color: 'var(--muted)', flex: 1 }}>Ready to send</span>
+                <button type="button" onClick={() => setPendingMedia(null)} style={{ background: 'none', border: 'none', color: '#ff4d1c', fontSize: '18px', cursor: 'pointer' }}>×</button>
+              </div>
+            )}
+
+            {/* Recording indicator */}
+            {recording && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', background: 'rgba(255,77,28,0.08)', borderTop: '1px solid rgba(255,77,28,0.2)' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff4d1c', animation: 'pulse 1s infinite' }} />
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#ff4d1c' }}>Recording… {Math.floor(recordSeconds / 60)}:{String(recordSeconds % 60).padStart(2, '0')}</span>
+                <button type="button" onClick={stopRecording} style={{ marginLeft: 'auto', padding: '6px 14px', borderRadius: '100px', border: 'none', background: '#ff4d1c', color: '#fff', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>Stop</button>
+              </div>
+            )}
+
+            <div className="chat-input-wrap" style={{ position: 'relative' }}>
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePickImage} />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePickImage} />
+
+              <button type="button" onClick={() => setAttachOpen(o => !o)} disabled={recording}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0 8px', display: 'flex', alignItems: 'center' }}>
+                <IconPaperclip />
               </button>
+
+              {attachOpen && (
+                <div style={{ position: 'absolute', bottom: '54px', left: '8px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', overflow: 'hidden', zIndex: 10 }}>
+                  <button type="button" onClick={() => cameraInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--dark)', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}><IconCamera /> Camera</button>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--dark)', fontFamily: 'inherit', width: '100%', textAlign: 'left', borderTop: '1px solid var(--border)' }}><IconImage /> Gallery</button>
+                </div>
+              )}
+
+              <input className="chat-input" placeholder="Type your message…" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} disabled={sending || recording} />
+
+              {!input.trim() && !pendingMedia ? (
+                <button type="button" onClick={startRecording} disabled={recording} className="chat-send">
+                  <IconMic />
+                </button>
+              ) : (
+                <button className="chat-send" onClick={send} disabled={sending}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              )}
             </div>
           </>
         )}

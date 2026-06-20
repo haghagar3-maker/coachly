@@ -110,8 +110,8 @@ export function getCoachDirectMessages() {
   return request('/api/coach/direct-messages');
 }
 
-export function sendCoachDirectMessage(userId, content) {
-  return request('/api/coach/direct-message', { method: 'POST', body: { userId, content } });
+export function sendCoachDirectMessage(userId, content, imageUrl, audioUrl) {
+  return request('/api/coach/direct-message', { method: 'POST', body: { userId, content, imageUrl, audioUrl } });
 }
 
 export function getCoachAiConversations() {
