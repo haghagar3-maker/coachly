@@ -2082,12 +2082,13 @@ function SectionAnalytics({ coach }) {
   }, []);
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
-  if (!data) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Failed to load analytics.</div>;
+  if (!data || data.error) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Failed to load analytics.</div>;
 
-  const revenueMonths = data?.revenue_by_month || [];
-  const subsMonths = data?.subs_by_month || [];
-  const maxRevenue = Math.max(...revenueMonths.map(m => m.revenue), 1);
-  const maxSubs = Math.max(...subsMonths.map(m => m.count), 1);
+  const revenueMonths = Array.isArray(data.revenue_by_month) ? data.revenue_by_month : [];
+  const subsMonths = Array.isArray(data.subs_by_month) ? data.subs_by_month : [];
+  const activeList = Array.isArray(data.active_list) ? data.active_list : [];
+  const maxRevenue = revenueMonths.length ? Math.max(...revenueMonths.map(m => m.revenue), 1) : 1;
+  const maxSubs = subsMonths.length ? Math.max(...subsMonths.map(m => m.count), 1) : 1;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -2147,9 +2148,9 @@ function SectionAnalytics({ coach }) {
       {/* Active subscribers list */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
         <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>Active subscribers ({data.active_count})</div>
-        {data.active_list.length === 0 ? (
+        {activeList.length === 0 ? (
           <div style={{ color: 'var(--muted)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>No active subscribers yet.</div>
-        ) : data.active_list.map(s => (
+        ) : activeList.map(s => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarBg(s.users?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
               {s.users?.photo ? <img src={s.users.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(s.users?.name)}
@@ -2183,7 +2184,9 @@ function SectionLifecycle({ coach }) {
   }, []);
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
-  if (!data) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Failed to load.</div>;
+  if (!data || data.error) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Failed to load.</div>;
+  const endingSoon = Array.isArray(data.ending_soon) ? data.ending_soon : [];
+  const cancelledList = Array.isArray(data.cancelled_list) ? data.cancelled_list : [];
 
   function daysLeft(dateStr) {
     const diff = new Date(dateStr) - Date.now();
@@ -2202,9 +2205,9 @@ function SectionLifecycle({ coach }) {
           <div style={{ fontSize: '14px', fontWeight: '700' }}>Ending soon ({data.ending_soon.length})</div>
           <div style={{ fontSize: '12px', color: 'var(--muted)', marginLeft: '4px' }}>within 48 hours</div>
         </div>
-        {data.ending_soon.length === 0 ? (
+        {endingSoon.length === 0 ? (
           <div style={{ color: 'var(--muted)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>No subscriptions ending soon.</div>
-        ) : data.ending_soon.map(s => (
+        ) : endingSoon.map(s => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
             <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarBg(s.users?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>
               {initials(s.users?.name)}
@@ -2221,9 +2224,9 @@ function SectionLifecycle({ coach }) {
       {/* Cancelled */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
         <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>Cancelled subscriptions ({data.cancelled_count})</div>
-        {data.cancelled_list.length === 0 ? (
+        {cancelledList.length === 0 ? (
           <div style={{ color: 'var(--muted)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>No cancellations yet.</div>
-        ) : data.cancelled_list.map(s => (
+        ) : cancelledList.map(s => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid var(--border)', opacity: 0.7 }}>
             <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarBg(s.users?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>
               {initials(s.users?.name)}
