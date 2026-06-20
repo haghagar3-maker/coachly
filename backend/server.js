@@ -2288,7 +2288,75 @@ app.patch('/api/chat/seen', requireAuth, requireUser, async (req, res) => {
     res.status(500).json({ error: 'Failed to mark seen' });
   }
 });
+// GET /api/coach/analytics — revenue + subscriber analytics
+app.get('/api/coach/analytics', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const subs = await db('subscriptions', 'GET', null,
+      `?coach_id=eq.${req.session.coach_id}&select=*,users(name,photo,email)`
+    );
+    const all = Array.isArray(subs) ? subs : [];
 
+    const active = all.filter(s => s.status === 'active');
+    const cancelled = all.filter(s => s.status === 'cancelled');
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Revenue per month (last 6 months)
+    const revenueByMonth = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      revenueByMonth[key] = 0;
+    }
+    active.forEach(s => {
+      const d = new Date(s.created_at);
+      const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      if (revenueByMonth[key] !== undefined) {
+        revenueByMonth[key] += parseFloat(s.plan_price || 0) * 0.9;
+      }
+    });
+
+    // New subscribers per month (last 6 months)
+    const subsByMonth = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      subsByMonth[key] = 0;
+    }
+    all.forEach(s => {
+      const d = new Date(s.created_at);
+      const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      if (subsByMonth[key] !== undefined) subsByMonth[key]++;
+    });
+
+    // Ending soon (within 48 hours)
+    const in48h = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const endingSoon = active.filter(s => s.plan_end && s.plan_end <= in48h);
+
+    // Total revenue (coach's 90%)
+    const totalRevenue = active.reduce((sum, s) => sum + parseFloat(s.plan_price || 0) * 0.9, 0);
+    const thisMonthRevenue = active
+      .filter(s => new Date(s.created_at) >= monthStart)
+      .reduce((sum, s) => sum + parseFloat(s.plan_price || 0) * 0.9, 0);
+
+    res.json({
+      active_count: active.length,
+      cancelled_count: cancelled.length,
+      total_revenue: parseFloat(totalRevenue.toFixed(2)),
+      this_month_revenue: parseFloat(thisMonthRevenue.toFixed(2)),
+      avg_plan_price: active.length ? parseFloat((active.reduce((s, x) => s + parseFloat(x.plan_price || 0), 0) / active.length).toFixed(2)) : 0,
+      revenue_by_month: Object.entries(revenueByMonth).map(([month, revenue]) => ({ month, revenue: parseFloat(revenue.toFixed(2)) })),
+      subs_by_month: Object.entries(subsByMonth).map(([month, count]) => ({ month, count })),
+      ending_soon: endingSoon,
+      cancelled_list: cancelled.slice(0, 20),
+      active_list: active,
+    });
+  } catch (e) {
+    logError('GET /api/coach/analytics', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Coachly backend running on port ${PORT}`);
 });
