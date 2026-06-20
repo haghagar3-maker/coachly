@@ -2404,11 +2404,32 @@ app.get('/api/coach/pending-payments', requireAuth, requireCoach, async (req, re
 // PATCH /api/coach/approve-payment/:subId — coach approves, client gets access
 app.patch('/api/coach/approve-payment/:subId', requireAuth, requireCoach, async (req, res) => {
   try {
+    // Fetch the proof URL first so we can delete it after approving
+    const existing = await db('subscriptions', 'GET', null,
+      `?id=eq.${req.params.subId}&coach_id=eq.${req.session.coach_id}&select=payment_proof_url,user_id`
+    );
+    const existingSub = existing?.[0];
+
     const result = await db('subscriptions', 'PATCH',
-      { status: 'active', payment_status: 'approved', approved_at: new Date().toISOString() },
+      { status: 'active', payment_status: 'approved', approved_at: new Date().toISOString(), payment_proof_url: null },
       `?id=eq.${req.params.subId}&coach_id=eq.${req.session.coach_id}`
     );
     const sub = Array.isArray(result) ? result[0] : result;
+
+    // Delete the screenshot from storage to save space (best-effort, non-blocking)
+    if (existingSub?.payment_proof_url) {
+      const fileName = existingSub.payment_proof_url.split('/coach-media/')[1];
+      if (fileName) {
+        fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+            'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+          },
+        }).catch(() => {});
+      }
+    }
+
     // Notify client
     const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
     if (sub?.user_id) {
