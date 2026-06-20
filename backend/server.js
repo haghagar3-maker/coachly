@@ -2473,7 +2473,7 @@ app.post('/api/user/submit-proof', requireAuth, requireUser, async (req, res) =>
 
     // Update subscription
     await db('subscriptions', 'PATCH',
-      { payment_proof_url: proofUrl, payment_status: 'proof_submitted' },
+      { payment_proof_url: proofUrl, payment_status: 'proof_submitted', proof_submitted_at: new Date().toISOString() },
       `?id=eq.${subscriptionId}&user_id=eq.${req.session.user_id}`
     );
 
@@ -2524,6 +2524,62 @@ app.post('/api/user/report-coach', requireAuth, requireUser, async (req, res) =>
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to submit report' });
+  }
+});
+// ─────────────────────────────────────────────
+// ADMIN — STUCK PAYMENTS (48h+ no coach response)
+// ─────────────────────────────────────────────
+
+// GET /api/admin/stuck-payments
+app.get('/api/admin/stuck-payments', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const subs = await db('subscriptions', 'GET', null,
+      `?payment_status=eq.proof_submitted&proof_submitted_at=lte.${cutoff}&select=*`
+    );
+    if (!subs || subs.length === 0) return res.json([]);
+
+    const enriched = await Promise.all(subs.map(async (s) => {
+      const users = await db('users', 'GET', null, `?id=eq.${s.user_id}&select=name,email,photo`);
+      const coaches = await db('coaches', 'GET', null, `?id=eq.${s.coach_id}&select=name,email,photo`);
+      return { ...s, user: users?.[0] || null, coach: coaches?.[0] || null };
+    }));
+
+    res.json(enriched);
+  } catch (e) {
+    logError('GET /api/admin/stuck-payments', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to fetch stuck payments' });
+  }
+});
+
+// PATCH /api/admin/payment/:subId/approve
+app.patch('/api/admin/payment/:subId/approve', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = await db('subscriptions', 'PATCH',
+      { status: 'active', payment_status: 'approved', approved_at: new Date().toISOString() },
+      `?id=eq.${req.params.subId}`
+    );
+    const sub = Array.isArray(result) ? result[0] : result;
+    if (sub?.user_id) {
+      await createNotification(sub.user_id, 'user', 'payment_approved', 'Coachly Support', 'Your payment has been confirmed by our support team. Welcome!');
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to approve payment' });
+  }
+});
+
+// PATCH /api/admin/payment/:subId/reject
+app.patch('/api/admin/payment/:subId/reject', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const sub = await db('subscriptions', 'GET', null, `?id=eq.${req.params.subId}&select=user_id`).then(r => r?.[0]).catch(() => null);
+    await db('subscriptions', 'PATCH', { payment_status: 'rejected' }, `?id=eq.${req.params.subId}`);
+    if (sub?.user_id) {
+      await createNotification(sub.user_id, 'user', 'payment_rejected', 'Coachly Support', 'Your payment proof could not be confirmed. Please contact support or resubmit.');
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to reject payment' });
   }
 });
 app.listen(PORT, () => {
