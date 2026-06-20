@@ -1173,9 +1173,9 @@ function SectionFoodScan({ user, coach }) {
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '16px' }}>
-              {[[<IconFlame size={18} />, result.calories, 'kcal'], [<IconBeef size={18} />, `${result.protein}g`, 'protein'], [<IconWheat size={18} />, `${result.carbs}g`, 'carbs'], [<IconDroplet size={18} />, `${result.fat}g`, 'fat']].map(([icon, val, label], i) => (
-                <div key={i} style={{ textAlign: 'center', background: 'var(--bg)', borderRadius: '10px', padding: '10px 6px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2px' }}>{icon}</div>
+              {[['🔥', result.calories, 'kcal'], ['💪', `${result.protein}g`, 'protein'], ['🌾', `${result.carbs}g`, 'carbs'], ['🧈', `${result.fat}g`, 'fat']].map(([icon, val, label]) => (
+                <div key={label} style={{ textAlign: 'center', background: 'var(--bg)', borderRadius: '10px', padding: '10px 6px' }}>
+                  <div style={{ fontSize: '18px' }}>{icon}</div>
                   <div style={{ fontSize: '15px', fontWeight: '700' }}>{val}</div>
                   <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{label}</div>
                 </div>
