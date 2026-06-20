@@ -167,7 +167,7 @@ app.get('/api/coaches', async (req, res) => {
 
 // GET /api/coach/:id — public coach profile
 app.get('/api/coach/:identifier', async (req, res, next) => {
-  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'client-meal-plans', 'account', 'meeting', 'meetings', 'post', 'posts', 'comments', 'analytics'];
+  const reserved = ['me', 'signup', 'login', 'clients', 'client', 'checkins', 'checkin', 'direct-messages', 'direct-message', 'ai-conversations', 'ai-conversation', 'content', 'programs', 'program', 'ai-training', 'stats', 'profile', 'client-nutrition', 'client-program', 'client-meal-plans', 'account', 'meeting', 'meetings', 'post', 'posts', 'comments', 'analytics', 'payment-method', 'pending-payments', 'approve-payment', 'reject-payment'];
   if (reserved.includes(req.params.identifier)) return next();
   try {
     const { identifier } = req.params;
@@ -2361,6 +2361,169 @@ app.get('/api/coach/analytics', requireAuth, requireCoach, async (req, res) => {
   } catch (e) {
     logError('GET /api/coach/analytics', e.message, e.stack);
     res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+// ─────────────────────────────────────────────
+// PAYMENT METHOD (coach sets how they get paid)
+// ─────────────────────────────────────────────
+
+// PATCH /api/coach/payment-method — coach saves their payment info
+app.patch('/api/coach/payment-method', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { payment_method, payment_details, payment_instructions } = req.body;
+    if (!payment_method || !payment_details) {
+      return res.status(400).json({ error: 'payment_method and payment_details required' });
+    }
+    const result = await db('coaches', 'PATCH',
+      { payment_method, payment_details, payment_instructions: payment_instructions || null },
+      `?id=eq.${req.session.coach_id}`
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save payment method' });
+  }
+});
+
+// GET /api/coach/pending-payments — coach sees all pending approvals
+app.get('/api/coach/pending-payments', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const subs = await db('subscriptions', 'GET', null,
+      `?coach_id=eq.${req.session.coach_id}&payment_status=eq.proof_submitted&select=*`
+    );
+    if (!subs || subs.length === 0) return res.json([]);
+    const enriched = await Promise.all(subs.map(async (s) => {
+      const users = await db('users', 'GET', null, `?id=eq.${s.user_id}&select=name,photo,email`);
+      return { ...s, user: users?.[0] || null };
+    }));
+    res.json(enriched);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch pending payments' });
+  }
+});
+
+// PATCH /api/coach/approve-payment/:subId — coach approves, client gets access
+app.patch('/api/coach/approve-payment/:subId', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const result = await db('subscriptions', 'PATCH',
+      { status: 'active', payment_status: 'approved', approved_at: new Date().toISOString() },
+      `?id=eq.${req.params.subId}&coach_id=eq.${req.session.coach_id}`
+    );
+    const sub = Array.isArray(result) ? result[0] : result;
+    // Notify client
+    const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+    if (sub?.user_id) {
+      await createNotification(
+        sub.user_id, 'user', 'payment_approved',
+        coach?.name || 'Your coach',
+        'Your payment has been confirmed. Welcome!',
+        coach?.name || null, coach?.photo || null
+      );
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to approve payment' });
+  }
+});
+
+// PATCH /api/coach/reject-payment/:subId — coach rejects proof
+app.patch('/api/coach/reject-payment/:subId', requireAuth, requireCoach, async (req, res) => {
+  try {
+    await db('subscriptions', 'PATCH',
+      { payment_status: 'rejected' },
+      `?id=eq.${req.params.subId}&coach_id=eq.${req.session.coach_id}`
+    );
+    const sub = await db('subscriptions', 'GET', null, `?id=eq.${req.params.subId}&select=user_id`).then(r => r?.[0]).catch(() => null);
+    const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+    if (sub?.user_id) {
+      await createNotification(
+        sub.user_id, 'user', 'payment_rejected',
+        coach?.name || 'Your coach',
+        'Your payment proof was not accepted. Please resubmit.',
+        coach?.name || null, coach?.photo || null
+      );
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to reject payment' });
+  }
+});
+
+// POST /api/user/submit-proof — client uploads payment proof
+app.post('/api/user/submit-proof', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { subscriptionId, proofBase64 } = req.body;
+    if (!subscriptionId || !proofBase64) {
+      return res.status(400).json({ error: 'subscriptionId and proofBase64 required' });
+    }
+    // Upload proof image
+    const buffer = Buffer.from(proofBase64.split(',')[1], 'base64');
+    const fileName = `proof_${Date.now()}.jpg`;
+    const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+        'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+        'Content-Type': 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: buffer,
+    });
+    if (!uploadRes.ok) return res.status(500).json({ error: 'Failed to upload proof' });
+    const proofUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/coach-media/${fileName}`;
+
+    // Update subscription
+    await db('subscriptions', 'PATCH',
+      { payment_proof_url: proofUrl, payment_status: 'proof_submitted' },
+      `?id=eq.${subscriptionId}&user_id=eq.${req.session.user_id}`
+    );
+
+    // Notify coach
+    const sub = await db('subscriptions', 'GET', null, `?id=eq.${subscriptionId}&select=coach_id`).then(r => r?.[0]).catch(() => null);
+    const user = await db('users', 'GET', null, `?id=eq.${req.session.user_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
+    if (sub?.coach_id) {
+      await createNotification(
+        sub.coach_id, 'coach', 'proof_submitted',
+        user?.name || 'A client',
+        'A client submitted payment proof. Review and approve.',
+        user?.name || null, user?.photo || null
+      );
+    }
+    res.json({ success: true, proofUrl });
+  } catch (e) {
+    logError('POST /api/user/submit-proof', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to submit proof: ' + e.message });
+  }
+});
+
+// GET /api/user/payment-status/:subId — client checks their payment status
+app.get('/api/user/payment-status/:subId', requireAuth, requireUser, async (req, res) => {
+  try {
+    const subs = await db('subscriptions', 'GET', null,
+      `?id=eq.${req.params.subId}&user_id=eq.${req.session.user_id}&select=payment_status,payment_proof_url,status,approved_at`
+    );
+    res.json(subs?.[0] || null);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch payment status' });
+  }
+});
+
+// POST /api/user/report-coach — client reports non-approving coach
+app.post('/api/user/report-coach', requireAuth, requireUser, async (req, res) => {
+  try {
+    const { subscriptionId, reason } = req.body;
+    await db('subscriptions', 'PATCH',
+      { reported_at: new Date().toISOString() },
+      `?id=eq.${subscriptionId}&user_id=eq.${req.session.user_id}`
+    );
+    // Log for admin
+    await db('error_logs', 'POST', {
+      type: 'coach_report',
+      message: `User reported coach. Sub: ${subscriptionId}. Reason: ${reason || 'No reason given'}`,
+      stack: null,
+    }).catch(() => {});
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to submit report' });
   }
 });
 app.listen(PORT, () => {
