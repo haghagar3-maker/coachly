@@ -2449,15 +2449,35 @@ app.patch('/api/coach/approve-payment/:subId', requireAuth, requireCoach, async 
 // PATCH /api/coach/reject-payment/:subId — coach rejects proof
 app.patch('/api/coach/reject-payment/:subId', requireAuth, requireCoach, async (req, res) => {
   try {
+    // Fetch the proof URL first so we can delete it after rejecting
+    const existing = await db('subscriptions', 'GET', null,
+      `?id=eq.${req.params.subId}&coach_id=eq.${req.session.coach_id}&select=payment_proof_url,user_id`
+    );
+    const existingSub = existing?.[0];
+
     await db('subscriptions', 'PATCH',
-      { payment_status: 'rejected' },
+      { payment_status: 'rejected', payment_proof_url: null },
       `?id=eq.${req.params.subId}&coach_id=eq.${req.session.coach_id}`
     );
-    const sub = await db('subscriptions', 'GET', null, `?id=eq.${req.params.subId}&select=user_id`).then(r => r?.[0]).catch(() => null);
+
+    // Delete the screenshot from storage to save space (best-effort, non-blocking)
+    if (existingSub?.payment_proof_url) {
+      const fileName = existingSub.payment_proof_url.split('/coach-media/')[1];
+      if (fileName) {
+        fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+            'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+          },
+        }).catch(() => {});
+      }
+    }
+
     const coach = await db('coaches', 'GET', null, `?id=eq.${req.session.coach_id}&select=name,photo`).then(r => r?.[0]).catch(() => null);
-    if (sub?.user_id) {
+    if (existingSub?.user_id) {
       await createNotification(
-        sub.user_id, 'user', 'payment_rejected',
+        existingSub.user_id, 'user', 'payment_rejected',
         coach?.name || 'Your coach',
         'Your payment proof was not accepted. Please resubmit.',
         coach?.name || null, coach?.photo || null
