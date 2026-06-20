@@ -107,8 +107,8 @@ function IntakeModal({ coach, planMonths, planPrice, onClose, onDone }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await createSubscription(coach.id, planMonths, planPrice, form);
-      onDone();
+      const result = await createSubscription(coach.id, planMonths, planPrice, form);
+      onDone(result?.subscription?.id || result?.id);
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -220,6 +220,80 @@ function StarRating({ coachId, accentColor, onRated }) {
     </div>
   );
 }
+function PaymentModal({ subId, coach, onClose, onPaid }) {
+  const [proofBase64, setProofBase64] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+  const accentColor = coach.store_color || '#C8FF00';
+  const isDark = accentColor === '#C8FF00' || accentColor === '#ffffff';
+
+  async function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setProofBase64(reader.result);
+    reader.readAsDataURL(file);
+  }
+
+  async function submit() {
+    if (!proofBase64) return;
+    setUploading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/user/submit-proof`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        body: JSON.stringify({ subscriptionId: subId, proofBase64 }),
+      });
+      if (!res.ok) throw new Error('Failed to submit');
+      onPaid();
+    } catch (e) {
+      showToast(e.message, 'error');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '20px', backdropFilter: 'blur(4px)' }}>
+      <div style={{ background: '#fff', borderRadius: '24px', padding: '36px', width: '100%', maxWidth: '460px', boxShadow: '0 32px 80px rgba(0,0,0,0.25)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ fontSize: '22px', fontWeight: '800', marginBottom: '4px', fontFamily: 'Georgia, serif' }}>Complete your payment</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#aaa' }}>×</button>
+        </div>
+        <div style={{ fontSize: '14px', color: '#888', marginBottom: '28px' }}>Pay {coach.name?.split(' ')[0]} directly, then upload your proof below.</div>
+
+        {/* Payment details */}
+        <div style={{ background: '#f8f7f4', borderRadius: '14px', padding: '20px', marginBottom: '20px', border: '1px solid #eee' }}>
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: '12px' }}>Payment details</div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ background: accentColor, color: isDark ? '#111' : '#fff', fontSize: '12px', fontWeight: '800', padding: '4px 12px', borderRadius: '100px' }}>{coach.payment_method}</div>
+          </div>
+          <div style={{ fontSize: '16px', fontWeight: '700', color: '#111', marginBottom: '8px', wordBreak: 'break-all' }}>{coach.payment_details}</div>
+          {coach.payment_instructions && (
+            <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6', borderTop: '1px solid #e5e5e5', paddingTop: '10px', marginTop: '8px' }}>{coach.payment_instructions}</div>
+          )}
+        </div>
+
+        {/* Proof upload */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: '#111', marginBottom: '8px' }}>Upload payment screenshot</div>
+          <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #ddd', borderRadius: '12px', padding: '24px', textAlign: 'center', cursor: 'pointer', background: proofBase64 ? '#f8f7f4' : '#fff' }}>
+            {proofBase64
+              ? <img src={proofBase64} alt="proof" style={{ maxHeight: '140px', borderRadius: '8px', objectFit: 'contain' }} />
+              : <div style={{ color: '#aaa', fontSize: '13px' }}>Tap to upload screenshot</div>}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+        </div>
+
+        <button onClick={submit} disabled={!proofBase64 || uploading} style={{ width: '100%', padding: '15px', borderRadius: '12px', border: 'none', background: proofBase64 ? accentColor : '#e5e5e5', color: proofBase64 ? (isDark ? '#111' : '#fff') : '#aaa', fontSize: '15px', fontWeight: '800', cursor: proofBase64 ? 'pointer' : 'default', fontFamily: 'inherit', marginBottom: '12px' }}>
+          {uploading ? 'Submitting…' : 'Submit proof — awaiting approval'}
+        </button>
+        <div style={{ textAlign: 'center', fontSize: '12px', color: '#aaa' }}>Your coach will review and approve your access within 24–48h.</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Store() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -263,7 +337,8 @@ export default function Store() {
   }
 
   function onAuthSuccess(user) { setCurrentUser(user); setShowAuth(false); setShowIntake(true); }
-  function onSubDone() { setShowIntake(false); setAlreadySubbed(true); showToast('Subscription active! Welcome aboard.', 'success'); setTimeout(() => navigate('/dashboard'), 1500); }
+  const [showPayment, setShowPayment] = useState(null); // { subId, coach }
+  function onSubDone(subId) { setShowIntake(false); if (coach.payment_method && coach.payment_details) { setShowPayment({ subId, coach }); } else { setAlreadySubbed(true); showToast('Subscription active! Welcome aboard.', 'success'); setTimeout(() => navigate('/dashboard'), 1500); } }
 
   // Dynamic SEO meta tags
   useEffect(() => {
@@ -682,6 +757,7 @@ export default function Store() {
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={onAuthSuccess} />}
       {showIntake && coach && <IntakeModal coach={coach} planMonths={planMonths} planPrice={getPlanPrice(planMonths)} onClose={() => setShowIntake(false)} onDone={onSubDone} />}
+      {showPayment && <PaymentModal subId={showPayment.subId} coach={showPayment.coach} onClose={() => setShowPayment(null)} onPaid={() => { setShowPayment(null); setAlreadySubbed(true); showToast('Proof submitted! Your coach will approve shortly.', 'success'); }} />}
     </div>
   );
 }
