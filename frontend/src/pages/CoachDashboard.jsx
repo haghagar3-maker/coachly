@@ -113,7 +113,7 @@ export default function CoachDashboard() {
 
   const sectionLabel = {
     overview: 'Overview', clients: 'Clients', messages: 'Messages',
-    ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training', nutrition: 'Client Nutrition', strategy: 'Client Strategy', calendar: 'Calendar', community: 'Community',
+    ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training', nutrition: 'Client Nutrition', strategy: 'Client Strategy', calendar: 'Calendar', community: 'Community', analytics: 'Revenue & Analytics', lifecycle: 'Subscriptions',
   };
 
   return (
@@ -155,6 +155,8 @@ export default function CoachDashboard() {
 { id: 'strategy',  label: 'Client Strategy',   icon: <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
 { id: 'calendar',  label: 'Calendar',          icon: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, badge: calendarToday },
 { id: 'community', label: 'Community',         icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+{ id: 'analytics', label: 'Revenue & Analytics', icon: <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+{ id: 'lifecycle', label: 'Subscriptions',     icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
           ].map(({ id, label, icon, badge }) => (
             <button key={id} className={`nav-item${activeSection === id ? ' active' : ''}`} onClick={() => navTo(id)}>
               {icon}{label}
@@ -230,6 +232,8 @@ export default function CoachDashboard() {
           {activeSection === 'strategy'   && <SectionStrategy   coach={coach} />}
           {activeSection === 'calendar'   && <SectionCalendar   coach={coach} />}
           {activeSection === 'community'  && <SectionCommunity  coach={coach} />}
+          {activeSection === 'analytics'  && <SectionAnalytics  coach={coach} />}
+          {activeSection === 'lifecycle'  && <SectionLifecycle  coach={coach} />}
         </div>
       </main>
     </div>
@@ -2064,7 +2068,175 @@ function SectionCommunity({ coach }) {
     </div>
   );
 }
+// ═══════════════════════════════════════════════════════════════
+// REVENUE & ANALYTICS
+// ═══════════════════════════════════════════════════════════════
+function SectionAnalytics({ coach }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/analytics`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+    }).then(r => r.json()).then(setData).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
+  if (!data) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Failed to load analytics.</div>;
+
+  const maxRevenue = Math.max(...data.revenue_by_month.map(m => m.revenue), 1);
+  const maxSubs = Math.max(...data.subs_by_month.map(m => m.count), 1);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+        {[
+          { label: 'Active subscribers', value: data.active_count },
+          { label: 'Total revenue (your 90%)', value: `$${data.total_revenue.toFixed(0)}`, dark: true },
+          { label: 'This month', value: `$${data.this_month_revenue.toFixed(0)}` },
+          { label: 'Avg plan price', value: `$${data.avg_plan_price.toFixed(0)}` },
+        ].map(({ label, value, dark }) => (
+          <div key={label} className={`stat-card${dark ? ' dark' : ''}`}>
+            <div className="stat-label">{label}</div>
+            <div className="stat-value">{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Revenue chart */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '20px' }}>Revenue — last 6 months</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '140px' }}>
+          {data.revenue_by_month.map(({ month, revenue }) => (
+            <div key={month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', height: '100%', justifyContent: 'flex-end' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--dark)' }}>${revenue.toFixed(0)}</div>
+              <div style={{
+                width: '100%', borderRadius: '6px 6px 0 0',
+                height: `${Math.max((revenue / maxRevenue) * 100, 4)}%`,
+                background: 'var(--lime)', opacity: revenue === 0 ? 0.2 : 1,
+                transition: 'height 0.3s',
+              }} />
+              <div style={{ fontSize: '10px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>{month}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Subscribers chart */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '20px' }}>New subscribers — last 6 months</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '120px' }}>
+          {data.subs_by_month.map(({ month, count }) => (
+            <div key={month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', height: '100%', justifyContent: 'flex-end' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--dark)' }}>{count}</div>
+              <div style={{
+                width: '100%', borderRadius: '6px 6px 0 0',
+                height: `${Math.max((count / maxSubs) * 100, 4)}%`,
+                background: '#5c6bc0', opacity: count === 0 ? 0.2 : 1,
+              }} />
+              <div style={{ fontSize: '10px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>{month}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Active subscribers list */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>Active subscribers ({data.active_count})</div>
+        {data.active_list.length === 0 ? (
+          <div style={{ color: 'var(--muted)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>No active subscribers yet.</div>
+        ) : data.active_list.map(s => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarBg(s.users?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
+              {s.users?.photo ? <img src={s.users.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(s.users?.name)}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '600' }}>{s.users?.name || '?'}</div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{s.plan_months} month plan · joined {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: '700' }}>${(parseFloat(s.plan_price || 0) * 0.9).toFixed(0)}</div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)' }}>your cut</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUBSCRIPTION LIFECYCLE
+// ═══════════════════════════════════════════════════════════════
+function SectionLifecycle({ coach }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/analytics`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+    }).then(r => r.json()).then(setData).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
+  if (!data) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Failed to load.</div>;
+
+  function daysLeft(dateStr) {
+    const diff = new Date(dateStr) - Date.now();
+    const h = Math.floor(diff / 3600000);
+    if (h < 24) return `${h}h left`;
+    return `${Math.floor(h / 24)}d left`;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+      {/* Ending soon */}
+      <div style={{ background: 'var(--card)', border: '1px solid rgba(255,77,28,0.3)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff4d1c' }} />
+          <div style={{ fontSize: '14px', fontWeight: '700' }}>Ending soon ({data.ending_soon.length})</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginLeft: '4px' }}>within 48 hours</div>
+        </div>
+        {data.ending_soon.length === 0 ? (
+          <div style={{ color: 'var(--muted)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>No subscriptions ending soon.</div>
+        ) : data.ending_soon.map(s => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarBg(s.users?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>
+              {initials(s.users?.name)}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '600' }}>{s.users?.name || '?'}</div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{s.plan_months} month plan · ends {new Date(s.plan_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+            </div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ff4d1c', flexShrink: 0 }}>{daysLeft(s.plan_end)}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Cancelled */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>Cancelled subscriptions ({data.cancelled_count})</div>
+        {data.cancelled_list.length === 0 ? (
+          <div style={{ color: 'var(--muted)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>No cancellations yet.</div>
+        ) : data.cancelled_list.map(s => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid var(--border)', opacity: 0.7 }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarBg(s.users?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>
+              {initials(s.users?.name)}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '600' }}>{s.users?.name || '?'}</div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{s.plan_months} month plan · cancelled {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+            </div>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--muted)', flexShrink: 0 }}>Cancelled</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 // ═══════════════════════════════════════════════════════════════
 // CALENDAR (coach meetings)
 // ═══════════════════════════════════════════════════════════════
