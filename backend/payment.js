@@ -46,12 +46,13 @@
  *   - skipPayment: if true, skip payment and activate subscription directly (dev mode)
  */
 async function createCheckout({ userId, coachId, planMonths, planPrice, subscriptionId }) {
-  // ── CURRENT BEHAVIOR (no payment provider connected) ──
-  // Skip payment entirely, subscription becomes active immediately.
-  // Remove this block when you add a real payment provider.
+  // ── CURRENT BEHAVIOR (manual payment-proof system) ──
+  // No payment provider connected — client pays the coach directly outside
+  // the app and uploads a screenshot as proof. Subscription stays pending
+  // until the coach (or admin, after 48h) approves it.
   return {
     checkoutUrl: null,
-    skipPayment: true,
+    skipPayment: false,
   };
 
   // ── LEMONSQUEEZY EXAMPLE (uncomment when ready) ──
