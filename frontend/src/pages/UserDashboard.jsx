@@ -135,6 +135,117 @@ function todayLabel() {
   return new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
+// Clean icon set (no emojis)
+function IconCamera({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+function IconImage({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  );
+}
+function IconMic({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+    </svg>
+  );
+}
+function IconPaperclip({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+function IconUtensils({ size = 32, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2" />
+      <path d="M5 12v10" />
+      <path d="M19 2v10c0 1.1-.9 2-2 2h0a2 2 0 0 1-2-2V2" />
+      <path d="M19 12v10" />
+    </svg>
+  );
+}
+function IconFlame({ size = 18, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    </svg>
+  );
+}
+function IconBeef({ size = 18, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12.5" cy="8.5" r="2.5" />
+      <path d="M12.5 2a6.5 6.5 0 0 0-6.5 6.5c0 1.25.45 2.45 1.27 3.4l-4.5 4.5a2 2 0 1 0 2.83 2.83l4.5-4.5a6.5 6.5 0 1 0 2.4-12.73z" />
+    </svg>
+  );
+}
+function IconWheat({ size = 18, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22v-7l5-5" /><path d="M9.5 7.5 12 5l2.5 2.5" /><path d="M7 12l5-5 5 5" /><path d="M4.5 14.5 12 7l7.5 7.5" />
+    </svg>
+  );
+}
+function IconDroplet({ size = 18, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.69s-5.5 5.27-8 9.91c-1 2-1 5 1.5 7.5a8 8 0 0 0 13 0c2.5-2.5 2.5-5.5 1.5-7.5-2.5-4.64-8-9.91-8-9.91z" />
+    </svg>
+  );
+}
+function IconPlateEmpty({ size = 48, color = 'var(--muted)' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="4.5" />
+    </svg>
+  );
+}
+function IconSunrise({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 18a5 5 0 0 0-10 0" /><line x1="12" y1="2" x2="12" y2="9" /><line x1="4.22" y1="10.22" x2="5.64" y2="11.64" /><line x1="1" y1="18" x2="3" y2="18" /><line x1="21" y1="18" x2="23" y2="18" /><line x1="18.36" y1="11.64" x2="19.78" y2="10.22" /><line x1="23" y1="22" x2="1" y2="22" /><polyline points="8 6 12 2 16 6" />
+    </svg>
+  );
+}
+function IconSun({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+function IconApple({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 6c-1.5-2-4-2.5-6-1-2.5 1.8-3 6-1 9.5 1.8 3 4.5 5 7 5s5.2-2 7-5c2-3.5 1.5-7.7-1-9.5-2-1.5-4.5-1-6 1z" />
+      <path d="M12 6c0-1.5.5-3 1.5-4" />
+    </svg>
+  );
+}
+function IconMoon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
 // ─── stat card ──────────────────────────────────────────────────
 function StatCard({ label, value, sub }) {
   return (
@@ -609,19 +720,13 @@ function SectionDM({ user, coach }) {
 
         <button type="button" onClick={() => setAttachOpen(o => !o)} disabled={recording}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0 8px', display: 'flex', alignItems: 'center' }}>
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h9" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="M21 15l-5-5L5 21" />
-            <line x1="17" y1="14" x2="21" y2="14" />
-            <line x1="19" y1="12" x2="19" y2="16" />
-          </svg>
+          <IconPaperclip />
         </button>
 
         {attachOpen && (
           <div style={{ position: 'absolute', bottom: '54px', left: '8px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', overflow: 'hidden', zIndex: 10 }}>
-            <button type="button" onClick={() => cameraInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--dark)', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}>📷 Camera</button>
-            <button type="button" onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--dark)', fontFamily: 'inherit', width: '100%', textAlign: 'left', borderTop: '1px solid var(--border)' }}>🖼️ Gallery</button>
+            <button type="button" onClick={() => cameraInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--dark)', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}><IconCamera /> Camera</button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--dark)', fontFamily: 'inherit', width: '100%', textAlign: 'left', borderTop: '1px solid var(--border)' }}><IconImage /> Gallery</button>
           </div>
         )}
 
@@ -635,11 +740,7 @@ function SectionDM({ user, coach }) {
 
         {!input.trim() && !pendingMedia ? (
           <button type="button" onClick={startRecording} disabled={recording} className="chat-send">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-            </svg>
+            <IconMic />
           </button>
         ) : (
           <button type="submit" className="chat-send" disabled={(!input.trim() && !pendingMedia) || sending}>
@@ -657,6 +758,16 @@ function SectionDM({ user, coach }) {
 // ═══════════════════════════════════════════════════════════════
 // SECTION: STRATEGY (workout program)
 // ═══════════════════════════════════════════════════════════════
+function IconDumbbell({ size = 40, color = 'var(--muted)' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6.5 6.5h11" /><path d="M6.5 17.5h11" />
+      <rect x="2" y="9" width="3" height="6" rx="1" /><rect x="19" y="9" width="3" height="6" rx="1" />
+      <rect x="5" y="7" width="2" height="10" rx="1" /><rect x="17" y="7" width="2" height="10" rx="1" />
+      <line x1="7" y1="12" x2="17" y2="12" />
+    </svg>
+  );
+}
 function GenerateProgram({ coach, onGenerated }) {
   const [generating, setGenerating] = useState(false);
   async function generate() {
@@ -671,11 +782,11 @@ function GenerateProgram({ coach, onGenerated }) {
   }
   return (
     <div style={{ textAlign: 'center', padding: '48px 20px' }}>
-      <div style={{ fontSize: '40px', marginBottom: '16px' }}>🏋️</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><IconDumbbell /></div>
       <div style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>No program yet</div>
       <div style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' }}>Generate a personalized workout program based on your coach's method and your goals.</div>
       <button className="btn-primary" onClick={generate} disabled={generating}>
-        {generating ? 'Generating your program…' : '✨ Generate my program'}
+        {generating ? 'Generating your program…' : 'Generate my program'}
       </button>
     </div>
   );
@@ -856,10 +967,10 @@ function SectionNutrition({ user, coach }) {
   }
 
   const mealSlots = [
-    { key: 'breakfast', label: 'Breakfast', icon: '🌅' },
-    { key: 'lunch', label: 'Lunch', icon: '☀️' },
-    { key: 'snack', label: 'Snack', icon: '🍎' },
-    { key: 'dinner', label: 'Dinner', icon: '🌙' },
+    { key: 'breakfast', label: 'Breakfast', icon: <IconSunrise /> },
+    { key: 'lunch', label: 'Lunch', icon: <IconSun /> },
+    { key: 'snack', label: 'Snack', icon: <IconApple /> },
+    { key: 'dinner', label: 'Dinner', icon: <IconMoon /> },
   ];
 
   if (loading) return (
@@ -1043,7 +1154,7 @@ function SectionFoodScan({ user, coach }) {
       <Section title="Food Scan">
         <div style={{ textAlign: 'center', padding: '32px 20px', background: 'var(--card)', borderRadius: '16px', border: '2px dashed var(--border)', marginBottom: '20px', cursor: 'pointer' }}
           onClick={() => fileRef.current?.click()}>
-          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📸</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: 'var(--muted)' }}><IconCamera size={40} /></div>
           <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '6px' }}>
             {analyzing ? 'Analyzing your meal…' : 'Take a photo of your meal'}
           </div>
@@ -1062,9 +1173,9 @@ function SectionFoodScan({ user, coach }) {
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '16px' }}>
-              {[['🔥', result.calories, 'kcal'], ['💪', `${result.protein}g`, 'protein'], ['🌾', `${result.carbs}g`, 'carbs'], ['🧈', `${result.fat}g`, 'fat']].map(([icon, val, label]) => (
-                <div key={label} style={{ textAlign: 'center', background: 'var(--bg)', borderRadius: '10px', padding: '10px 6px' }}>
-                  <div style={{ fontSize: '18px' }}>{icon}</div>
+              {[[<IconFlame size={18} />, result.calories, 'kcal'], [<IconBeef size={18} />, `${result.protein}g`, 'protein'], [<IconWheat size={18} />, `${result.carbs}g`, 'carbs'], [<IconDroplet size={18} />, `${result.fat}g`, 'fat']].map(([icon, val, label], i) => (
+                <div key={i} style={{ textAlign: 'center', background: 'var(--bg)', borderRadius: '10px', padding: '10px 6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2px' }}>{icon}</div>
                   <div style={{ fontSize: '15px', fontWeight: '700' }}>{val}</div>
                   <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{label}</div>
                 </div>
@@ -1089,7 +1200,7 @@ function SectionFoodScan({ user, coach }) {
                 <div style={{ width: '100%', height: '120px', overflow: 'hidden', background: 'var(--border)' }}>
                   {item.image_base64 && item.image_base64.length > 100
   ? <img src={item.image_base64} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>🍽️</div>}
+  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}><IconUtensils size={28} /></div>}
                 </div>
                 <div style={{ padding: '10px 12px' }}>
                   <div style={{ fontSize: '12px', fontWeight: '700', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.meal_name || 'Meal'}</div>
@@ -1268,9 +1379,9 @@ function SectionCommunity({ user, coach }) {
               <div style={{ display: 'flex', gap: '6px' }}>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePickImage} />
                 <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePickImage} />
-                <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={recording} title="Camera" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', padding: '4px' }}>📷</button>
-                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={recording} title="Gallery" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', padding: '4px' }}>🖼️</button>
-                <button type="button" onClick={startRecording} disabled={recording} title="Record voice note" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', padding: '4px' }}>🎤</button>
+                <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={recording} title="Camera" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '4px', display: 'flex', alignItems: 'center' }}><IconCamera /></button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={recording} title="Gallery" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '4px', display: 'flex', alignItems: 'center' }}><IconImage /></button>
+                <button type="button" onClick={startRecording} disabled={recording} title="Record voice note" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '4px', display: 'flex', alignItems: 'center' }}><IconMic /></button>
               </div>
               <button
                 type="submit"
