@@ -2293,16 +2293,14 @@ app.get('/api/coach/analytics', requireAuth, requireCoach, async (req, res) => {
   try {
     const subs = await db('subscriptions', 'GET', null,
       `?coach_id=eq.${req.session.coach_id}&select=*`
-    );
-    // Enrich with user data
-    const all_raw = Array.isArray(subs) ? subs : [];
-    for (const sub of all_raw) {
-      if (sub.user_id) {
+    ).catch(() => []);
+    const all = Array.isArray(subs) ? subs : [];
+    for (const sub of all) {
+      try {
         const users = await db('users', 'GET', null, `?id=eq.${sub.user_id}&select=name,photo,email`);
         sub.users = users?.[0] || null;
-      }
+      } catch { sub.users = null; }
     }
-    const all = all_raw;
 
     const active = all.filter(s => s.status === 'active');
     const cancelled = all.filter(s => s.status === 'cancelled');
