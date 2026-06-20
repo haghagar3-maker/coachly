@@ -391,10 +391,10 @@ function SectionOverview({ coach }) {
     <>
       <div className="stats-row" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
         {[
-          { label: 'Active subscribers', value: stats?.activeSubscribers || 0 },
-          { label: 'Revenue this month', value: `$${(stats?.revenueThisMonth || 0).toFixed(0)}`, dark: true },
-          { label: 'AI conversations', value: stats?.aiConversationsThisWeek || 0, sub: 'this week' },
-          { label: 'Goals reached', value: stats?.goalsReached || 0, sub: 'milestones' },
+          { label: 'Active subscribers', value: stats?.subscriber_count || 0 },
+          { label: 'Revenue this month', value: `$${(stats?.revenue_this_month || 0).toFixed(0)}`, dark: true },
+          { label: 'AI conversations', value: stats?.ai_conversations_this_week || 0, sub: 'this week' },
+          { label: 'Goals reached', value: stats?.checkins_this_week || 0, sub: 'this week' },
         ].map(({ label, value, sub, dark }) => (
           <div key={label} className={`stat-card${dark ? ' dark' : ''}`}>
             <div className="stat-label">{label}</div>
