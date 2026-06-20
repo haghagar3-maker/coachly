@@ -228,8 +228,8 @@ export function getPosts(coachId) {
   return request(`/api/posts/${coachId}`);
 }
 
-export function createPost(coachId, content, photo) {
-  return request('/api/posts', { method: 'POST', body: { coachId, content, photo } });
+export function createPost(coachId, content, photo, audioUrl) {
+  return request('/api/posts', { method: 'POST', body: { coachId, content, photo, audioUrl } });
 }
 
 export function likePost(id) {

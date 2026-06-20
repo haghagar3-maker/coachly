@@ -1119,6 +1119,13 @@ function SectionCommunity({ user, coach }) {
   const [comments, setComments] = useState({});
   const [commentInput, setCommentInput] = useState('');
   const [likedIds, setLikedIds] = useState(new Set());
+  const [pendingMedia, setPendingMedia] = useState(null); // { type: 'image'|'audio', base64 }
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const recorderRef = useRef(null);
+  const recordIntervalRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   useEffect(() => {
     if (!coach) return;
@@ -1128,13 +1135,56 @@ function SectionCommunity({ user, coach }) {
       .finally(() => setLoading(false));
   }, [coach]);
 
+  async function handlePickImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file);
+      setPendingMedia({ type: 'image', base64: compressed });
+    } catch {
+      showToast('Failed to process image', 'error');
+    }
+    e.target.value = '';
+  }
+
+  async function startRecording() {
+    try {
+      recorderRef.current = createRecorder({
+        maxSeconds: 120,
+        onStop: async (blob) => {
+          setRecording(false);
+          clearInterval(recordIntervalRef.current);
+          const base64 = await blobToBase64(blob);
+          setPendingMedia({ type: 'audio', base64 });
+        },
+      });
+      await recorderRef.current.start();
+      setRecording(true);
+      setRecordSeconds(0);
+      recordIntervalRef.current = setInterval(() => setRecordSeconds(s => s + 1), 1000);
+    } catch {
+      showToast('Microphone access denied', 'error');
+    }
+  }
+
+  function stopRecording() {
+    recorderRef.current?.stop();
+  }
+
   async function post(e) {
     e.preventDefault();
     const text = newPost.trim();
-    if (!text || posting) return;
+    if (!text && !pendingMedia) return;
+    if (posting) return;
     setPosting(true);
+    const media = pendingMedia;
+    setPendingMedia(null);
     try {
-      const p = await createPost(coach.id, text, null);
+      let photo, audioUrl;
+      if (media?.type === 'image') photo = await uploadMedia(media.base64, `post_${Date.now()}.jpg`, 'image/jpeg');
+      else if (media?.type === 'audio') audioUrl = await uploadMedia(media.base64, `post_${Date.now()}.webm`, 'audio/webm');
+
+      const p = await createPost(coach.id, text || null, photo, audioUrl);
       setPosts((prev) => [{ ...p, user: { name: user?.name }, comment_count: 0 }, ...prev]);
       setNewPost('');
       showToast('Posted!', 'success');
@@ -1186,7 +1236,7 @@ function SectionCommunity({ user, coach }) {
           <div className="post-composer-av" style={{ background: avatarColor(user?.id) }}>
             {initials(user?.name)}
           </div>
-          <div className="post-composer-right">
+          <div className="post-composer-right" style={{ width: '100%' }}>
             <textarea
               className="post-composer-input"
               placeholder={`Share with ${coach?.name?.split(' ')[0]}'s community…`}
@@ -1194,14 +1244,43 @@ function SectionCommunity({ user, coach }) {
               onChange={(e) => setNewPost(e.target.value)}
               rows={2}
             />
-            <button
-              type="submit"
-              className="btn-primary btn-sm"
-              disabled={!newPost.trim() || posting}
-              style={{ alignSelf: 'flex-end', opacity: posting ? 0.7 : 1 }}
-            >
-              {posting ? 'Posting…' : 'Post'}
-            </button>
+
+            {pendingMedia && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
+                {pendingMedia.type === 'image' ? (
+                  <img src={pendingMedia.base64} alt="" style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }} />
+                ) : (
+                  <audio controls src={pendingMedia.base64} style={{ height: '32px', maxWidth: '200px' }} />
+                )}
+                <button type="button" onClick={() => setPendingMedia(null)} style={{ background: 'none', border: 'none', color: '#ff4d1c', fontSize: '16px', cursor: 'pointer' }}>×</button>
+              </div>
+            )}
+
+            {recording && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: '#ff4d1c', fontWeight: '600' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff4d1c', animation: 'pulse 1s infinite' }} />
+                Recording… {Math.floor(recordSeconds / 60)}:{String(recordSeconds % 60).padStart(2, '0')}
+                <button type="button" onClick={stopRecording} style={{ padding: '4px 12px', borderRadius: '100px', border: 'none', background: '#ff4d1c', color: '#fff', fontSize: '11px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>Stop</button>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePickImage} />
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePickImage} />
+                <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={recording} title="Camera" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', padding: '4px' }}>📷</button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={recording} title="Gallery" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', padding: '4px' }}>🖼️</button>
+                <button type="button" onClick={startRecording} disabled={recording} title="Record voice note" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '18px', padding: '4px' }}>🎤</button>
+              </div>
+              <button
+                type="submit"
+                className="btn-primary btn-sm"
+                disabled={(!newPost.trim() && !pendingMedia) || posting}
+                style={{ opacity: posting ? 0.7 : 1 }}
+              >
+                {posting ? 'Posting…' : 'Post'}
+              </button>
+            </div>
           </div>
         </form>
       </Section>
@@ -1224,8 +1303,9 @@ function SectionCommunity({ user, coach }) {
                   <div className="post-time">{timeAgo(p.created_at)}</div>
                 </div>
               </div>
-              <div className="post-body">{p.content}</div>
+              {p.content && <div className="post-body">{p.content}</div>}
               {p.photo && <img src={p.photo} alt="" className="post-photo" />}
+              {p.audio_url && <audio controls src={p.audio_url} style={{ display: 'block', width: '100%', marginTop: '8px' }} />}
               <div className="post-actions">
                 <button
                   className={`post-action${likedIds.has(p.id) ? ' liked' : ''}`}
