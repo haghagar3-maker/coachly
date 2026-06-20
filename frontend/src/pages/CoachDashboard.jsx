@@ -65,6 +65,7 @@ export default function CoachDashboard() {
 
   const [clientsUnread, setClientsUnread] = useState(0);
   const [calendarToday, setCalendarToday] = useState(0);
+  const [pendingPayments, setPendingPayments] = useState(0);
   const [selectedClient, setSelectedClient] = useState(null);
   const [messagePreselectId, setMessagePreselectId] = useState(null);
 
@@ -93,9 +94,19 @@ export default function CoachDashboard() {
         setCalendarToday(count);
       } catch {}
     }
+    async function pollPendingPayments() {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/pending-payments`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        });
+        const data = await res.json();
+        setPendingPayments(Array.isArray(data) ? data.length : 0);
+      } catch {}
+    }
     pollUnread();
     pollTodayMeetings();
-    const interval = setInterval(() => { pollUnread(); pollTodayMeetings(); }, 8000);
+    pollPendingPayments();
+    const interval = setInterval(() => { pollUnread(); pollTodayMeetings(); pollPendingPayments(); }, 8000);
     return () => clearInterval(interval);
   }, []);
 
@@ -113,7 +124,7 @@ export default function CoachDashboard() {
 
   const sectionLabel = {
     overview: 'Overview', clients: 'Clients', messages: 'Messages',
-    ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training', nutrition: 'Client Nutrition', strategy: 'Client Strategy', calendar: 'Calendar', community: 'Community', analytics: 'Revenue & Analytics', lifecycle: 'Subscriptions',
+    ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training', nutrition: 'Client Nutrition', strategy: 'Client Strategy', calendar: 'Calendar', community: 'Community', analytics: 'Revenue & Analytics', lifecycle: 'Subscriptions', payments: 'Payment Settings',
   };
 
   return (
@@ -157,6 +168,7 @@ export default function CoachDashboard() {
 { id: 'community', label: 'Community',         icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
 { id: 'analytics', label: 'Revenue & Analytics', icon: <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
 { id: 'lifecycle', label: 'Subscriptions',     icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+{ id: 'payments', label: 'Payment Settings',   icon: <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, badge: pendingPayments },
           ].map(({ id, label, icon, badge }) => (
             <button key={id} className={`nav-item${activeSection === id ? ' active' : ''}`} onClick={() => navTo(id)}>
               {icon}{label}
@@ -234,6 +246,7 @@ export default function CoachDashboard() {
           {activeSection === 'community'  && <SectionCommunity  coach={coach} />}
           {activeSection === 'analytics'  && <SectionAnalytics  coach={coach} />}
           {activeSection === 'lifecycle'  && <SectionLifecycle  coach={coach} />}
+          {activeSection === 'payments'   && <SectionPayments   coach={coach} setCoach={setCoach} />}
         </div>
       </main>
     </div>
@@ -2236,6 +2249,136 @@ function SectionLifecycle({ coach }) {
               <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{s.plan_months} month plan · cancelled {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
             </div>
             <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--muted)', flexShrink: 0 }}>Cancelled</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+// ═══════════════════════════════════════════════════════════════
+// PAYMENT SETTINGS
+// ═══════════════════════════════════════════════════════════════
+function SectionPayments({ coach, setCoach }) {
+  const [form, setForm] = useState({
+    payment_method: coach.payment_method || '',
+    payment_details: coach.payment_details || '',
+    payment_instructions: coach.payment_instructions || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [pending, setPending] = useState([]);
+  const [loadingPending, setLoadingPending] = useState(true);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/pending-payments`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+    }).then(r => r.json()).then(d => setPending(Array.isArray(d) ? d : [])).catch(() => {}).finally(() => setLoadingPending(false));
+  }, []);
+
+  function upd(k, v) { setForm(p => ({ ...p, [k]: v })); }
+
+  async function save() {
+    setSaving(true);
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/payment-method`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        body: JSON.stringify(form),
+      });
+      setCoach(prev => ({ ...prev, ...form }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch { alert('Failed to save'); }
+    finally { setSaving(false); }
+  }
+
+  async function approve(subId) {
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/approve-payment/${subId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      });
+      setPending(prev => prev.filter(p => p.id !== subId));
+    } catch { alert('Failed to approve'); }
+  }
+
+  async function reject(subId) {
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/reject-payment/${subId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      });
+      setPending(prev => prev.filter(p => p.id !== subId));
+    } catch { alert('Failed to reject'); }
+  }
+
+  const methods = ['PayPal', 'Bank Transfer', 'CashApp', 'Venmo', 'Wise', 'Western Union', 'Other'];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '6px' }}>Your payment method</div>
+        <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '20px' }}>Clients will see this when they subscribe and pay you directly.</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="field">
+            <label>Payment method</label>
+            <select value={form.payment_method} onChange={e => upd('payment_method', e.target.value)}
+              style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', color: 'var(--dark)' }}>
+              <option value="">Select a method…</option>
+              {methods.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Payment details</label>
+            <input type="text" value={form.payment_details} onChange={e => upd('payment_details', e.target.value)}
+              placeholder="e.g. paypal.me/yourname or your IBAN or @cashapp" />
+          </div>
+          <div className="field">
+            <label>Instructions for clients (optional)</label>
+            <textarea value={form.payment_instructions} onChange={e => upd('payment_instructions', e.target.value)}
+              rows={3} placeholder="e.g. Send payment with your name in the note. Once sent, upload your screenshot below." />
+          </div>
+          <button className="btn-save-live" onClick={save} disabled={saving} style={{ alignSelf: 'flex-start' }}>
+            {saving ? 'Saving…' : saved ? 'Saved!' : 'Save payment method'}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '700' }}>Pending approvals</div>
+          {pending.length > 0 && (
+            <span style={{ fontSize: '11px', fontWeight: '700', background: 'rgba(255,77,28,0.12)', color: '#ff4d1c', padding: '2px 8px', borderRadius: '100px' }}>
+              {pending.length} waiting
+            </span>
+          )}
+        </div>
+        {loadingPending ? (
+          <div style={{ color: 'var(--muted)', fontSize: '13px' }}>Loading…</div>
+        ) : pending.length === 0 ? (
+          <div style={{ color: 'var(--muted)', fontSize: '13px', textAlign: 'center', padding: '24px' }}>No pending payments to review.</div>
+        ) : pending.map(s => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: s.user?.photo ? 'transparent' : avatarBg(s.user?.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
+              {s.user?.photo ? <img src={s.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(s.user?.name)}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '2px' }}>{s.user?.name || '?'}</div>
+              <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '10px' }}>{s.plan_months} month plan · ${s.plan_price}</div>
+              {s.payment_proof_url && (
+                <a href={s.payment_proof_url} target="_blank" rel="noopener noreferrer">
+                  <img src={s.payment_proof_url} alt="Payment proof" style={{ maxWidth: '200px', maxHeight: '140px', borderRadius: '10px', objectFit: 'cover', display: 'block', marginBottom: '10px', border: '1px solid var(--border)' }} />
+                </a>
+              )}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => approve(s.id)} className="btn-save-live" style={{ padding: '7px 16px', fontSize: '12px' }}>
+                  Approve & give access
+                </button>
+                <button onClick={() => reject(s.id)} className="content-btn" style={{ color: '#ff4d1c', borderColor: 'rgba(255,77,28,0.25)', fontSize: '12px' }}>
+                  Reject
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
