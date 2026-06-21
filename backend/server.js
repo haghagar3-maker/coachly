@@ -106,11 +106,18 @@ async function compressVideoInBackground(contentId, originalUrl) {
   const inputPath = path.join(tmpDir, `in_${contentId}.mp4`);
   const outputPath = path.join(tmpDir, `out_${contentId}.mp4`);
 
+  console.log(`[compress] starting for content ${contentId}: ${originalUrl}`);
+
   try {
     const res = await fetch(originalUrl);
     if (!res.ok) throw new Error('Failed to download original video');
-    const buffer = Buffer.from(await res.arrayBuffer());
-    fs.writeFileSync(inputPath, buffer);
+
+    // Stream straight to disk instead of loading the whole video into memory
+    const { pipeline } = require('stream/promises');
+    const { Readable } = require('stream');
+    await pipeline(Readable.fromWeb(res.body), fs.createWriteStream(inputPath));
+    const buffer = { length: fs.statSync(inputPath).size };
+    console.log(`[compress] downloaded ${buffer.length} bytes for ${contentId}`);
 
     await new Promise((resolve, reject) => {
       ffmpeg(inputPath)
@@ -124,6 +131,7 @@ async function compressVideoInBackground(contentId, originalUrl) {
         .save(outputPath);
     });
 
+    console.log(`[compress] ffmpeg finished for ${contentId}, uploading result…`);
     const compressedBuffer = fs.readFileSync(outputPath);
     const fileName = `compressed_${Date.now()}_${contentId}.mp4`;
     const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
@@ -164,7 +172,7 @@ async function compressVideoInBackground(contentId, originalUrl) {
       }).catch(() => {});
     }
   } catch (e) {
-    console.error('Video compression error:', e.message);
+    console.error(`[compress] FAILED for ${contentId}:`, e.message);
   } finally {
     try { fs.unlinkSync(inputPath); } catch {}
     try { fs.unlinkSync(outputPath); } catch {}
