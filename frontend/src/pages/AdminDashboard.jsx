@@ -505,11 +505,11 @@ function SectionSubscriptions({ showToast }) {
         ) : filtered.map(s => (
           <div className="ct-row" key={s.id} style={{ gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr 1fr', cursor: 'default' }}>
             <div className="ct-cell">
-              <div style={{ fontWeight: 500 }}>{s.user_name || s.users?.name || '—'}</div>
-              <div style={{ fontSize: 11, color: 'var(--muted)' }}>{s.user_email || s.users?.email || ''}</div>
+              <div style={{ fontWeight: 500 }}>{s.user?.name || '—'}</div>
+              <div style={{ fontSize: 11, color: 'var(--muted)' }}>{s.user?.email || ''}</div>
             </div>
             <div className="ct-cell">
-              <div style={{ fontWeight: 500 }}>{s.coach_name || s.coaches?.name || '—'}</div>
+              <div style={{ fontWeight: 500 }}>{s.coach?.name || '—'}</div>
             </div>
             <div className="ct-cell">{s.plan_months}mo</div>
             <div className="ct-cell">{s.plan_start ? new Date(s.plan_start).toLocaleDateString() : '—'}</div>

@@ -555,7 +555,7 @@ app.patch('/api/coach/checkin/:id', requireAuth, requireCoach, async (req, res) 
   try {
     const result = await db('checkins', 'PATCH',
       { coach_reply: req.body.coach_reply, replied_at: new Date().toISOString() },
-      `?id=eq.${req.params.coachPublicId}&coach_id=eq.${req.session.coach_id}`
+      `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`
     );
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
@@ -1010,7 +1010,7 @@ app.delete('/api/user/subscription/:id', requireAuth, requireUser, async (req, r
   try {
     await db('subscriptions', 'PATCH',
       { status: 'cancelled' },
-      `?id=eq.${req.params.coachPublicId}&user_id=eq.${req.session.user_id}`
+      `?id=eq.${req.params.id}&user_id=eq.${req.session.user_id}`
     );
     res.json({ success: true });
   } catch (e) {
@@ -1362,10 +1362,10 @@ app.post('/api/posts', requireAuth, requireUser, async (req, res) => {
 app.patch('/api/posts/:id/like', requireAuth, async (req, res) => {
   try {
     // Optimistic increment
-    const posts = await db('posts', 'GET', null, `?id=eq.${req.params.coachPublicId}&select=likes`);
+    const posts = await db('posts', 'GET', null, `?id=eq.${req.params.id}&select=likes`);
     if (!posts || posts.length === 0) return res.status(404).json({ error: 'Post not found' });
     const newLikes = (posts[0].likes || 0) + 1;
-    const result = await db('posts', 'PATCH', { likes: newLikes }, `?id=eq.${req.params.coachPublicId}`);
+    const result = await db('posts', 'PATCH', { likes: newLikes }, `?id=eq.${req.params.id}`);
     res.json({ likes: newLikes });
   } catch (e) {
     res.status(500).json({ error: 'Failed to like post' });
@@ -1738,7 +1738,7 @@ app.get('/api/admin/coaches', requireAuth, requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/coach/:id/approve', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('coaches', 'PATCH', { is_approved: true, is_active: true }, `?id=eq.${req.params.coachPublicId}`);
+    await db('coaches', 'PATCH', { is_approved: true, is_active: true }, `?id=eq.${req.params.id}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to approve coach' });
@@ -1747,7 +1747,7 @@ app.patch('/api/admin/coach/:id/approve', requireAuth, requireAdmin, async (req,
 
 app.patch('/api/admin/coach/:id/suspend', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('coaches', 'PATCH', { is_active: false }, `?id=eq.${req.params.coachPublicId}`);
+    await db('coaches', 'PATCH', { is_active: false }, `?id=eq.${req.params.id}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to suspend coach' });
@@ -1756,7 +1756,7 @@ app.patch('/api/admin/coach/:id/suspend', requireAuth, requireAdmin, async (req,
 
 app.delete('/api/admin/coach/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('coaches', 'DELETE', null, `?id=eq.${req.params.coachPublicId}`);
+    await db('coaches', 'DELETE', null, `?id=eq.${req.params.id}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete coach' });
@@ -1825,7 +1825,7 @@ app.post('/api/admin/category', requireAuth, requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/category/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const result = await db('categories', 'PATCH', req.body, `?id=eq.${req.params.coachPublicId}`);
+    const result = await db('categories', 'PATCH', req.body, `?id=eq.${req.params.id}`);
     res.json(Array.isArray(result) ? result[0] : result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to update category' });
@@ -1834,7 +1834,7 @@ app.patch('/api/admin/category/:id', requireAuth, requireAdmin, async (req, res)
 
 app.delete('/api/admin/category/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('categories', 'DELETE', null, `?id=eq.${req.params.coachPublicId}`);
+    await db('categories', 'DELETE', null, `?id=eq.${req.params.id}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete category' });
@@ -1896,22 +1896,23 @@ app.get('/api/admin/activity', requireAuth, requireAdmin, async (req, res) => {
 
 app.get('/api/admin/system', requireAuth, requireAdmin, async (req, res) => {
   try {
-    // Test DB connection
-    let dbStatus = 'ok';
-    try { await db('settings', 'GET', null, '?limit=1'); } catch { dbStatus = 'error'; }
+    let dbOk = true;
+    try { await db('settings', 'GET', null, '?limit=1'); } catch { dbOk = false; }
 
-    // Test Groq connection (just check if key exists)
-    const groqStatus = process.env.GROQ_KEY ? 'configured' : 'not_configured';
-
+    const groqOk = !!process.env.GROQ_KEY;
     const errors = await db('error_logs', 'GET', null, '?order=created_at.desc&limit=20&select=*').catch(() => []);
 
+    const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+    const h = Math.floor(uptimeSeconds / 3600);
+    const m = Math.floor((uptimeSeconds % 3600) / 60);
+
     res.json({
-      server_status: 'ok',
-      uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
-      db_status: dbStatus,
-      groq_status: groqStatus,
+      server_ok: true,
+      db_ok: dbOk,
+      groq_ok: groqOk,
+      uptime: `${h}h ${m}m`,
       queue_length: getQueueLength(),
-      recent_errors: errors || [],
+      errors: errors || [],
     });
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch system status' });
@@ -1920,7 +1921,7 @@ app.get('/api/admin/system', requireAuth, requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/errors/:id/resolve', requireAuth, requireAdmin, async (req, res) => {
   try {
-    await db('error_logs', 'PATCH', { resolved: true }, `?id=eq.${req.params.coachPublicId}`);
+    await db('error_logs', 'PATCH', { resolved: true }, `?id=eq.${req.params.id}`);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to resolve error' });
