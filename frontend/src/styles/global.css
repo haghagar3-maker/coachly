@@ -2065,3 +2065,12 @@ body > div[style*="minHeight: '100vh'"] {
   .exercise-edit-row input:nth-child(4) { grid-area: rest; }
   .exercise-edit-row button { grid-area: remove; justify-self: end; }
 }
+.foodscan-macros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media (max-width: 420px) {
+  .foodscan-macros { grid-template-columns: repeat(2, 1fr); }
+}

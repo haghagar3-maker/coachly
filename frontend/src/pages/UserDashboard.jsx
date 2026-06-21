@@ -1172,7 +1172,7 @@ function SectionFoodScan({ user, coach }) {
                 {result.health_score}/10
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '16px' }}>
+            <div className="foodscan-macros">
               {[['🔥', result.calories, 'kcal'], ['💪', `${result.protein}g`, 'protein'], ['🌾', `${result.carbs}g`, 'carbs'], ['🧈', `${result.fat}g`, 'fat']].map(([icon, val, label]) => (
                 <div key={label} style={{ textAlign: 'center', background: 'var(--bg)', borderRadius: '10px', padding: '10px 6px' }}>
                   <div style={{ fontSize: '18px' }}>{icon}</div>
