@@ -20,6 +20,12 @@ const {
   generalModal,
 } = require('./groq-modals');
 const { createCheckout, handleWebhook, calculatePlatformFee } = require('./payment');
+const ffmpegPath = require('ffmpeg-static');
+const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -89,6 +95,79 @@ async function createNotification(recipientId, recipientType, type, title, body 
   } catch (e) {
     // non-blocking — never crash the main request
     console.error('Notification error:', e.message);
+  }
+}
+
+// ─────────────────────────────────────────────
+// BACKGROUND VIDEO COMPRESSION (runs silently, never blocks the coach)
+// ─────────────────────────────────────────────
+async function compressVideoInBackground(contentId, originalUrl) {
+  const tmpDir = os.tmpdir();
+  const inputPath = path.join(tmpDir, `in_${contentId}.mp4`);
+  const outputPath = path.join(tmpDir, `out_${contentId}.mp4`);
+
+  try {
+    const res = await fetch(originalUrl);
+    if (!res.ok) throw new Error('Failed to download original video');
+    const buffer = Buffer.from(await res.arrayBuffer());
+    fs.writeFileSync(inputPath, buffer);
+
+    await new Promise((resolve, reject) => {
+      ffmpeg(inputPath)
+        .videoCodec('libx264')
+        .size('?x720')
+        .outputOptions(['-crf 28', '-preset fast', '-movflags +faststart'])
+        .audioCodec('aac')
+        .audioBitrate('128k')
+        .on('end', resolve)
+        .on('error', reject)
+        .save(outputPath);
+    });
+
+    const compressedBuffer = fs.readFileSync(outputPath);
+    const fileName = `compressed_${Date.now()}_${contentId}.mp4`;
+    const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+        'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+        'Content-Type': 'video/mp4',
+        'x-upsert': 'true',
+      },
+      body: compressedBuffer,
+    });
+    if (!uploadRes.ok) throw new Error('Failed to upload compressed video');
+    const compressedUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/coach-media/${fileName}`;
+
+    // Only swap if it's actually smaller — never make things worse
+    if (compressedBuffer.length < buffer.length) {
+      await db('content', 'PATCH', { url: compressedUrl }, `?id=eq.${contentId}`);
+
+      const origFileName = originalUrl.split('/coach-media/')[1];
+      if (origFileName) {
+        fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${origFileName}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+            'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+          },
+        }).catch(() => {});
+      }
+      console.log(`Compressed video ${contentId}: ${buffer.length} → ${compressedBuffer.length} bytes`);
+    } else {
+      fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+          'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+        },
+      }).catch(() => {});
+    }
+  } catch (e) {
+    console.error('Video compression error:', e.message);
+  } finally {
+    try { fs.unlinkSync(inputPath); } catch {}
+    try { fs.unlinkSync(outputPath); } catch {}
   }
 }
 
@@ -555,6 +634,11 @@ app.post('/api/coach/content', requireAuth, requireCoach, async (req, res) => {
       coach_id: req.session.coach_id,
     });
     const content = Array.isArray(result) ? result[0] : result;
+
+    // Compress video in the background — coach isn't kept waiting for this
+    if (content?.type === 'video' && content?.url && content.url.includes('/coach-media/')) {
+      compressVideoInBackground(content.id, content.url).catch(() => {});
+    }
 
     // Notify all active subscribers
     const subs = await db('subscriptions', 'GET', null,
