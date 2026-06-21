@@ -954,7 +954,7 @@ app.patch('/api/user/profile', requireAuth, requireUser, async (req, res) => {
 app.get('/api/user/subscriptions', requireAuth, requireUser, async (req, res) => {
   try {
     const subs = await db('subscriptions', 'GET', null,
-      `?user_id=eq.${req.session.user_id}&status=eq.active&select=*`
+      `?user_id=eq.${req.session.user_id}&status=neq.cancelled&select=*`
     );
     if (!subs) return res.json([]);
 

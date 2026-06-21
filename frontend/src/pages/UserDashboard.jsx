@@ -2030,20 +2030,21 @@ export default function UserDashboard() {
 
   // Poll subscription status while pending — auto-switches to the full dashboard the moment the coach approves
   const pendingStatus = subscriptions.find((s) => s.coach_id === activeCoachId)?.status;
+  const isPending = pendingStatus === 'pending_payment';
   useEffect(() => {
-    if (pendingStatus !== 'pending') return;
+    if (!isPending) return;
     const interval = setInterval(async () => {
       try {
         const subs = await getUserSubscriptions();
         const updated = subs.find((s) => s.coach_id === activeCoachId);
-        if (updated && updated.status !== 'pending') {
+        if (updated && updated.status !== 'pending_payment') {
           showToast('Your coach approved you! Welcome aboard 🎉', 'success');
         }
         setSubscriptions(subs);
       } catch {}
     }, 5000);
     return () => clearInterval(interval);
-  }, [pendingStatus, activeCoachId]);
+  }, [isPending, activeCoachId]);
 
   function navigate2(s) {
     if (s === 'switch-coach') { setSection('switch-coach'); return; }
@@ -2118,7 +2119,7 @@ export default function UserDashboard() {
   }
 
   // Subscription pending coach approval — show waiting screen, auto-unlocks via polling above
-  const pendingSub = subscriptions.find((s) => s.coach_id === activeCoachId && s.status === 'pending');
+  const pendingSub = subscriptions.find((s) => s.coach_id === activeCoachId && s.status === 'pending_payment');
   if (pendingSub) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
