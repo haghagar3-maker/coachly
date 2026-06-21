@@ -303,27 +303,21 @@ export default function Store() {
     style.textContent = `
       @media (max-width: 860px) {
         .store-main-grid { grid-template-columns: 1fr !important; }
-        .store-hero-content-row { flex-direction: column; align-items: flex-start !important; gap: 16px !important; }
-        .store-hero-content-row > div:last-child { align-items: flex-start !important; width: 100%; }
       }
       @media (max-width: 700px) {
-        .store-hero { height: 380px !important; margin-bottom: 90px; }
-        .store-hero-subscribe-btn { display: none !important; }
-        .store-mobile-plan-card {
-          display: block !important;
-          position: relative;
-          margin: -80px 16px 0;
-          background: #fff;
-          border-radius: 20px;
-          padding: 18px;
-          box-shadow: 0 12px 40px rgba(0,0,0,0.18);
-          z-index: 5;
-        }
+        .store-hero { height: 280px !important; }
+        .store-hero-content-row { flex-direction: column; align-items: flex-start !important; gap: 12px !important; bottom: 16px !important; left: 16px !important; right: 16px !important; }
+        .store-hero-identity { gap: 10px !important; align-items: center !important; }
+        .store-hero-avatar { width: 56px !important; height: 56px !important; font-size: 18px !important; border-width: 2px !important; }
+        .store-hero-name { font-size: 19px !important; }
+        .store-hero-meta-text { display: none !important; }
+        .store-hero-stats-cta { display: none !important; }
+        .store-hero-plan-mobile { display: block !important; width: 100%; }
       }
       .store-gallery-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
       @media (max-width: 480px) {
         .store-highlights-grid { grid-template-columns: 1fr !important; }
-        .store-gallery-grid { grid-template-columns: 1fr !important; }
+        .store-gallery-grid { grid-template-columns: repeat(2, 1fr) !important; max-width: 100% !important; gap: 8px !important; }
       }
     `;
     document.head.appendChild(style);
@@ -451,25 +445,25 @@ export default function Store() {
           Share ↑
         </button>
 
-        {/* Hero content */}
+        {/* Hero content — desktop layout */}
         <div className="store-hero-content-row" style={{ position: 'absolute', bottom: '32px', left: '28px', right: '28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
+          <div className="store-hero-identity" style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
             {/* Avatar */}
-            <div style={{ width: '110px', height: '110px', borderRadius: '50%', border: '4px solid rgba(255,255,255,0.95)', overflow: 'hidden', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '800', color: '#fff', flexShrink: 0, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+            <div className="store-hero-avatar" style={{ width: '110px', height: '110px', borderRadius: '50%', border: '4px solid rgba(255,255,255,0.95)', overflow: 'hidden', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '800', color: '#fff', flexShrink: 0, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
               {coach.photo ? <img src={coach.photo} alt={coach.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(coach.name)}
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: '36px', fontWeight: '900', color: '#fff', letterSpacing: '-0.02em', textShadow: '0 2px 16px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>{coach.name}</h1>
+              <h1 className="store-hero-name" style={{ margin: 0, fontSize: '36px', fontWeight: '900', color: '#fff', letterSpacing: '-0.02em', textShadow: '0 2px 16px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>{coach.name}</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                 {coach.sport && <div style={{ fontSize: '11px', color: '#fff', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.12em', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', padding: '5px 14px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.25)' }}>{coach.sport}</div>}
-                {coach.location && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{coach.location}</div>}
-                {coach.years_experience && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{coach.years_experience}y exp</div>}
+                {coach.location && <div className="store-hero-meta-text" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{coach.location}</div>}
+                {coach.years_experience && <div className="store-hero-meta-text" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{coach.years_experience}y exp</div>}
               </div>
             </div>
           </div>
 
-          {/* Right side — stats + CTA */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+          {/* Right side — stats + CTA (desktop only) */}
+          <div className="store-hero-stats-cta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '12px' }}>
               {coach.subscriber_count > 0 && (
                 <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center' }}>
@@ -489,25 +483,25 @@ export default function Store() {
           </button>
           </div>
         </div>
-      </div>
 
-      {/* ── MOBILE FLOATING PLAN CARD ── */}
-      <div className="store-mobile-plan-card" style={{ display: 'none' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-          {planOptions.map(months => {
-            const price = getPlanPrice(months);
-            const selected = planMonths === months;
-            return (
-              <button key={months} onClick={() => setPlanMonths(months)} style={{ flex: 1, padding: '10px 8px', borderRadius: '12px', border: `2px solid ${selected ? '#111' : '#e5e5e5'}`, background: selected ? '#111' : '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: selected ? '#fff' : '#111' }}>{months}mo</div>
-                <div style={{ fontSize: '13px', fontWeight: '900', color: selected ? accentColor : '#111', marginTop: '2px' }}>${price || '—'}</div>
-              </button>
-            );
-          })}
+        {/* Hero plan picker — mobile only, stacked below identity inside the hero */}
+        <div className="store-hero-plan-mobile" style={{ display: 'none' }}>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+            {planOptions.map(months => {
+              const price = getPlanPrice(months);
+              const selected = planMonths === months;
+              return (
+                <button key={months} onClick={() => setPlanMonths(months)} style={{ flex: 1, padding: '8px 4px', borderRadius: '10px', border: `1.5px solid ${selected ? '#fff' : 'rgba(255,255,255,0.3)'}`, background: selected ? '#fff' : 'rgba(255,255,255,0.1)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '700', color: selected ? '#111' : '#fff' }}>{months}mo</div>
+                  <div style={{ fontSize: '12px', fontWeight: '900', color: selected ? '#111' : '#fff', marginTop: '1px' }}>${price || '—'}</div>
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '13px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit' }}>
+            {alreadySubbed ? '✓ Subscribed' : 'Get started →'}
+          </button>
         </div>
-        <button onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ width: '100%', padding: '15px', borderRadius: '14px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '15px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit' }}>
-          {alreadySubbed ? '✓ Subscribed' : 'Get started →'}
-        </button>
       </div>
 
       {/* ── STATS BAR ── */}
@@ -675,7 +669,7 @@ export default function Store() {
           {activeTab === 'about' && Array.isArray(coach.media) && coach.media.filter(m => m.url).length > 0 && (
             <div style={{ marginBottom: '32px' }}>
               <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>Gallery</div>
-              <div className="store-gallery-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+              <div className="store-gallery-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', maxWidth: '440px' }}>
                 {coach.media.filter(m => m.url).map((m, i) => (
                   <div key={i} className="store-gallery-card" style={{ borderRadius: '16px', overflow: 'hidden', background: '#111', aspectRatio: '4/5', position: 'relative', boxShadow: '0 6px 20px rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.06)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
                     {m.type === 'video'
