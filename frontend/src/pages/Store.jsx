@@ -296,6 +296,24 @@ function PaymentModal({ subId, coach, onClose, onPaid }) {
 
 export default function Store() {
   const { id } = useParams();
+  // Mobile responsive overrides — inline page has no shared stylesheet
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.id = 'store-responsive-overrides';
+    style.textContent = `
+      @media (max-width: 860px) {
+        .store-main-grid { grid-template-columns: 1fr !important; }
+        .store-hero-content-row { flex-direction: column; align-items: flex-start !important; gap: 20px !important; }
+        .store-hero-content-row > div:last-child { align-items: flex-start !important; width: 100%; }
+      }
+      @media (max-width: 480px) {
+        .store-highlights-grid { grid-template-columns: 1fr !important; }
+        .store-gallery-grid { grid-template-columns: 1fr !important; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
   const navigate = useNavigate();
   const [coach, setCoach] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -419,7 +437,7 @@ export default function Store() {
         </button>
 
         {/* Hero content */}
-        <div style={{ position: 'absolute', bottom: '32px', left: '28px', right: '28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
+        <div className="store-hero-content-row" style={{ position: 'absolute', bottom: '32px', left: '28px', right: '28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
             {/* Avatar */}
             <div style={{ width: '110px', height: '110px', borderRadius: '50%', border: '4px solid rgba(255,255,255,0.95)', overflow: 'hidden', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '800', color: '#fff', flexShrink: 0, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
@@ -490,7 +508,7 @@ export default function Store() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 24px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '32px', alignItems: 'start' }}>
+      <div className="store-main-grid" style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 24px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '32px', alignItems: 'start' }}>
 
         {/* LEFT COLUMN */}
         <div>
@@ -539,7 +557,7 @@ export default function Store() {
               )}
 
               {/* Highlights */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
+              <div className="store-highlights-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
                 {[
                   { title: 'Personalised program', desc: 'Custom workout plan built around your coach\'s exact method and your goals' },
                   { title: 'Daily meal plans', desc: 'Custom nutrition guidance every day' },
@@ -623,7 +641,7 @@ export default function Store() {
           {activeTab === 'about' && Array.isArray(coach.media) && coach.media.filter(m => m.url).length > 0 && (
             <div style={{ marginBottom: '32px' }}>
               <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>Gallery</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div className="store-gallery-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                 {coach.media.filter(m => m.url).map((m, i) => (
                   <div key={i} style={{ borderRadius: '12px', overflow: 'hidden', background: '#111', aspectRatio: '16/9', position: 'relative' }}>
                     {m.type === 'video'
