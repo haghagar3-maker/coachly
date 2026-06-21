@@ -303,9 +303,24 @@ export default function Store() {
     style.textContent = `
       @media (max-width: 860px) {
         .store-main-grid { grid-template-columns: 1fr !important; }
-        .store-hero-content-row { flex-direction: column; align-items: flex-start !important; gap: 20px !important; }
+        .store-hero-content-row { flex-direction: column; align-items: flex-start !important; gap: 16px !important; }
         .store-hero-content-row > div:last-child { align-items: flex-start !important; width: 100%; }
       }
+      @media (max-width: 700px) {
+        .store-hero { height: 380px !important; margin-bottom: 90px; }
+        .store-hero-subscribe-btn { display: none !important; }
+        .store-mobile-plan-card {
+          display: block !important;
+          position: relative;
+          margin: -80px 16px 0;
+          background: #fff;
+          border-radius: 20px;
+          padding: 18px;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+          z-index: 5;
+        }
+      }
+      .store-gallery-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
       @media (max-width: 480px) {
         .store-highlights-grid { grid-template-columns: 1fr !important; }
         .store-gallery-grid { grid-template-columns: 1fr !important; }
@@ -417,7 +432,7 @@ export default function Store() {
       <Toast />
 
       {/* ── HERO ── */}
-      <div style={{ position: 'relative', height: '520px', overflow: 'hidden' }}>
+      <div className="store-hero" style={{ position: 'relative', height: '520px', overflow: 'hidden' }}>
         {/* Banner */}
         <div style={{
           position: 'absolute', inset: 0,
@@ -469,11 +484,30 @@ export default function Store() {
                 </div>
               )}
             </div>
-            <button onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '15px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap' }}>
+            <button className="store-hero-subscribe-btn" onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '15px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap' }}>
             {alreadySubbed ? '✓ Subscribed' : 'Subscribe now'}
           </button>
           </div>
         </div>
+      </div>
+
+      {/* ── MOBILE FLOATING PLAN CARD ── */}
+      <div className="store-mobile-plan-card" style={{ display: 'none' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+          {planOptions.map(months => {
+            const price = getPlanPrice(months);
+            const selected = planMonths === months;
+            return (
+              <button key={months} onClick={() => setPlanMonths(months)} style={{ flex: 1, padding: '10px 8px', borderRadius: '12px', border: `2px solid ${selected ? '#111' : '#e5e5e5'}`, background: selected ? '#111' : '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: selected ? '#fff' : '#111' }}>{months}mo</div>
+                <div style={{ fontSize: '13px', fontWeight: '900', color: selected ? accentColor : '#111', marginTop: '2px' }}>${price || '—'}</div>
+              </button>
+            );
+          })}
+        </div>
+        <button onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ width: '100%', padding: '15px', borderRadius: '14px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '15px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit' }}>
+          {alreadySubbed ? '✓ Subscribed' : 'Get started →'}
+        </button>
       </div>
 
       {/* ── STATS BAR ── */}
@@ -641,16 +675,20 @@ export default function Store() {
           {activeTab === 'about' && Array.isArray(coach.media) && coach.media.filter(m => m.url).length > 0 && (
             <div style={{ marginBottom: '32px' }}>
               <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '16px' }}>Gallery</div>
-              <div className="store-gallery-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div className="store-gallery-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 {coach.media.filter(m => m.url).map((m, i) => (
-                  <div key={i} style={{ borderRadius: '12px', overflow: 'hidden', background: '#111', aspectRatio: '16/9', position: 'relative' }}>
+                  <div key={i} className="store-gallery-card" style={{ borderRadius: '16px', overflow: 'hidden', background: '#111', aspectRatio: '4/5', position: 'relative', boxShadow: '0 6px 20px rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.06)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
                     {m.type === 'video'
                       ? (m.url?.includes('youtube.com') || m.url?.includes('youtu.be')
                           ? <iframe src={m.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
                           : <video src={m.url} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />)
                       : <img src={m.url} alt={m.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     }
-                    {m.caption && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', padding: '20px 12px 10px', fontSize: '12px', color: '#fff', fontWeight: '600' }}>{m.caption}</div>}
+                    {m.caption && (
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '28px 14px 12px', fontSize: '12px', color: '#fff', fontWeight: '700', letterSpacing: '0.01em' }}>
+                        {m.caption}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
