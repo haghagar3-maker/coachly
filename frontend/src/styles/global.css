@@ -2091,3 +2091,7 @@ body > div[style*="minHeight: '100vh'"] {
     padding-top: 6px;
   }
 }
+@media (max-width: 900px) {
+  .sb-mini-calendar { display: none; }
+  .sb-bottom-desktop-only { display: none; }
+}

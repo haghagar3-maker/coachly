@@ -261,8 +261,8 @@ export default function Sidebar({
           );
         })()}
 
-        {/* Bottom actions */}
-        <div className="sb-bottom sb-bottom-sticky">
+        {/* Bottom actions — hidden on mobile, redundant with bottom nav + topbar logout */}
+        <div className="sb-bottom sb-bottom-desktop-only">
           <button
             className={`sb-profile-btn${activeSection === 'profile' ? ' active' : ''}`}
             onClick={() => { if (onNavigate) onNavigate('profile'); if (onClose) onClose(); }}
