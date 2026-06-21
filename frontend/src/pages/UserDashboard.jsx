@@ -1876,6 +1876,126 @@ function SectionSessions({ coach }) {
   
 
 // ═══════════════════════════════════════════════════════════════
+// PROGRAM COMPLETION — end-of-program rating + comment + optional photos
+// ═══════════════════════════════════════════════════════════════
+function StarRating({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontSize: '32px', lineHeight: 1, color: n <= value ? '#ffb800' : 'var(--border)' }}
+        >
+          ★
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SectionProgramFeedback({ coach, subscription, onDone }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [beforeImage, setBeforeImage] = useState(null);
+  const [afterImage, setAfterImage] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const beforeRef = useRef(null);
+  const afterRef = useRef(null);
+
+  async function pickImage(e, setter) {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file);
+      setter(compressed);
+    } catch {
+      showToast('Failed to process image', 'error');
+    }
+    e.target.value = '';
+  }
+
+  async function submit() {
+    if (!rating) { showToast('Please choose a star rating', 'error'); return; }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/user/program-feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+        body: JSON.stringify({
+          subscriptionId: subscription.id,
+          rating,
+          comment: comment.trim() || undefined,
+          beforeImageBase64: beforeImage || undefined,
+          afterImageBase64: afterImage || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit feedback');
+      showToast('Thank you for your feedback!', 'success');
+      onDone();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+      <Toast />
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '36px 28px', width: '100%', maxWidth: '460px', textAlign: 'center' }}>
+        <div style={{ width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', margin: '0 auto 16px', background: coach?.photo ? 'transparent' : avatarColor(coach?.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '800', color: '#fff' }}>
+          {coach?.photo ? <img src={coach.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(coach?.name)}
+        </div>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '700', marginBottom: '8px' }}>
+          You completed your program with {coach?.name?.split(' ')[0] || 'your coach'}!
+        </div>
+        <div style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px', lineHeight: '1.6' }}>
+          Leave a rating and a quick note before you go — this helps {coach?.name?.split(' ')[0] || 'your coach'} and future clients.
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <StarRating value={rating} onChange={setRating} />
+        </div>
+
+        <textarea
+          className="input"
+          rows={4}
+          placeholder="How was your experience? (optional)"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          style={{ resize: 'vertical', marginBottom: '20px', width: '100%' }}
+        />
+
+        <div style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', marginBottom: '10px' }}>
+          Before & after (optional — skip if you'd rather not)
+        </div>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+          <input ref={beforeRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => pickImage(e, setBeforeImage)} />
+          <input ref={afterRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => pickImage(e, setAfterImage)} />
+          <div onClick={() => beforeRef.current?.click()} style={{ flex: 1, height: '110px', borderRadius: '12px', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', background: 'var(--bg)' }}>
+            {beforeImage
+              ? <img src={beforeImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}><IconCamera size={22} /><div style={{ marginTop: '6px' }}>Before</div></div>}
+          </div>
+          <div onClick={() => afterRef.current?.click()} style={{ flex: 1, height: '110px', borderRadius: '12px', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', background: 'var(--bg)' }}>
+            {afterImage
+              ? <img src={afterImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}><IconCamera size={22} /><div style={{ marginTop: '6px' }}>After</div></div>}
+          </div>
+        </div>
+
+        <button className="btn-primary" onClick={submit} disabled={submitting} style={{ width: '100%', opacity: submitting ? 0.7 : 1 }}>
+          {submitting ? 'Submitting…' : 'Submit & finish'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SUBSCRIPTION SWITCHER (coach picker)
 // ═══════════════════════════════════════════════════════════════
 function SectionSwitchCoach({ subscriptions, currentCoachId, onSwitch, onBrowse }) {
@@ -2144,6 +2264,28 @@ export default function UserDashboard() {
           Log out
         </button>
       </div>
+    );
+  }
+
+  // Subscription completed but feedback not yet submitted — hard lock until they rate & comment
+  const completedSub = subscriptions.find((s) => s.coach_id === activeCoachId && s.status === 'completed' && !s.feedback_submitted);
+  if (completedSub) {
+    return (
+      <SectionProgramFeedback
+        coach={coach}
+        subscription={completedSub}
+        onDone={() => {
+          getUserSubscriptions().then((subs) => {
+            setSubscriptions(subs);
+            const nextActive = subs.find((s) => s.status === 'active');
+            if (nextActive) {
+              setActiveCoachId(nextActive.coach_id);
+              setSearchParams({ coach: nextActive.coach_id });
+              getCoach(nextActive.coach_id).then(setCoach).catch(() => {});
+            }
+          }).catch(() => {});
+        }}
+      />
     );
   }
 
