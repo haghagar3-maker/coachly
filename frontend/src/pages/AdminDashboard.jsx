@@ -350,6 +350,12 @@ function SectionCoaches({ showToast }) {
                   <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                 </button>
               )}
+              {c.is_active === false && (
+                <button className="ct-act-btn" title="Reactivate" style={{ color: 'var(--green)', borderColor: 'rgba(42,122,79,0.2)' }}
+                  onClick={() => handleApprove(c.id)} disabled={actionLoading === c.id + '-approve'}>
+                  <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </button>
+              )}
               <button className="ct-act-btn" title="View store" onClick={() => window.open(`/coach/${c.id}`, '_blank')}>
                 <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               </button>
