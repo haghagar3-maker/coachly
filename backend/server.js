@@ -549,8 +549,9 @@ app.get('/api/coach/content', requireAuth, requireCoach, async (req, res) => {
 
 app.post('/api/coach/content', requireAuth, requireCoach, async (req, res) => {
   try {
+    const { _uploading, ...cleanBody } = req.body;
     const result = await db('content', 'POST', {
-      ...req.body,
+      ...cleanBody,
       coach_id: req.session.coach_id,
     });
     const content = Array.isArray(result) ? result[0] : result;
