@@ -81,11 +81,13 @@ function SectionOverview({ showToast }) {
           getAdminActivity(),
           getAdminRevenue(),
         ]);
-        setStats(s);
-        setActivity(Array.isArray(a) ? a.slice(0, 8) : []);
-        setRevenue(Array.isArray(r) ? r : []);
+        setStats(s.status === 'fulfilled' ? s.value : null);
+        const activityData = a.status === 'fulfilled' && Array.isArray(a.value) ? a.value : [];
+        setActivity(activityData.slice(0, 8));
+        const revenueData = r.status === 'fulfilled' && Array.isArray(r.value) ? r.value : [];
+        setRevenue(revenueData);
         // build subs-over-time from revenue data
-        const subData = Array.isArray(r) ? r.map(row => ({ value: row.subscriptions || 0, label: row.month })) : [];
+        const subData = revenueData.map(row => ({ value: row.subscriptions || 0, label: row.month }));
         setSubs(subData);
       } catch (err) {
         showToast('Failed to load overview', 'error');
@@ -120,12 +122,12 @@ function SectionOverview({ showToast }) {
         </div>
         <div className="stat-card">
           <div className="stat-label-sm">Active Subscriptions</div>
-          <div className="stat-num-lg"><em>{stats?.total_subscriptions ?? 0}</em></div>
+          <div className="stat-num-lg"><em>{stats?.total_active_subscriptions ?? 0}</em></div>
           <div className="stat-change">Currently active</div>
         </div>
         <div className="stat-card dark">
           <div className="stat-label-sm">Platform Revenue</div>
-          <div className="stat-num-lg"><em>${stats?.platform_revenue_month ? Number(stats.platform_revenue_month).toFixed(0) : '0'}</em></div>
+          <div className="stat-num-lg"><em>${stats?.platform_revenue_this_month ? Number(stats.platform_revenue_this_month).toFixed(0) : '0'}</em></div>
           <div className="stat-change" style={{ color: 'rgba(255,255,255,0.3)' }}>This month (10% fee)</div>
         </div>
       </div>
