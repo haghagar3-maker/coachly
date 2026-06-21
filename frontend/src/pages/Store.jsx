@@ -814,7 +814,7 @@ export default function Store() {
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={onAuthSuccess} />}
       {showIntake && coach && <IntakeModal coach={coach} planMonths={planMonths} planPrice={getPlanPrice(planMonths)} onClose={() => setShowIntake(false)} onDone={onSubDone} />}
-      {showPayment && <PaymentModal subId={showPayment.subId} coach={showPayment.coach} onClose={() => setShowPayment(null)} onPaid={() => { setShowPayment(null); setAlreadySubbed(true); showToast('Proof submitted! Your coach will approve shortly.', 'success'); }} />}
+      {showPayment && <PaymentModal subId={showPayment.subId} coach={showPayment.coach} onClose={() => setShowPayment(null)} onPaid={() => { setShowPayment(null); setAlreadySubbed(true); navigate(`/dashboard?coach=${coach.id}`); }} />}
     </div>
   );
 }

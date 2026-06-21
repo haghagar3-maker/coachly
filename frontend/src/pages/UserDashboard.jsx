@@ -2028,6 +2028,23 @@ export default function UserDashboard() {
     }).catch(() => {});
   }, [coach]);
 
+  // Poll subscription status while pending — auto-switches to the full dashboard the moment the coach approves
+  const pendingStatus = subscriptions.find((s) => s.coach_id === activeCoachId)?.status;
+  useEffect(() => {
+    if (pendingStatus !== 'pending') return;
+    const interval = setInterval(async () => {
+      try {
+        const subs = await getUserSubscriptions();
+        const updated = subs.find((s) => s.coach_id === activeCoachId);
+        if (updated && updated.status !== 'pending') {
+          showToast('Your coach approved you! Welcome aboard 🎉', 'success');
+        }
+        setSubscriptions(subs);
+      } catch {}
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [pendingStatus, activeCoachId]);
+
   function navigate2(s) {
     if (s === 'switch-coach') { setSection('switch-coach'); return; }
     setSection(s);
@@ -2096,6 +2113,35 @@ export default function UserDashboard() {
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: '700', marginBottom: '12px' }}>Coachly</div>
           <div style={{ color: 'var(--muted)', fontSize: '14px' }}>Loading your dashboard…</div>
         </div>
+      </div>
+    );
+  }
+
+  // Subscription pending coach approval — show waiting screen, auto-unlocks via polling above
+  const pendingSub = subscriptions.find((s) => s.coach_id === activeCoachId && s.status === 'pending');
+  if (pendingSub) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
+        <Toast />
+        <div style={{ width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden', background: coach?.photo ? 'transparent' : avatarColor(coach?.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: '800', color: '#fff' }}>
+          {coach?.photo ? <img src={coach.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(coach?.name)}
+        </div>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '700' }}>
+          Waiting for {coach?.name?.split(' ')[0] || 'your coach'}'s approval
+        </div>
+        <div style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '360px', lineHeight: '1.6' }}>
+          Your payment proof was submitted. {coach?.name?.split(' ')[0] || 'Your coach'} reviews requests within 24–48h — this page switches to your dashboard automatically once you're approved, no need to refresh.
+        </div>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff4d1c', animation: 'pulse 1s infinite' }} />
+          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Checking for updates…</span>
+        </div>
+        <button
+          style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}
+          onClick={async () => { await logout().catch(() => {}); navigate('/'); }}
+        >
+          Log out
+        </button>
       </div>
     );
   }
