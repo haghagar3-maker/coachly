@@ -6,6 +6,7 @@ import {
   getAdminUsers,
   getAdminSubscriptions,
   getAdminRevenue,
+  getAdminCoachGrowth,
   getAdminCategories,
   getAdminActivity,
   getAdminSystem,
@@ -543,6 +544,86 @@ function SectionSubscriptions({ showToast }) {
   );
 }
 
+// ── Section: Coach Growth ─────────────────────────────────────────────────────
+function SectionGrowth({ showToast }) {
+  const [period, setPeriod] = useState('month');
+  const [growth, setGrowth] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await getAdminCoachGrowth(period);
+        setGrowth(Array.isArray(data) ? data : []);
+      } catch { showToast('Failed to load growth data', 'error'); }
+      finally { setLoading(false); }
+    }
+    load();
+  }, [period]);
+
+  const chartData = growth.map(g => ({ value: g.count, label: g.label }));
+
+  function formatLabel(label) {
+    if (period === 'year') return label;
+    if (period === 'month') {
+      const [y, m] = label.split('-');
+      return new Date(y, m - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    }
+    // day or week — label is YYYY-MM-DD
+    return new Date(label).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+  }
+
+  return (
+    <>
+      <div className="page-header">
+        <h1>Coach Growth</h1>
+        <p>New coach signups over time</p>
+      </div>
+
+      <div className="free-filters" style={{ marginBottom: 20 }}>
+        {['day', 'week', 'month', 'year'].map(p => (
+          <button key={p} className={`free-filter${period === p ? ' active' : ''}`} onClick={() => setPeriod(p)}>
+            {p.charAt(0).toUpperCase() + p.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-head">
+          <span className="card-title">New Coaches per {period.charAt(0).toUpperCase() + period.slice(1)}</span>
+        </div>
+        <div style={{ padding: '16px 22px' }}>
+          {loading ? (
+            <div style={{ color: 'var(--muted)', fontSize: 13 }}>Loading...</div>
+          ) : (
+            <MiniLineChart data={chartData} color="#E8633A" label="growth" />
+          )}
+        </div>
+      </div>
+
+      <div className="clients-table">
+        <div className="ct-head" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
+          <div>Period</div>
+          <div>New Coaches</div>
+          <div>Total Coaches (cumulative)</div>
+        </div>
+        {loading ? (
+          <div style={{ padding: 24, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Loading...</div>
+        ) : growth.length === 0 ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>No coach signups yet.</div>
+        ) : [...growth].reverse().map((g, i) => (
+          <div className="ct-row" key={i} style={{ gridTemplateColumns: '2fr 1fr 1fr', cursor: 'default' }}>
+            <div className="ct-cell" style={{ fontWeight: 600 }}>{formatLabel(g.label)}</div>
+            <div className="ct-cell">{g.count}</div>
+            <div className="ct-cell">{g.cumulative}</div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 // ── Section: Revenue ──────────────────────────────────────────────────────────
 function SectionRevenue({ showToast }) {
   const [revenue, setRevenue] = useState([]);
@@ -1019,6 +1100,7 @@ export default function AdminDashboard() {
     { id: 'users', label: 'Users', icon: <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
     { id: 'subscriptions', label: 'Subscriptions', icon: <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> },
     { id: 'revenue', label: 'Revenue', icon: <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
+    { id: 'growth', label: 'Coach Growth', icon: <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> },
     { id: 'categories', label: 'Categories', icon: <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg> },
     { id: 'activity', label: 'Activity Log', icon: <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
     { id: 'system', label: 'System Health', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 1 0 0 14.14"/></svg> },
@@ -1030,6 +1112,7 @@ export default function AdminDashboard() {
     users: 'Users',
     subscriptions: 'Subscriptions',
     revenue: 'Revenue',
+    growth: 'Coach Growth',
     categories: 'Categories',
     activity: 'Activity Log',
     system: 'System Health',
@@ -1122,6 +1205,7 @@ export default function AdminDashboard() {
           {activeSection === 'users' && <SectionUsers showToast={showToast} />}
           {activeSection === 'subscriptions' && <SectionSubscriptions showToast={showToast} />}
           {activeSection === 'revenue' && <SectionRevenue showToast={showToast} />}
+          {activeSection === 'growth' && <SectionGrowth showToast={showToast} />}
           {activeSection === 'categories' && <SectionCategories showToast={showToast} />}
           {activeSection === 'activity' && <SectionActivity showToast={showToast} />}
           {activeSection === 'system' && <SectionSystem showToast={showToast} />}

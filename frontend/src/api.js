@@ -327,6 +327,10 @@ export function getAdminRevenue() {
   return request('/api/admin/revenue', { admin: true });
 }
 
+export function getAdminCoachGrowth(period = 'month') {
+  return request(`/api/admin/coach-growth?period=${period}`, { admin: true });
+}
+
 export function getAdminActivity() {
   return request('/api/admin/activity', { admin: true });
 }
