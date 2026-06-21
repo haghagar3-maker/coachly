@@ -402,7 +402,7 @@ function SectionOverview({ coach }) {
 
   return (
     <>
-      <div className="stats-row" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+      <div className="stats-row coach-stats">
         {[
           { label: 'Active subscribers', value: stats?.subscriber_count || 0 },
           { label: 'Revenue this month', value: `$${(stats?.revenue_this_month || 0).toFixed(0)}`, dark: true },
@@ -564,7 +564,7 @@ function SectionClientDetail({ client, onBack }) {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+      <div className="client-detail-grid">
         {/* Plan info */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px' }}>
           <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '12px' }}>Plan</div>
@@ -992,7 +992,7 @@ function SectionStore({ coach, setCoach }) {
   const PRESET_COLORS = ['#C8FF00','#FF6B35','#5C6BC0','#00BCD4','#E91E63','#4CAF50','#FF9800','#ffffff'];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: '32px', alignItems: 'start' }}>
+    <div className="store-editor-wrap">
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* Photos */}
@@ -1624,7 +1624,7 @@ function SectionTraining({ coach, setCoach }) {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', alignItems: 'start' }}>
+    <div className="training-wrap">
       {/* Left — training blocks */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="ai-status-bar" style={{ marginBottom: '4px' }}>
@@ -2107,7 +2107,7 @@ function SectionAnalytics({ coach }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+      <div className="admin-stats">
         {[
           { label: 'Active subscribers', value: data.active_count },
           { label: 'Total revenue (your 90%)', value: `$${data.total_revenue.toFixed(0)}`, dark: true },
@@ -2748,7 +2748,7 @@ function SectionStrategy({ coach }) {
                 <input type="text" value={editingDay.session_title} onChange={e => setEditingDay(p => ({ ...p, session_title: e.target.value }))} />
               </div>
               {editingDay.exercises.map((ex, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px 32px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                <div key={i} className="exercise-edit-row">
                   <input type="text" value={ex.name} placeholder="Exercise" onChange={e => setEditingDay(p => ({ ...p, exercises: p.exercises.map((x, j) => j === i ? { ...x, name: e.target.value } : x) }))} style={{ padding: '7px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
                   <input type="text" value={ex.sets} placeholder="Sets" onChange={e => setEditingDay(p => ({ ...p, exercises: p.exercises.map((x, j) => j === i ? { ...x, sets: e.target.value } : x) }))} style={{ padding: '7px 8px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', textAlign: 'center' }} />
                   <input type="text" value={ex.reps} placeholder="Reps" onChange={e => setEditingDay(p => ({ ...p, exercises: p.exercises.map((x, j) => j === i ? { ...x, reps: e.target.value } : x) }))} style={{ padding: '7px 8px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', textAlign: 'center' }} />
