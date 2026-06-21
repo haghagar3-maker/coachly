@@ -2169,8 +2169,8 @@ app.delete('/api/coach/account', requireAuth, requireCoach, async (req, res) => 
 app.get('/api/notifications', requireAuth, async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
-    const recipientId = req.session.coach_id || req.session.user_id;
-    const recipientType = req.session.type === 'coach' ? 'coach' : 'user';
+    const recipientId = req.session.coach_id || req.session.user_id || req.session.admin_id;
+    const recipientType = req.session.type === 'coach' ? 'coach' : req.session.type === 'admin' ? 'admin' : 'user';
     const notifs = await db('notifications', 'GET', null,
       `?recipient_id=eq.${recipientId}&recipient_type=eq.${recipientType}&order=created_at.desc&limit=20&select=*`
     );
@@ -2183,8 +2183,8 @@ app.get('/api/notifications', requireAuth, async (req, res) => {
 // PATCH /api/notifications/read-all
 app.patch('/api/notifications/read-all', requireAuth, async (req, res) => {
   try {
-    const recipientId = req.session.coach_id || req.session.user_id;
-    const recipientType = req.session.type === 'coach' ? 'coach' : 'user';
+    const recipientId = req.session.coach_id || req.session.user_id || req.session.admin_id;
+    const recipientType = req.session.type === 'coach' ? 'coach' : req.session.type === 'admin' ? 'admin' : 'user';
     await db('notifications', 'PATCH', { is_read: true },
       `?recipient_id=eq.${recipientId}&recipient_type=eq.${recipientType}&is_read=eq.false`
     );
