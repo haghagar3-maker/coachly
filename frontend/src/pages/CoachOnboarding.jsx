@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { coachSignup, saveToken } from '../api';
+import { coachSignup, saveToken, getCategories } from '../api';
 import Toast, { showToast } from '../components/Toast';
 
 // ─── Step indicators ────────────────────────────────────────────
@@ -101,10 +101,24 @@ function StepAccount({ data, onChange }) {
 
 // ─── Step 2: Public profile ──────────────────────────────────────
 function StepProfile({ data, onChange }) {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([]));
+  }, []);
+
   return (
     <>
       <Field label="Sport / Niche *" hint="e.g. Strength & Conditioning, Marathon Running, Weight Loss">
         <input className="input" placeholder="What do you coach?" value={data.sport} onChange={(e) => onChange('sport', e.target.value)} />
+      </Field>
+      <Field label="Category *" hint="Where you'll appear when clients filter by category on the homepage">
+        <select className="input" value={data.category_id} onChange={(e) => onChange('category_id', e.target.value)}>
+          <option value="">Select a category…</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
       </Field>
       <Field label="Years of experience">
         <input className="input" type="number" min="0" placeholder="e.g. 5" value={data.experience} onChange={(e) => onChange('experience', e.target.value)} />
@@ -198,7 +212,7 @@ export default function CoachOnboarding() {
     // Step 1
     name: '', email: '', password: '', confirmPassword: '',
     // Step 2
-    sport: '', experience: '', location: '', bio: '', credentials: '',
+    sport: '', category_id: '', experience: '', location: '', bio: '', credentials: '',
     philosophy: '', photo: '', banner: '',
     // Step 3
     price_3m: '', price_6m: '', price_12m: '', meal_philosophy: '',
@@ -219,6 +233,7 @@ export default function CoachOnboarding() {
     }
     if (step === 1) {
       if (!form.sport.trim()) { showToast('Sport / niche is required', 'error'); return false; }
+      if (!form.category_id) { showToast('Please select a category', 'error'); return false; }
     }
     return true;
   }
@@ -243,6 +258,7 @@ export default function CoachOnboarding() {
         email: form.email.trim(),
         password: form.password,
         sport: form.sport.trim() || undefined,
+        category_id: form.category_id || undefined,
         experience: form.experience ? parseInt(form.experience, 10) : undefined,
         location: form.location.trim() || undefined,
         bio: form.bio.trim() || undefined,
