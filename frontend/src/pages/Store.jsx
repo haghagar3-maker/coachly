@@ -502,6 +502,7 @@ export default function Store() {
             </div>
           </div>
         </div>
+      </div>
 
       {/* ── STATS BAR ── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #eee' }}>
