@@ -1146,7 +1146,7 @@ export default function AdminDashboard() {
 
         <nav className="sb-nav">
           <div className="sb-section-label">Platform</div>
-          {navItems.slice(0, 5).map(item => (
+          {navItems.slice(0, 6).map(item => (
             <button key={item.id} className={`nav-item${activeSection === item.id ? ' active' : ''}`} onClick={() => nav(item.id)}>
               {item.icon}
               {item.label}
@@ -1154,7 +1154,7 @@ export default function AdminDashboard() {
           ))}
 
           <div className="sb-section-label">Content</div>
-          {navItems.slice(5, 7).map(item => (
+          {navItems.slice(6, 8).map(item => (
             <button key={item.id} className={`nav-item${activeSection === item.id ? ' active' : ''}`} onClick={() => nav(item.id)}>
               {item.icon}
               {item.label}
@@ -1162,7 +1162,7 @@ export default function AdminDashboard() {
           ))}
 
           <div className="sb-section-label">System</div>
-          {navItems.slice(7).map(item => (
+          {navItems.slice(8).map(item => (
             <button key={item.id} className={`nav-item${activeSection === item.id ? ' active' : ''}`} onClick={() => nav(item.id)}>
               {item.icon}
               {item.label}
