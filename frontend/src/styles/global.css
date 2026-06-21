@@ -2074,21 +2074,22 @@ body > div[style*="minHeight: '100vh'"] {
 @media (max-width: 420px) {
   .foodscan-macros { grid-template-columns: repeat(2, 1fr); }
 }
-/* ── Sidebar height fixes for mobile ──────────────────────── */
 @media (max-width: 900px) {
   .sb-mini-calendar { display: none; }
 
   .sidebar {
     display: flex;
     flex-direction: column;
+    padding-bottom: var(--bottom-nav-h);
   }
-  .sb-nav { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
-  .sb-bottom-sticky {
+  .sb-nav {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .sb-bottom {
     flex-shrink: 0;
-    position: sticky;
-    bottom: 0;
-    background: var(--dark);
-    padding-top: 6px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   }
 }
 @media (max-width: 900px) {
