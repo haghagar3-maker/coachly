@@ -1896,7 +1896,57 @@ app.get('/api/admin/revenue', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch revenue' });
   }
 });
-// GET /api/admin/coach-growth?period=day|week|month|year — new coach signups grouped by period
+// GET /api/admin/geo — country breakdown: demand (users) + supply (coaches) + performance
+app.get('/api/admin/geo', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const users = await db('users', 'GET', null, '?select=id,country').catch(() => []);
+    const coaches = await db('coaches', 'GET', null, '?select=id,country,rating,subscriber_count').catch(() => []);
+    const subs = await db('subscriptions', 'GET', null, '?status=eq.active&select=coach_id,plan_price').catch(() => []);
+
+    // Revenue per coach (for "best performing coaches" per country)
+    const revenueByCoach = {};
+    for (const s of (subs || [])) {
+      revenueByCoach[s.coach_id] = (revenueByCoach[s.coach_id] || 0) + (parseFloat(s.plan_price) || 0) * 0.9;
+    }
+
+    const byCountry = {};
+    function ensure(country) {
+      const key = country || 'Unknown';
+      if (!byCountry[key]) {
+        byCountry[key] = { country: key, user_count: 0, coach_count: 0, total_subscribers: 0, total_revenue: 0, avg_rating: 0, _ratingSum: 0, _ratedCoaches: 0 };
+      }
+      return byCountry[key];
+    }
+
+    for (const u of (users || [])) {
+      ensure(u.country).user_count++;
+    }
+    for (const c of (coaches || [])) {
+      const row = ensure(c.country);
+      row.coach_count++;
+      row.total_subscribers += c.subscriber_count || 0;
+      row.total_revenue += revenueByCoach[c.id] || 0;
+      if (c.rating) {
+        row._ratingSum += parseFloat(c.rating);
+        row._ratedCoaches++;
+      }
+    }
+
+    const result = Object.values(byCountry).map(row => ({
+      country: row.country,
+      user_count: row.user_count,
+      coach_count: row.coach_count,
+      total_subscribers: row.total_subscribers,
+      total_revenue: parseFloat(row.total_revenue.toFixed(2)),
+      avg_rating: row._ratedCoaches > 0 ? parseFloat((row._ratingSum / row._ratedCoaches).toFixed(1)) : null,
+    })).sort((a, b) => (b.user_count + b.coach_count) - (a.user_count + a.coach_count));
+
+    res.json(result);
+  } catch (e) {
+    logError('GET /api/admin/geo', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to fetch geo analytics' });
+  }
+});
 app.get('/api/admin/coach-growth', requireAuth, requireAdmin, async (req, res) => {
   try {
     const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'month';
