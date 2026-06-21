@@ -2074,3 +2074,20 @@ body > div[style*="minHeight: '100vh'"] {
 @media (max-width: 420px) {
   .foodscan-macros { grid-template-columns: repeat(2, 1fr); }
 }
+/* ── Sidebar height fixes for mobile ──────────────────────── */
+@media (max-width: 900px) {
+  .sb-mini-calendar { display: none; }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+  .sb-nav { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+  .sb-bottom-sticky {
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    background: var(--dark);
+    padding-top: 6px;
+  }
+}

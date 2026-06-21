@@ -207,7 +207,7 @@ export default function Sidebar({
           ])}
         </nav>
 
-        {/* Mini calendar */}
+        {/* Mini calendar — hidden on mobile to save space */}
         {(() => {
           const now = new Date();
           const year = now.getFullYear();
@@ -222,7 +222,7 @@ export default function Sidebar({
             }).filter(Boolean)
           );
           return (
-            <div style={{ margin: '8px 12px 4px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '10px 8px' }}>
+            <div className="sb-mini-calendar" style={{ margin: '8px 12px 4px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '10px 8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', padding: '0 4px' }}>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {now.toLocaleDateString('en-GB', { month: 'long' })}
@@ -262,7 +262,7 @@ export default function Sidebar({
         })()}
 
         {/* Bottom actions */}
-        <div className="sb-bottom">
+        <div className="sb-bottom sb-bottom-sticky">
           <button
             className={`sb-profile-btn${activeSection === 'profile' ? ' active' : ''}`}
             onClick={() => { if (onNavigate) onNavigate('profile'); if (onClose) onClose(); }}
