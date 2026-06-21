@@ -18,6 +18,7 @@ import {
   clearAdminToken,
   adminLogout,
 } from '../api';
+import NotificationBell from '../components/NotificationBell';
 
 // ── Toast ────────────────────────────────────────────────────────────────────
 function Toast({ message, type, visible }) {
@@ -1108,7 +1109,8 @@ export default function AdminDashboard() {
             </button>
             <div className="topbar-title">{sectionTitles[activeSection]}</div>
           </div>
-          <div className="topbar-right">
+          <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <NotificationBell token={localStorage.getItem('coachly_admin_token')} />
             <div className="tb-date">{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
           </div>
         </div>
