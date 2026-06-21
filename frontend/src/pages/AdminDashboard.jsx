@@ -7,6 +7,7 @@ import {
   getAdminSubscriptions,
   getAdminRevenue,
   getAdminCoachGrowth,
+  getAdminGeo,
   getAdminCategories,
   getAdminActivity,
   getAdminSystem,
@@ -624,6 +625,86 @@ function SectionGrowth({ showToast }) {
   );
 }
 
+// ── Section: Geo / Country Analytics ────────────────────────────────────────
+function SectionGeo({ showToast }) {
+  const [geo, setGeo] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await getAdminGeo();
+        setGeo(Array.isArray(data) ? data : []);
+      } catch { showToast('Failed to load geo data', 'error'); }
+      finally { setLoading(false); }
+    }
+    load();
+  }, []);
+
+  const byDemand = [...geo].sort((a, b) => b.user_count - a.user_count);
+  const byPerformance = [...geo].sort((a, b) => b.total_revenue - a.total_revenue);
+
+  return (
+    <>
+      <div className="page-header">
+        <h1>Country Analytics</h1>
+        <p>Where your users and coaches are coming from</p>
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-head">
+          <span className="card-title">Demand by Country (most users)</span>
+        </div>
+        <div className="clients-table">
+          <div className="ct-head" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
+            <div>Country</div>
+            <div>Users</div>
+            <div>Coaches</div>
+          </div>
+          {loading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Loading...</div>
+          ) : byDemand.length === 0 ? (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>No country data yet.</div>
+          ) : byDemand.map((g, i) => (
+            <div className="ct-row" key={i} style={{ gridTemplateColumns: '2fr 1fr 1fr', cursor: 'default' }}>
+              <div className="ct-cell" style={{ fontWeight: 600 }}>{g.country}</div>
+              <div className="ct-cell">{g.user_count}</div>
+              <div className="ct-cell">{g.coach_count}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <span className="card-title">Top Performing Countries (revenue & rating)</span>
+        </div>
+        <div className="clients-table">
+          <div className="ct-head" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
+            <div>Country</div>
+            <div>Subscribers</div>
+            <div>Revenue</div>
+            <div>Avg Rating</div>
+          </div>
+          {loading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Loading...</div>
+          ) : byPerformance.length === 0 ? (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>No country data yet.</div>
+          ) : byPerformance.map((g, i) => (
+            <div className="ct-row" key={i} style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr', cursor: 'default' }}>
+              <div className="ct-cell" style={{ fontWeight: 600 }}>{g.country}</div>
+              <div className="ct-cell">{g.total_subscribers}</div>
+              <div className="ct-cell">${g.total_revenue.toFixed(2)}</div>
+              <div className="ct-cell">{g.avg_rating ?? '—'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Section: Revenue ──────────────────────────────────────────────────────────
 function SectionRevenue({ showToast }) {
   const [revenue, setRevenue] = useState([]);
@@ -1101,6 +1182,7 @@ export default function AdminDashboard() {
     { id: 'subscriptions', label: 'Subscriptions', icon: <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> },
     { id: 'revenue', label: 'Revenue', icon: <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
     { id: 'growth', label: 'Coach Growth', icon: <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> },
+    { id: 'geo', label: 'Countries', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> },
     { id: 'categories', label: 'Categories', icon: <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg> },
     { id: 'activity', label: 'Activity Log', icon: <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
     { id: 'system', label: 'System Health', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 1 0 0 14.14"/></svg> },
@@ -1113,6 +1195,7 @@ export default function AdminDashboard() {
     subscriptions: 'Subscriptions',
     revenue: 'Revenue',
     growth: 'Coach Growth',
+    geo: 'Countries',
     categories: 'Categories',
     activity: 'Activity Log',
     system: 'System Health',
@@ -1146,7 +1229,7 @@ export default function AdminDashboard() {
 
         <nav className="sb-nav">
           <div className="sb-section-label">Platform</div>
-          {navItems.slice(0, 6).map(item => (
+          {navItems.slice(0, 7).map(item => (
             <button key={item.id} className={`nav-item${activeSection === item.id ? ' active' : ''}`} onClick={() => nav(item.id)}>
               {item.icon}
               {item.label}
@@ -1154,7 +1237,7 @@ export default function AdminDashboard() {
           ))}
 
           <div className="sb-section-label">Content</div>
-          {navItems.slice(6, 8).map(item => (
+          {navItems.slice(7, 9).map(item => (
             <button key={item.id} className={`nav-item${activeSection === item.id ? ' active' : ''}`} onClick={() => nav(item.id)}>
               {item.icon}
               {item.label}
@@ -1162,7 +1245,7 @@ export default function AdminDashboard() {
           ))}
 
           <div className="sb-section-label">System</div>
-          {navItems.slice(8).map(item => (
+          {navItems.slice(9).map(item => (
             <button key={item.id} className={`nav-item${activeSection === item.id ? ' active' : ''}`} onClick={() => nav(item.id)}>
               {item.icon}
               {item.label}
@@ -1206,6 +1289,7 @@ export default function AdminDashboard() {
           {activeSection === 'subscriptions' && <SectionSubscriptions showToast={showToast} />}
           {activeSection === 'revenue' && <SectionRevenue showToast={showToast} />}
           {activeSection === 'growth' && <SectionGrowth showToast={showToast} />}
+          {activeSection === 'geo' && <SectionGeo showToast={showToast} />}
           {activeSection === 'categories' && <SectionCategories showToast={showToast} />}
           {activeSection === 'activity' && <SectionActivity showToast={showToast} />}
           {activeSection === 'system' && <SectionSystem showToast={showToast} />}
