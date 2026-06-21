@@ -1879,7 +1879,50 @@ app.get('/api/admin/revenue', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch revenue' });
   }
 });
+// GET /api/admin/coach-growth?period=day|week|month|year — new coach signups grouped by period
+app.get('/api/admin/coach-growth', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const period = ['day', 'week', 'month', 'year'].includes(req.query.period) ? req.query.period : 'month';
+    const coaches = await db('coaches', 'GET', null, '?order=created_at.asc&select=created_at');
+    if (!coaches) return res.json([]);
 
+    function bucketKey(dateStr) {
+      const d = new Date(dateStr);
+      if (period === 'day') return dateStr.slice(0, 10); // YYYY-MM-DD
+      if (period === 'week') {
+        // ISO week start (Monday)
+        const day = d.getUTCDay() || 7;
+        const monday = new Date(d);
+        monday.setUTCDate(d.getUTCDate() - day + 1);
+        return monday.toISOString().slice(0, 10);
+      }
+      if (period === 'year') return dateStr.slice(0, 4); // YYYY
+      return dateStr.slice(0, 7); // YYYY-MM (month default)
+    }
+
+    const buckets = {};
+    for (const c of coaches) {
+      const key = bucketKey(c.created_at);
+      buckets[key] = (buckets[key] || 0) + 1;
+    }
+
+    const sorted = Object.entries(buckets)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([label, count]) => ({ label, count }));
+
+    // Running total (cumulative coaches over time) — useful for growth charts
+    let cumulative = 0;
+    const withCumulative = sorted.map(row => {
+      cumulative += row.count;
+      return { ...row, cumulative };
+    });
+
+    res.json(withCumulative);
+  } catch (e) {
+    logError('GET /api/admin/coach-growth', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to fetch coach growth' });
+  }
+});
 app.get('/api/admin/activity', requireAuth, requireAdmin, async (req, res) => {
   try {
     // Aggregate recent events from multiple tables
