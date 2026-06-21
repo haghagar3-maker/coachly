@@ -371,8 +371,8 @@ app.post('/api/coach/signup', async (req, res) => {
     const coaches = await db('coaches', 'POST', {
       name, email, password_hash,
       sport: sport || niche || null,
-      is_active: false,
-      is_approved: false,
+      is_active: true,
+      is_approved: true,
       ...rest,
     });
 
@@ -386,6 +386,16 @@ app.post('/api/coach/signup', async (req, res) => {
       type: 'coach',
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
+
+    // Notify admin — new coach joined automatically
+    const admins = await db('admins', 'GET', null, '?select=id').catch(() => []);
+    for (const admin of admins) {
+      await createNotification(
+        admin.id, 'admin', 'new_coach',
+        'New coach joined',
+        `${name} just signed up and is now live on the platform.`
+      );
+    }
 
     const { password_hash: _, ...safeCoach } = coach;
     res.json({ token, coach: safeCoach });
