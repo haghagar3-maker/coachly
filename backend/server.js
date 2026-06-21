@@ -98,6 +98,17 @@ async function createNotification(recipientId, recipientType, type, title, body 
   }
 }
 
+// Fetch with a hard timeout — prevents the process from hanging forever silently
+async function fetchWithTimeout(url, options = {}, timeoutMs = 60000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ─────────────────────────────────────────────
 // BACKGROUND VIDEO COMPRESSION (runs silently, never blocks the coach)
 // ─────────────────────────────────────────────
@@ -131,45 +142,76 @@ async function compressVideoInBackground(contentId, originalUrl) {
         .save(outputPath);
     });
 
-    console.log(`[compress] ffmpeg finished for ${contentId}, uploading result…`);
+    console.log(`[compress] ffmpeg finished for ${contentId}, reading output file…`);
     const compressedBuffer = fs.readFileSync(outputPath);
+    console.log(`[compress] output file is ${compressedBuffer.length} bytes, uploading to storage…`);
+
     const fileName = `compressed_${Date.now()}_${contentId}.mp4`;
-    const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
-        'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
-        'Content-Type': 'video/mp4',
-        'x-upsert': 'true',
+    const uploadRes = await fetchWithTimeout(
+      `${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+          'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+          'Content-Type': 'video/mp4',
+          'x-upsert': 'true',
+        },
+        body: compressedBuffer,
       },
-      body: compressedBuffer,
-    });
-    if (!uploadRes.ok) throw new Error('Failed to upload compressed video');
+      90000
+    );
+    console.log(`[compress] upload response status: ${uploadRes.status} for ${contentId}`);
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text().catch(() => '');
+      throw new Error(`Failed to upload compressed video: ${uploadRes.status} ${errText}`);
+    }
     const compressedUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/coach-media/${fileName}`;
+    console.log(`[compress] uploaded successfully, new url: ${compressedUrl}`);
 
     // Only swap if it's actually smaller — never make things worse
     if (compressedBuffer.length < buffer.length) {
-      await db('content', 'PATCH', { url: compressedUrl }, `?id=eq.${contentId}`);
+      console.log(`[compress] updating database row for ${contentId}…`);
+      const patchRes = await fetchWithTimeout(
+        `${process.env.SUPABASE_URL}/rest/v1/content?id=eq.${contentId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': process.env.SUPABASE_KEY,
+            'Authorization': `Bearer ${process.env.SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({ url: compressedUrl }),
+        },
+        30000
+      );
+      console.log(`[compress] database update status: ${patchRes.status} for ${contentId}`);
+      if (!patchRes.ok) {
+        const errText = await patchRes.text().catch(() => '');
+        throw new Error(`Failed to update database: ${patchRes.status} ${errText}`);
+      }
 
       const origFileName = originalUrl.split('/coach-media/')[1];
       if (origFileName) {
-        fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${origFileName}`, {
+        fetchWithTimeout(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${origFileName}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
             'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
           },
-        }).catch(() => {});
+        }, 30000).catch(() => {});
       }
-      console.log(`Compressed video ${contentId}: ${buffer.length} → ${compressedBuffer.length} bytes`);
+      console.log(`[compress] DONE for ${contentId}: ${buffer.length} → ${compressedBuffer.length} bytes`);
     } else {
-      fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
+      console.log(`[compress] compressed file was not smaller, keeping original for ${contentId}`);
+      fetchWithTimeout(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
           'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
         },
-      }).catch(() => {});
+      }, 30000).catch(() => {});
     }
   } catch (e) {
     console.error(`[compress] FAILED for ${contentId}:`, e.message);
