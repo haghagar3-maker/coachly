@@ -2254,7 +2254,7 @@ app.delete('/api/user/account', requireAuth, requireUser, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Delete coach account — wipe personal data, keep sport/niche/pricing data
+// Delete coach account — full cascade delete, keep only email/country/sport for analytics
 app.delete('/api/coach/account', requireAuth, requireCoach, async (req, res) => {
   try {
     const coachId = req.session.coach_id;
@@ -2262,16 +2262,52 @@ app.delete('/api/coach/account', requireAuth, requireCoach, async (req, res) => 
     await db('direct_messages', 'DELETE', null, `?coach_id=eq.${coachId}`);
     await db('content', 'DELETE', null, `?coach_id=eq.${coachId}`);
     await db('programs', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('subscriptions', 'PATCH', { status: 'cancelled' }, `?coach_id=eq.${coachId}`);
+    await db('checkins', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('food_logs', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('meal_plans', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('workout_logs', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('posts', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('comments', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('reviews', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('coach_meetings', 'DELETE', null, `?coach_id=eq.${coachId}`);
+    await db('notifications', 'DELETE', null, `?recipient_id=eq.${coachId}&recipient_type=eq.coach`);
     await db('sessions', 'DELETE', null, `?coach_id=eq.${coachId}`);
+
+    // Wipe everything on the coach's own row except email, country, and sport (kept for analytics)
     await db('coaches', 'PATCH', {
       name: null,
-      email: `deleted_${coachId}@anon.com`,
       password_hash: null,
       photo: null,
       banner: null,
+      bio: null,
+      credentials: null,
+      philosophy: null,
+      location: null,
+      tagline: null,
+      slug: null,
+      years_experience: null,
+      category_id: null,
+      ai_who: null,
+      ai_method: null,
+      ai_tone: null,
+      ai_examples: null,
+      ai_limits: null,
+      ai_quick_updates: null,
+      ai_docs: null,
+      ai_workout_strategy: null,
+      ai_nutrition_strategy: null,
+      payment_method: null,
+      payment_details: null,
+      payment_instructions: null,
+      rating: null,
+      subscriber_count: 0,
+      seo_score: 0,
       deleted_at: new Date().toISOString(),
       is_active: false,
+      is_approved: false,
     }, `?id=eq.${coachId}`);
+
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
