@@ -78,6 +78,20 @@ function generateSlug(name, id) {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return `${base}-${id.slice(0, 6)}`;
 }
+
+// Detect country from request IP — free, no API key needed. Never blocks signup if it fails.
+async function detectCountry(req) {
+  try {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress;
+    if (!ip || ip === '127.0.0.1' || ip.startsWith('::1')) return null; // local/dev — skip
+    const res = await fetchWithTimeout(`http://ip-api.com/json/${ip}?fields=country`, {}, 5000);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.country || null;
+  } catch {
+    return null;
+  }
+}
 // ─────────────────────────────────────────────
 // NOTIFICATION HELPER
 // ─────────────────────────────────────────────
@@ -368,11 +382,13 @@ app.post('/api/coach/signup', async (req, res) => {
     if (existing && existing.length > 0) return res.status(409).json({ error: 'Email already registered' });
 
     const password_hash = await bcrypt.hash(password, 12);
+    const country = await detectCountry(req);
     const coaches = await db('coaches', 'POST', {
       name, email, password_hash,
       sport: sport || niche || null,
       is_active: true,
       is_approved: true,
+      country,
       ...rest,
     });
 
@@ -863,7 +879,8 @@ app.post('/api/user/signup', async (req, res) => {
     if (existing && existing.length > 0) return res.status(409).json({ error: 'Email already registered' });
 
     const password_hash = await bcrypt.hash(password, 12);
-    const users = await db('users', 'POST', { name, email, password_hash });
+    const country = await detectCountry(req);
+    const users = await db('users', 'POST', { name, email, password_hash, country });
     const user = Array.isArray(users) ? users[0] : users;
 
     const token = crypto.randomBytes(32).toString('hex');
