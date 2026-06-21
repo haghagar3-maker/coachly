@@ -2210,12 +2210,109 @@ app.post('/api/review', requireAuth, requireUser, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/review', requireAuth, requireUser, async (req, res) => {
+// POST /api/user/program-feedback — end-of-program rating/comment/photos, then wipes conversation data for that coach
+app.post('/api/user/program-feedback', requireAuth, requireUser, async (req, res) => {
   try {
-    const { coachId } = req.query;
-    const existing = await db('reviews', 'GET', null, `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&select=rating`);
-    res.json({ rating: existing?.[0]?.rating || null });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    const { subscriptionId, rating, comment, beforeImageBase64, afterImageBase64 } = req.body;
+    if (!subscriptionId || !rating) {
+      return res.status(400).json({ error: 'subscriptionId and rating required' });
+    }
+
+    const subs = await db('subscriptions', 'GET', null,
+      `?id=eq.${subscriptionId}&user_id=eq.${req.session.user_id}&select=*`
+    );
+    const sub = subs?.[0];
+    if (!sub) return res.status(404).json({ error: 'Subscription not found' });
+    if (sub.status !== 'completed') return res.status(400).json({ error: 'Program is not completed yet' });
+    if (sub.feedback_submitted) return res.status(409).json({ error: 'Feedback already submitted' });
+
+    const coachId = sub.coach_id;
+    const userId = req.session.user_id;
+
+    // Upload before/after images if provided (both optional)
+    async function uploadImage(base64, label) {
+      if (!base64) return null;
+      const buffer = Buffer.from(base64.split(',')[1], 'base64');
+      const fileName = `feedback_${label}_${Date.now()}_${userId}.jpg`;
+      const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+          'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+          'Content-Type': 'image/jpeg',
+          'x-upsert': 'true',
+        },
+        body: buffer,
+      });
+      if (!uploadRes.ok) return null;
+      return `${process.env.SUPABASE_URL}/storage/v1/object/public/coach-media/${fileName}`;
+    }
+
+    const [beforeImage, afterImage] = await Promise.all([
+      uploadImage(beforeImageBase64, 'before'),
+      uploadImage(afterImageBase64, 'after'),
+    ]);
+
+    // Snapshot the client's name now, since their data is about to be wiped
+    const users = await db('users', 'GET', null, `?id=eq.${userId}&select=name`);
+    const clientName = users?.[0]?.name || 'A former client';
+
+    // Save the review/feedback (one row per user+coach, like the existing review system)
+    const existingReview = await db('reviews', 'GET', null, `?user_id=eq.${userId}&coach_id=eq.${coachId}&select=id`);
+    if (existingReview && existingReview.length > 0) {
+      await db('reviews', 'PATCH',
+        { rating, comment: comment || null, before_image: beforeImage, after_image: afterImage, client_name_snapshot: clientName, subscription_id: subscriptionId },
+        `?user_id=eq.${userId}&coach_id=eq.${coachId}`
+      );
+    } else {
+      await db('reviews', 'POST', {
+        user_id: userId, coach_id: coachId, rating,
+        comment: comment || null, before_image: beforeImage, after_image: afterImage,
+        client_name_snapshot: clientName, subscription_id: subscriptionId,
+      });
+    }
+
+    // Recalculate coach's average rating
+    const allReviews = await db('reviews', 'GET', null, `?coach_id=eq.${coachId}&select=rating`);
+    const avg = (allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length).toFixed(1);
+    await db('coaches', 'PATCH', { rating: avg }, `?id=eq.${coachId}`);
+
+    // Mark feedback as submitted — this is what unlocks the dashboard again (for other coaches) / fully locks this one out
+    await db('subscriptions', 'PATCH', { feedback_submitted: true }, `?id=eq.${subscriptionId}`);
+
+    // Wipe conversation/program data tied to this specific user+coach relationship
+    await db('messages', 'DELETE', null, `?user_id=eq.${userId}&coach_id=eq.${coachId}`);
+    await db('direct_messages', 'DELETE', null, `?user_id=eq.${userId}&coach_id=eq.${coachId}`);
+    await db('checkins', 'DELETE', null, `?user_id=eq.${userId}&coach_id=eq.${coachId}`);
+    await db('food_logs', 'DELETE', null, `?user_id=eq.${userId}&coach_id=eq.${coachId}`);
+    await db('workout_logs', 'DELETE', null, `?user_id=eq.${userId}&coach_id=eq.${coachId}`);
+    await db('programs', 'DELETE', null, `?user_id=eq.${userId}&coach_id=eq.${coachId}`);
+    await db('meal_plans', 'DELETE', null, `?user_id=eq.${userId}&coach_id=eq.${coachId}`);
+
+    // Notify coach
+    const coach = await db('coaches', 'GET', null, `?id=eq.${coachId}&select=name`).then(r => r?.[0]).catch(() => null);
+    await createNotification(
+      coachId, 'coach', 'program_feedback',
+      clientName,
+      `Left a ${rating}★ review after completing their program.`
+    );
+
+    res.json({ success: true });
+  } catch (e) {
+    logError('POST /api/user/program-feedback', e.message, e.stack);
+    res.status(500).json({ error: 'Failed to submit feedback: ' + e.message });
+  }
+});
+// GET /api/coach/feedback — end-of-program reviews/comments/photos received from former clients
+app.get('/api/coach/feedback', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const feedback = await db('reviews', 'GET', null,
+      `?coach_id=eq.${req.session.coach_id}&order=created_at.desc&select=*`
+    );
+    res.json(feedback || []);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch feedback' });
+  }
 });
 // Weekly cleanup — null out food scan images older than 7 days
 const CLEANUP_INTERVAL = 7 * 24 * 60 * 60 * 1000;
@@ -2230,6 +2327,25 @@ async function cleanOldFoodImages() {
 }
 setInterval(cleanOldFoodImages, CLEANUP_INTERVAL);
 cleanOldFoodImages(); // run once on startup too
+// Auto-complete subscriptions whose plan_end has passed — runs hourly
+const COMPLETION_CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour
+async function completeExpiredPrograms() {
+  try {
+    const now = new Date().toISOString();
+    const result = await db('subscriptions', 'PATCH',
+      { status: 'completed', completed_at: now },
+      `?status=eq.active&plan_end=lt.${now}`
+    );
+    const completed = Array.isArray(result) ? result : [];
+    if (completed.length > 0) {
+      console.log(`[program-completion] marked ${completed.length} subscription(s) as completed`);
+    }
+  } catch (e) {
+    console.error('Program completion check error:', e.message);
+  }
+}
+setInterval(completeExpiredPrograms, COMPLETION_CHECK_INTERVAL);
+completeExpiredPrograms(); // run once on startup too
 // Delete user account — wipe personal data, keep email + behavioral data
 app.delete('/api/user/account', requireAuth, requireUser, async (req, res) => {
   try {
