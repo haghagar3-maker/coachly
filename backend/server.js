@@ -593,9 +593,30 @@ app.patch('/api/coach/content/:id', requireAuth, requireCoach, async (req, res) 
 
 app.delete('/api/coach/content/:id', requireAuth, requireCoach, async (req, res) => {
   try {
-    await db('content', 'DELETE', null,
-      `?id=eq.${req.params.coachPublicId}&coach_id=eq.${req.session.coach_id}`
+    // Fetch the content first so we can delete its file from storage too
+    const existing = await db('content', 'GET', null,
+      `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}&select=url`
     );
+    const existingItem = existing?.[0];
+
+    await db('content', 'DELETE', null,
+      `?id=eq.${req.params.id}&coach_id=eq.${req.session.coach_id}`
+    );
+
+    // If the file lives in our own storage (not an external link like YouTube), delete it
+    if (existingItem?.url && existingItem.url.includes('/coach-media/')) {
+      const fileName = existingItem.url.split('/coach-media/')[1];
+      if (fileName) {
+        fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${fileName}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`,
+            'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+          },
+        }).catch(() => {});
+      }
+    }
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete content' });
