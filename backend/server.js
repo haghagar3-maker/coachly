@@ -541,6 +541,23 @@ app.get('/api/coach/clients', requireAuth, requireCoach, async (req, res) => {
   }
 });
 
+app.get('/api/coach/completed-clients', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const subs = await db('subscriptions', 'GET', null,
+      `?coach_id=eq.${req.session.coach_id}&status=eq.completed&order=completed_at.desc&select=*`
+    );
+    if (!subs || subs.length === 0) return res.json([]);
+
+    const enriched = await Promise.all(subs.map(async (sub) => {
+      const users = await db('users', 'GET', null, `?id=eq.${sub.user_id}&select=id,name,email,photo`);
+      return { ...sub, user: users?.[0] || null };
+    }));
+    res.json(enriched);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch completed clients' });
+  }
+});
+
 app.get('/api/coach/client/:userId', requireAuth, requireCoach, async (req, res) => {
   try {
     const users = await db('users', 'GET', null, `?id=eq.${req.params.userId}&select=*`);

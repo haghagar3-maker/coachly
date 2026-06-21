@@ -123,7 +123,7 @@ export default function CoachDashboard() {
   if (!coach) return null;
 
   const sectionLabel = {
-    overview: 'Overview', clients: 'Clients', messages: 'Messages',
+    overview: 'Overview', clients: 'Clients', completed: 'Completed Clients', messages: 'Messages',
     ai: 'AI Conversations', store: 'Store Editor', content: 'Program Content', training: 'AI Training', nutrition: 'Client Nutrition', strategy: 'Client Strategy', calendar: 'Calendar', community: 'Community', analytics: 'Revenue & Analytics', lifecycle: 'Subscriptions', payments: 'Payment Settings',
   };
 
@@ -160,6 +160,7 @@ export default function CoachDashboard() {
           {[
             { id: 'overview', label: 'Overview', icon: <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
             { id: 'clients',  label: 'Clients',  icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, badge: clientsUnread },
+            { id: 'completed', label: 'Completed Clients', icon: <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
             { id: 'messages', label: 'Messages', icon: <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, badge: msgUnread },
             { id: 'ai',        label: 'AI Conversations', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> },
 { id: 'nutrition', label: 'Client Nutrition',  icon: <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg> },
@@ -232,6 +233,7 @@ export default function CoachDashboard() {
             onMessageClient={(c) => { setMessagePreselectId(c.user_id); setActiveSection('messages'); }}
           />}
           {activeSection === 'client-detail' && <SectionClientDetail client={selectedClient} onBack={() => setActiveSection('clients')} />}
+          {activeSection === 'completed' && <SectionCompleted coach={coach} />}
           {activeSection === 'messages'  && <SectionMessages coach={coach}
             preselectUserId={messagePreselectId}
             onPreselectHandled={() => setMessagePreselectId(null)}
@@ -613,6 +615,105 @@ function SectionClientDetail({ client, onBack }) {
               {c.notes && <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px', fontStyle: 'italic' }}>"{c.notes}"</div>}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPLETED CLIENTS + FEEDBACK
+// ═══════════════════════════════════════════════════════════════
+function SectionCompleted({ coach }) {
+  const [completed, setCompleted] = useState([]);
+  const [feedback, setFeedback] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/completed-clients`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      }).then(r => r.json()).catch(() => []),
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/coach/feedback`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+      }).then(r => r.json()).catch(() => []),
+    ]).then(([c, f]) => {
+      setCompleted(Array.isArray(c) ? c : []);
+      setFeedback(Array.isArray(f) ? f : []);
+    }).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading…</div>;
+
+  function findFeedback(sub) {
+    return feedback.find(f => f.subscription_id === sub.id) || feedback.find(f => f.user_id === sub.user_id && f.coach_id === sub.coach_id);
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '16px' }}>
+        Clients who finished their program with you. Their conversation history and progress data have been cleared — their rating, comment, and photos (if shared) remain below.
+      </div>
+      {completed.length === 0 ? (
+        <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>No completed clients yet.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {completed.map(c => {
+            const fb = findFeedback(c);
+            const isOpen = expanded === c.id;
+            return (
+              <div key={c.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                <div
+                  onClick={() => setExpanded(isOpen ? null : c.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', cursor: 'pointer' }}
+                >
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: c.user?.photo ? 'transparent' : avatarBg(c.user?.name || fb?.client_name_snapshot), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
+                    {c.user?.photo ? <img src={c.user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(c.user?.name || fb?.client_name_snapshot)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600' }}>{c.user?.name || fb?.client_name_snapshot || 'Former client'}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                      {c.plan_months} month plan · completed {c.completed_at ? new Date(c.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                    </div>
+                  </div>
+                  {fb ? (
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#ffb800', flexShrink: 0 }}>{'★'.repeat(fb.rating)}{'☆'.repeat(5 - fb.rating)}</span>
+                  ) : (
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--muted)', flexShrink: 0 }}>No feedback yet</span>
+                  )}
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--muted)" style={{ flexShrink: 0, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+                {isOpen && (
+                  <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)' }}>
+                    {!fb ? (
+                      <div style={{ fontSize: '12px', color: 'var(--muted)', paddingTop: '14px' }}>This client hasn't submitted their end-of-program feedback yet.</div>
+                    ) : (
+                      <div style={{ paddingTop: '14px' }}>
+                        {fb.comment && <div style={{ fontSize: '13px', color: 'var(--dark)', lineHeight: '1.6', marginBottom: '14px', fontStyle: 'italic' }}>"{fb.comment}"</div>}
+                        {(fb.before_image || fb.after_image) && (
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            {fb.before_image && (
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '6px' }}>Before</div>
+                                <img src={fb.before_image} alt="" style={{ width: '100%', borderRadius: '10px', objectFit: 'cover', maxHeight: '200px' }} />
+                              </div>
+                            )}
+                            {fb.after_image && (
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '6px' }}>After</div>
+                                <img src={fb.after_image} alt="" style={{ width: '100%', borderRadius: '10px', objectFit: 'cover', maxHeight: '200px' }} />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
