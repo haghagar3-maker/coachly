@@ -305,14 +305,24 @@ export default function Store() {
         .store-main-grid { grid-template-columns: 1fr !important; }
       }
       @media (max-width: 700px) {
-        .store-hero { height: 280px !important; }
-        .store-hero-content-row { flex-direction: column; align-items: flex-start !important; gap: 12px !important; bottom: 16px !important; left: 16px !important; right: 16px !important; }
+        .store-hero { height: 260px !important; }
+        .store-hero-content-row { align-items: center !important; bottom: 18px !important; left: 16px !important; right: 16px !important; }
         .store-hero-identity { gap: 10px !important; align-items: center !important; }
-        .store-hero-avatar { width: 56px !important; height: 56px !important; font-size: 18px !important; border-width: 2px !important; }
-        .store-hero-name { font-size: 19px !important; }
+        .store-hero-avatar { width: 50px !important; height: 50px !important; font-size: 16px !important; border-width: 2px !important; }
+        .store-hero-name { font-size: 17px !important; }
+        .store-hero-tags { margin-top: 4px !important; }
         .store-hero-meta-text { display: none !important; }
-        .store-hero-stats-cta { display: none !important; }
-        .store-hero-plan-mobile { display: block !important; width: 100%; }
+        .store-hero-stats-row { display: none !important; }
+        .store-hero-subscribe-btn { display: none !important; }
+        .store-hero-stats-cta { align-items: flex-end !important; gap: 0 !important; }
+        .store-hero-price-card-mobile {
+          display: block !important;
+          background: #fff;
+          border-radius: 14px;
+          padding: 10px 14px;
+          text-align: right;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        }
       }
       .store-gallery-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
       @media (max-width: 480px) {
@@ -454,7 +464,7 @@ export default function Store() {
             </div>
             <div>
               <h1 className="store-hero-name" style={{ margin: 0, fontSize: '36px', fontWeight: '900', color: '#fff', letterSpacing: '-0.02em', textShadow: '0 2px 16px rgba(0,0,0,0.5)', lineHeight: 1.1 }}>{coach.name}</h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+              <div className="store-hero-tags" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                 {coach.sport && <div style={{ fontSize: '11px', color: '#fff', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.12em', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', padding: '5px 14px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.25)' }}>{coach.sport}</div>}
                 {coach.location && <div className="store-hero-meta-text" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{coach.location}</div>}
                 {coach.years_experience && <div className="store-hero-meta-text" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{coach.years_experience}y exp</div>}
@@ -462,9 +472,9 @@ export default function Store() {
             </div>
           </div>
 
-          {/* Right side — stats + CTA (desktop only) */}
+          {/* Right side — desktop: stats + big CTA. Mobile: compact price card (CSS swaps content via classes) */}
           <div className="store-hero-stats-cta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div className="store-hero-stats-row" style={{ display: 'flex', gap: '12px' }}>
               {coach.subscriber_count > 0 && (
                 <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center' }}>
                   <div style={{ fontSize: '22px', fontWeight: '900', color: '#fff', lineHeight: 1 }}>{coach.subscriber_count}</div>
@@ -481,28 +491,17 @@ export default function Store() {
             <button className="store-hero-subscribe-btn" onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '15px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap' }}>
             {alreadySubbed ? '✓ Subscribed' : 'Subscribe now'}
           </button>
-          </div>
-        </div>
 
-        {/* Hero plan picker — mobile only, stacked below identity inside the hero */}
-        <div className="store-hero-plan-mobile" style={{ display: 'none' }}>
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-            {planOptions.map(months => {
-              const price = getPlanPrice(months);
-              const selected = planMonths === months;
-              return (
-                <button key={months} onClick={() => setPlanMonths(months)} style={{ flex: 1, padding: '8px 4px', borderRadius: '10px', border: `1.5px solid ${selected ? '#fff' : 'rgba(255,255,255,0.3)'}`, background: selected ? '#fff' : 'rgba(255,255,255,0.1)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '700', color: selected ? '#111' : '#fff' }}>{months}mo</div>
-                  <div style={{ fontSize: '12px', fontWeight: '900', color: selected ? '#111' : '#fff', marginTop: '1px' }}>${price || '—'}</div>
-                </button>
-              );
-            })}
+            {/* Compact mobile price card — hidden on desktop */}
+            <div className="store-hero-price-card-mobile" style={{ display: 'none' }}>
+              <div style={{ fontSize: '9px', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{planMonths}mo plan</div>
+              <div style={{ fontSize: '17px', fontWeight: '900', color: '#111', margin: '2px 0 8px' }}>${getPlanPrice(planMonths) || '—'}</div>
+              <button onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ padding: '8px 14px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '11px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                {alreadySubbed ? '✓ Subscribed' : 'Get started →'}
+              </button>
+            </div>
           </div>
-          <button onClick={handleSubscribeClick} disabled={alreadySubbed} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '13px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit' }}>
-            {alreadySubbed ? '✓ Subscribed' : 'Get started →'}
-          </button>
         </div>
-      </div>
 
       {/* ── STATS BAR ── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #eee' }}>
