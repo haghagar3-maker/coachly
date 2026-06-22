@@ -2267,7 +2267,7 @@ export default function UserDashboard() {
     );
   }
 
-  // Subscription completed but feedback not yet submitted — hard lock until they rate & comment
+  // Subscription completed but feedback not yet submitted
   const completedSub = subscriptions.find((s) => s.coach_id === activeCoachId && s.status === 'completed' && !s.feedback_submitted);
   if (completedSub) {
     return (
@@ -2286,6 +2286,31 @@ export default function UserDashboard() {
           }).catch(() => {});
         }}
       />
+    );
+  }
+
+  // Subscription completed and feedback already submitted — show done screen
+  const doneSub = subscriptions.find((s) => s.coach_id === activeCoachId && s.status === 'completed' && s.feedback_submitted);
+  const hasOtherActive = subscriptions.some((s) => s.status === 'active' && s.coach_id !== activeCoachId);
+  if (doneSub && !hasOtherActive) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
+        <Toast />
+        <div style={{ fontSize: '48px' }}>🎉</div>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: '700' }}>
+          Program complete!
+        </div>
+        <div style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '360px', lineHeight: '1.6' }}>
+          You've finished your program with {coach?.name?.split(' ')[0] || 'your coach'}. Your feedback has been submitted — thank you!
+        </div>
+        <button className="btn-primary" onClick={() => navigate('/')}>Browse coaches</button>
+        <button
+          style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}
+          onClick={async () => { await logout().catch(() => {}); navigate('/'); }}
+        >
+          Log out
+        </button>
+      </div>
     );
   }
 
