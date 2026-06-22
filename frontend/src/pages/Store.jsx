@@ -696,10 +696,21 @@ export default function Store() {
 
           {/* COMMUNITY TAB */}
           {activeTab === 'community' && (
-            <div style={{ position: 'relative', minHeight: !currentUser ? '400px' : 'auto' }}>
-              {/* Blurred preview */}
-              <div style={{ filter: !currentUser ? 'blur(6px)' : 'none', pointerEvents: !currentUser ? 'none' : 'auto', userSelect: 'none', maxHeight: !currentUser ? '400px' : 'none', overflow: 'hidden' }}>
-              {posts.length === 0 ? (
+            <div>
+              {!currentUser ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '60px 24px', textAlign: 'center', background: '#fff', borderRadius: '16px', border: '1px solid #eee' }}>
+                  <div style={{ fontSize: '36px' }}>🔒</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#111', fontFamily: 'Georgia, serif', maxWidth: '320px', lineHeight: '1.4' }}>
+                    "The people around you shape who you become."
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#888', maxWidth: '300px', lineHeight: '1.6' }}>
+                    Join the community — share your wins, get support, and stay accountable.
+                  </div>
+                  <button onClick={handleSubscribeClick} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: `0 4px 20px ${accentColor}66` }}>
+                    Subscribe to join →
+                  </button>
+                </div>
+              ) : posts.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#888', fontSize: '14px' }}>No community posts yet.</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -722,22 +733,6 @@ export default function Store() {
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
-              </div>
-              {/* Lock overlay for non-subscribers */}
-              {!currentUser && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '40px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '28px' }}>🔒</div>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#111', fontFamily: 'Georgia, serif' }}>
-                    "The people around you shape who you become."
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#888', maxWidth: '300px', lineHeight: '1.6' }}>
-                    Join the community — share your wins, get support, and stay accountable.
-                  </div>
-                  <button onClick={handleSubscribeClick} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: `0 4px 20px ${accentColor}66` }}>
-                    Subscribe to join →
-                  </button>
                 </div>
               )}
             </div>
