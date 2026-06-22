@@ -699,7 +699,6 @@ export default function Store() {
             <div>
               {!currentUser ? (
                 <div style={{ position: 'relative' }}>
-                  {/* Fake dummy posts — always blurred, never real data */}
                   <div style={{ filter: 'blur(7px)', pointerEvents: 'none', userSelect: 'none' }}>
                     {[
                       { name: 'Sarah M.', time: '2h ago', text: 'Just finished week 3 and I can already see the difference. Down 4kg and my energy is through the roof!', likes: 14, comments: 6 },
@@ -718,6 +717,26 @@ export default function Store() {
                         </div>
                         <p style={{ fontSize: '14px', lineHeight: '1.7', color: '#333', margin: 0 }}>{post.text}</p>
                         <div style={{ marginTop: '12px', fontSize: '12px', color: '#aaa', display: 'flex', gap: '16px' }}>
+                          <span>♥ {post.likes}</span>
+                          <span>💬 {post.comments}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '40px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '36px' }}>🔒</div>
+                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#111', fontFamily: 'Georgia, serif', maxWidth: '320px', lineHeight: '1.4' }}>
+                      "The people around you shape who you become."
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#888', maxWidth: '300px', lineHeight: '1.6' }}>
+                      Join the community — share your wins, get support, and stay accountable.
+                    </div>
+                    <button onClick={handleSubscribeClick} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: `0 4px 20px ${accentColor}66` }}>
+                      Subscribe to join →
+                    </button>
+                  </div>
+                </div>
+              ) : posts.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#888', fontSize: '14px' }}>No community posts yet.</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -745,6 +764,8 @@ export default function Store() {
             </div>
           )}
         </div>
+
+        
 
         {/* RIGHT COLUMN — sticky pricing */}
         <div style={{ position: 'sticky', top: '20px' }}>
