@@ -5,44 +5,55 @@ import EmptyState from '../components/EmptyState';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
 
-/* ─── animation keyframes injected once ─── */
-const STYLES = `
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.93); }
-  to   { opacity: 1; transform: scale(1); }
-}
-.anim-fadeup   { animation: fadeUp  0.7s cubic-bezier(.22,1,.36,1) both; }
-.anim-fadein   { animation: fadeIn  0.6s ease both; }
-.anim-scalein  { animation: scaleIn 0.55s cubic-bezier(.22,1,.36,1) both; }
-.hero-overlay  {
-  background: linear-gradient(
-    to bottom,
-    rgba(10,18,10,0.45) 0%,
-    rgba(10,18,10,0.20) 40%,
-    rgba(10,18,10,0.75) 100%
+/* ─── Legal Modal ─── */
+function LegalModal({ type, onClose }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  const content = type === 'privacy' ? {
+    title: 'Privacy Policy', lastUpdated: 'May 2025',
+    sections: [
+      { heading: 'Information We Collect', body: 'We collect information you provide directly to us when you create an account, subscribe to a coach, or communicate with us. This includes your name, email address, payment information, fitness goals, and any content you upload or share on the platform.' },
+      { heading: 'How We Use Your Information', body: 'We use the information we collect to provide, maintain, and improve our services, process transactions, send you technical notices and support messages, respond to your comments and questions, and send you marketing communications (with your consent).' },
+      { heading: 'Information Sharing', body: 'We do not sell, trade, or otherwise transfer your personally identifiable information to outside parties. This does not include trusted third parties who assist us in operating our website.' },
+      { heading: 'Data Security', body: 'We implement a variety of security measures to maintain the safety of your personal information.' },
+      { heading: 'Contact Us', body: 'If you have any questions about this Privacy Policy, please contact us at privacy@coachly.app.' },
+    ],
+  } : {
+    title: 'Terms of Service', lastUpdated: 'May 2025',
+    sections: [
+      { heading: 'Acceptance of Terms', body: 'By accessing or using Coachly, you agree to be bound by these Terms of Service.' },
+      { heading: 'Use of Service', body: 'Coachly provides a platform connecting clients with fitness and wellness coaches. You agree to use the service only for lawful purposes.' },
+      { heading: 'Subscriptions & Payments', body: 'Subscriptions are billed monthly. You may cancel at any time.' },
+      { heading: 'Coach Content', body: 'Coaches are independent professionals responsible for their content. Always consult a healthcare professional before starting any fitness program.' },
+      { heading: 'Contact', body: 'For questions, contact us at legal@coachly.app.' },
+    ],
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={onClose}>
+      <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '20px', maxWidth: '600px', width: '100%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: '#F5F0E8' }}>{content.title}</div>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid #333', color: '#888', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', fontSize: '16px' }}>×</button>
+        </div>
+        <div style={{ overflowY: 'auto', padding: '24px 28px 32px' }}>
+          {content.sections.map((s, i) => (
+            <div key={i} style={{ marginBottom: '20px' }}>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '15px', fontWeight: '700', color: '#C9A84C', marginBottom: '8px' }}>{s.heading}</h3>
+              <p style={{ fontSize: '13px', color: '#888', lineHeight: '1.75', margin: 0 }}>{s.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
-.coach-card:hover {
-  box-shadow: 0 12px 40px rgba(0,0,0,0.13);
-  transform: translateY(-3px);
-}
-.pill-btn:hover { opacity: 0.82; }
-.nav-link:hover { color: var(--dark) !important; }
-.cat-btn:hover { background: var(--dark) !important; color: #fff !important; }
-`;
 
-const AVATAR_COLORS = [
-  '#E8633A','#2a7a4f','#5a5ac8','#c94e2a',
-  '#2d6b47','#8b5cf6','#0891b2','#b45309',
-];
+/* ─── helpers ─── */
+const AVATAR_COLORS = ['#C9A84C','#2a7a4f','#5a5ac8','#c94e2a','#2d6b47','#8b5cf6','#0891b2'];
 function avatarColor(id) {
   if (!id) return AVATAR_COLORS[0];
   let h = 0;
@@ -54,220 +65,104 @@ function initials(name) {
   return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
 }
 
-/* ─── Coach card ─── */
+/* ─── Coach Card ─── */
 function CoachCard({ coach, onView, delay = 0 }) {
+  const [hovered, setHovered] = useState(false);
   return (
     <div
-      className="coach-card anim-scalein"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() => onView(coach.slug || coach.id)}
       style={{
-        background: 'var(--card)',
-        borderRadius: '18px',
-        border: '1px solid var(--border)',
+        background: '#111',
+        border: `1px solid ${hovered ? '#C9A84C55' : '#222'}`,
+        borderRadius: '16px',
         overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'box-shadow 0.2s, transform 0.2s',
         cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        transform: hovered ? 'translateY(-4px)' : 'none',
+        boxShadow: hovered ? '0 20px 60px rgba(201,168,76,0.12)' : '0 2px 20px rgba(0,0,0,0.3)',
+        animation: `fadeSlideUp 0.6s ease both`,
         animationDelay: `${delay}ms`,
       }}
-      onClick={() => onView(coach.slug || coach.id)}
     >
-      <div style={{
-        height: '120px',
-        background: coach.banner
-          ? `url(${coach.banner}) center/cover`
-          : `linear-gradient(135deg, #1e3a2a, #2d6b47)`,
-        position: 'relative',
-      }}>
+      <div style={{ height: '180px', background: coach.banner ? `url(${coach.banner}) center/cover` : `linear-gradient(135deg, #1a1a1a, #2a2a2a)`, position: 'relative', overflow: 'hidden' }}>
+        {/* Gold shimmer overlay on hover */}
+        <div style={{ position: 'absolute', inset: 0, background: hovered ? 'rgba(201,168,76,0.08)' : 'transparent', transition: 'background 0.3s' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to bottom, transparent, #111)' }} />
         <div style={{
-          position: 'absolute', bottom: '-20px', left: '20px',
-          width: '48px', height: '48px', borderRadius: '50%',
-          border: '3px solid var(--card)',
+          position: 'absolute', bottom: '-18px', left: '20px',
+          width: '52px', height: '52px', borderRadius: '50%',
+          border: `2px solid ${hovered ? '#C9A84C' : '#333'}`,
           background: coach.photo ? 'transparent' : avatarColor(coach.id),
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '13px', fontWeight: '700', color: '#fff',
-          overflow: 'hidden', flexShrink: 0,
+          fontSize: '14px', fontWeight: '700', color: '#fff', overflow: 'hidden',
+          transition: 'border-color 0.3s',
         }}>
-          {coach.photo
-            ? <img src={coach.photo} alt={coach.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : initials(coach.name)}
+          {coach.photo ? <img src={coach.photo} alt={coach.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials(coach.name)}
         </div>
       </div>
       <div style={{ padding: '28px 20px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
           <div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '17px', fontWeight: '700', marginBottom: '3px' }}>
-              {coach.name}
-            </div>
-            {coach.category_name && (
-              <div style={{ fontSize: '11px', color: 'var(--orange)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                {coach.category_name}
-              </div>
-            )}
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '17px', fontWeight: '700', color: '#F5F0E8', marginBottom: '4px' }}>{coach.name}</div>
+            {coach.category_name && <div style={{ fontSize: '11px', color: '#C9A84C', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{coach.category_name}</div>}
           </div>
           {coach.plan_price != null && (
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: '700', color: 'var(--dark)' }}>
-                ${Number(coach.plan_price).toFixed(0)}
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--muted)' }}>/month</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '18px', fontWeight: '700', color: '#C9A84C' }}>${Number(coach.plan_price).toFixed(0)}</div>
+              <div style={{ fontSize: '10px', color: '#555' }}>/month</div>
             </div>
           )}
         </div>
-        {coach.tagline && (
-          <p style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.5', marginBottom: '14px', marginTop: '8px' }}>
-            {coach.tagline}
-          </p>
-        )}
+        {coach.tagline && <p style={{ fontSize: '12px', color: '#666', lineHeight: '1.5', marginBottom: '14px', marginTop: '8px' }}>{coach.tagline}</p>}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          {coach.subscriber_count != null && (
-            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
-              <strong style={{ color: 'var(--dark)' }}>{coach.subscriber_count}</strong> subscribers
-            </span>
-          )}
-          {coach.rating > 0 && (
-            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
-              ★ <strong style={{ color: 'var(--dark)' }}>{coach.rating}</strong>
-            </span>
-          )}
-          {coach.years_experience != null && (
-            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
-              <strong style={{ color: 'var(--dark)' }}>{coach.years_experience}</strong> yrs exp
-            </span>
-          )}
+          {coach.subscriber_count > 0 && <span style={{ fontSize: '11px', color: '#555' }}><strong style={{ color: '#888' }}>{coach.subscriber_count}</strong> clients</span>}
+          {coach.rating > 0 && <span style={{ fontSize: '11px', color: '#C9A84C' }}>★ <strong>{coach.rating}</strong></span>}
+          {coach.years_experience > 0 && <span style={{ fontSize: '11px', color: '#555' }}><strong style={{ color: '#888' }}>{coach.years_experience}</strong>y exp</span>}
         </div>
         <button
-          onClick={(e) => { e.stopPropagation(); onView(coach.slug || coach.id); }}
           style={{
-            width: '100%', padding: '10px', borderRadius: '100px',
-            border: '1.5px solid var(--dark)', background: 'none',
+            width: '100%', padding: '10px', borderRadius: '8px',
+            border: `1px solid ${hovered ? '#C9A84C' : '#333'}`,
+            background: hovered ? 'rgba(201,168,76,0.1)' : 'none',
+            color: hovered ? '#C9A84C' : '#666',
             fontFamily: 'inherit', fontSize: '13px', fontWeight: '500',
-            color: 'var(--dark)', cursor: 'pointer', transition: 'all 0.15s',
+            cursor: 'pointer', transition: 'all 0.2s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--dark)'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--dark)'; }}
         >
-          View profile
+          View profile →
         </button>
       </div>
     </div>
   );
 }
 
-const HOW_IT_WORKS = [
-  { num: '01', title: 'Subscribe to a coach', description: 'Browse coaches across every sport and discipline — fitness, football, tennis, swimming, and more. Pick your niche and subscribe to a monthly program built for your goals.' },
-  { num: '02', title: 'Get your AI + program', description: "Your coach's AI is available 24/7. Get a custom training plan, nutrition guidance, and daily check-ins — always tailored to your sport and level." },
-  { num: '03', title: 'Track progress together', description: 'Weekly reviews, progress tracking, and direct coach messaging keep you accountable. Your coach sees your data and adjusts your plan as you grow.' },
-];
-
-const STATS = [
-  { value: '10K+', label: 'Active athletes' },
-  { value: '200+', label: 'Expert coaches' },
-  { value: '50+', label: 'Sports & disciplines' },
-  { value: '24/7', label: 'AI availability' },
-];
-
-/* ─── Privacy & Terms modal ─── */
-function LegalModal({ type, onClose }) {
+/* ─── Animated word reveal ─── */
+function AnimatedHeadline({ text, delay = 0 }) {
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, []);
+    const t = setTimeout(() => setVisible(true), delay);
+    return () => clearTimeout(t);
+  }, [delay]);
 
-  const content = type === 'privacy' ? {
-    title: 'Privacy Policy',
-    lastUpdated: 'May 2025',
-    sections: [
-      { heading: 'Information We Collect', body: 'We collect information you provide directly to us when you create an account, subscribe to a coach, or communicate with us. This includes your name, email address, payment information, fitness goals, and any content you upload or share on the platform.' },
-      { heading: 'How We Use Your Information', body: 'We use the information we collect to provide, maintain, and improve our services, process transactions, send you technical notices and support messages, respond to your comments and questions, and send you marketing communications (with your consent).' },
-      { heading: 'Information Sharing', body: 'We do not sell, trade, or otherwise transfer your personally identifiable information to outside parties. This does not include trusted third parties who assist us in operating our website, conducting our business, or servicing you, so long as those parties agree to keep this information confidential.' },
-      { heading: 'Data Security', body: 'We implement a variety of security measures to maintain the safety of your personal information. Your personal information is contained behind secured networks and is only accessible by a limited number of persons who have special access rights to such systems.' },
-      { heading: 'Cookies', body: 'We use cookies to enhance your experience, gather general visitor information, and track visits to our website. You can choose to disable cookies through your browser settings, though this may affect your experience on our platform.' },
-      { heading: 'Contact Us', body: 'If you have any questions about this Privacy Policy, please contact us at privacy@coachly.app.' },
-    ],
-  } : {
-    title: 'Terms of Service',
-    lastUpdated: 'May 2025',
-    sections: [
-      { heading: 'Acceptance of Terms', body: 'By accessing or using Coachly, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our platform.' },
-      { heading: 'Use of Service', body: 'Coachly provides a platform connecting clients with fitness and wellness coaches. You agree to use the service only for lawful purposes and in a way that does not infringe the rights of others or restrict their use of the service.' },
-      { heading: 'Account Responsibilities', body: 'You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account. Notify us immediately of any unauthorized use of your account.' },
-      { heading: 'Subscriptions & Payments', body: 'Subscriptions are billed on a monthly basis. You may cancel at any time, and cancellation takes effect at the end of the current billing period. Refunds are issued at our discretion for unused portions of a subscription period.' },
-      { heading: 'Coach Content', body: 'Coaches are independent professionals and are solely responsible for the content, advice, and programs they provide. Coachly does not endorse any specific coach or guarantee results. Always consult a qualified healthcare professional before starting any fitness program.' },
-      { heading: 'Limitation of Liability', body: 'Coachly shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the service. Our total liability shall not exceed the amount paid by you in the past 12 months.' },
-      { heading: 'Changes to Terms', body: 'We reserve the right to modify these terms at any time. We will notify users of significant changes via email or a prominent notice on our platform. Continued use of the service after changes constitutes acceptance of the new terms.' },
-      { heading: 'Contact', body: 'For questions about these Terms of Service, contact us at legal@coachly.app.' },
-    ],
-  };
-
+  const words = text.split(' ');
   return (
-    <div
-      className="anim-fadein"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '20px',
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="anim-scalein"
-        style={{
-          background: 'var(--bg)', borderRadius: '20px',
-          maxWidth: '640px', width: '100%', maxHeight: '80vh',
-          overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div style={{
-          padding: '24px 28px 20px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexShrink: 0,
-        }}>
-          <div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '22px', fontWeight: '700', color: 'var(--dark)' }}>
-              {content.title}
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
-              Last updated: {content.lastUpdated}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              width: '36px', height: '36px', borderRadius: '50%',
-              border: '1.5px solid var(--border)', background: 'none',
-              cursor: 'pointer', fontSize: '18px', color: 'var(--muted)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--dark)'; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--muted)'; }}
-          >
-            ×
-          </button>
-        </div>
-        <div style={{ overflowY: 'auto', padding: '24px 28px 32px' }}>
-          {content.sections.map((s, i) => (
-            <div key={i} style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '16px', fontWeight: '700', color: 'var(--dark)', marginBottom: '8px' }}>
-                {i + 1}. {s.heading}
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: '1.75', margin: 0 }}>
-                {s.body}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <span>
+      {words.map((word, i) => (
+        <span key={i} style={{
+          display: 'inline-block',
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(30px)',
+          transition: `opacity 0.7s ease ${i * 100}ms, transform 0.7s cubic-bezier(0.22,1,0.36,1) ${i * 100}ms`,
+          marginRight: '0.28em',
+        }}>{word}</span>
+      ))}
+    </span>
   );
 }
 
-/* ─── Main Home component ─── */
+/* ─── Main ─── */
 export default function Home() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
@@ -276,21 +171,50 @@ export default function Home() {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
   const [legalModal, setLegalModal] = useState(null);
-  const [heroLoaded, setHeroLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoRef = useRef(null);
 
-  // Multi-sport coaching image — group training / athletic collage
-  const HERO_URL = 'https://images.unsplash.com/photo-1547060827-e2b799f1f515?w=1600&q=80';
-
+  // Inject styles
   useEffect(() => {
-    if (!document.getElementById('coachly-home-styles')) {
+    const id = 'coachly-home-v2';
+    if (!document.getElementById(id)) {
       const s = document.createElement('style');
-      s.id = 'coachly-home-styles';
-      s.textContent = STYLES;
+      s.id = id;
+      s.textContent = `
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .gold-shimmer {
+          background: linear-gradient(90deg, #C9A84C, #F0D080, #C9A84C, #A87830);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shimmer 4s linear infinite;
+        }
+        .nav-btn:hover { color: #C9A84C !important; }
+        .cat-pill:hover { border-color: #C9A84C !important; color: #C9A84C !important; }
+        @media (max-width: 768px) {
+          .hero-headline { font-size: 40px !important; }
+          .coaches-grid { grid-template-columns: 1fr !important; }
+          .how-grid { grid-template-columns: 1fr !important; }
+          .nav-for-coaches { display: none !important; }
+        }
+        @media (max-width: 500px) {
+          .hero-headline { font-size: 32px !important; }
+        }
+      `;
       document.head.appendChild(s);
     }
-    const img = new Image();
-    img.src = HERO_URL;
-    img.onload = () => setHeroLoaded(true);
   }, []);
 
   useEffect(() => {
@@ -300,8 +224,7 @@ export default function Home() {
   useEffect(() => {
     setLoadingCoaches(true);
     (activeCategory ? getCoaches(activeCategory) : getRankedCoaches().catch(() => getCoaches(null)))
-      .then(setCoaches)
-      .catch(() => { setCoaches([]); showToast('Failed to load coaches', 'error'); })
+      .then(setCoaches).catch(() => { setCoaches([]); showToast('Failed to load coaches', 'error'); })
       .finally(() => setLoadingCoaches(false));
   }, [activeCategory]);
 
@@ -309,54 +232,45 @@ export default function Home() {
   const tokenType = localStorage.getItem('coachly_token_type');
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', overflowY: 'auto', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#0A0A0A', color: '#F5F0E8', fontFamily: "'Inter', system-ui, sans-serif", overflowX: 'hidden' }}>
       <Toast />
       {legalModal && <LegalModal type={legalModal} onClose={() => setLegalModal(null)} />}
 
-      {/* ── Navbar ─── */}
+      {/* ── NAVBAR ── */}
       <header style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(245,240,232,0.96)', backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--border)',
-        padding: '0 32px', height: '60px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 32px',
+        background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(201,168,76,0.1)',
       }}>
-        {/* Logo — plain text, no background */}
-        <div
-          style={{ cursor: 'pointer' }}
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        >
-          <span style={{
-            fontFamily: "'Playfair Display', serif",
-            fontWeight: '800', fontSize: '18px',
-            color: 'var(--dark)', letterSpacing: '0.06em',
-          }}>
-            COACHLY<span style={{ color: 'var(--orange)' }}>.</span>
+        <div onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: '800', fontSize: '20px', color: '#F5F0E8', letterSpacing: '0.08em' }}>
+            COACHLY<span style={{ color: '#C9A84C' }}>.</span>
           </span>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button
-            className="nav-link"
-            onClick={() => navigate('/coach/signup')}
-            style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer', padding: '6px 12px', transition: 'color 0.15s' }}
-          >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className="nav-btn nav-for-coaches" onClick={() => navigate('/coach/signup')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: '#666', cursor: 'pointer', padding: '8px 14px', transition: 'color 0.2s' }}>
             For coaches
           </button>
           {token && tokenType === 'user' ? (
-            <button onClick={() => navigate('/dashboard')} style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--dark)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
+            <button onClick={() => navigate('/dashboard')} style={{ padding: '9px 20px', borderRadius: '8px', background: '#C9A84C', color: '#0A0A0A', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
               My dashboard
             </button>
           ) : token && tokenType === 'coach' ? (
-            <button onClick={() => navigate('/coach/dashboard')} style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--dark)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
+            <button onClick={() => navigate('/coach/dashboard')} style={{ padding: '9px 20px', borderRadius: '8px', background: '#C9A84C', color: '#0A0A0A', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
               Coach dashboard
             </button>
           ) : (
             <>
-              <button onClick={() => navigate('/user/login')} style={{ padding: '8px 16px', borderRadius: '100px', border: '1.5px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer', color: 'var(--dark)' }}>
+              <button onClick={() => navigate('/user/login')} style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid #2a2a2a', background: 'none', fontFamily: 'inherit', fontSize: '13px', color: '#888', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.color = '#C9A84C'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = '#888'; }}>
                 Log in
               </button>
-              <button onClick={() => navigate('/user/login')} style={{ padding: '8px 18px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
+              <button onClick={() => navigate('/user/login')} style={{ padding: '9px 20px', borderRadius: '8px', background: '#C9A84C', color: '#0A0A0A', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                 Get started
               </button>
             </>
@@ -364,207 +278,197 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Hero ─── */}
-      <section style={{
-        position: 'relative',
-        minHeight: '580px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden',
-        background: '#0f1f14',
-      }}>
-        {/* Background — multi-sport coaching image */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: heroLoaded ? `url('${HERO_URL}')` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
-          transition: 'opacity 0.8s ease',
-          opacity: heroLoaded ? 1 : 0,
-        }} />
-        <div className="hero-overlay" style={{ position: 'absolute', inset: 0 }} />
+      {/* ── HERO ── */}
+      <section style={{ position: 'relative', height: '100vh', minHeight: '600px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        {/* Video background */}
+        <video
+          ref={videoRef}
+          autoPlay muted loop playsInline
+          onLoadedData={() => setVideoLoaded(true)}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            objectFit: 'cover', opacity: videoLoaded ? 0.35 : 0,
+            transition: 'opacity 1.5s ease',
+          }}
+        >
+          <source src="https://videos.pexels.com/video-files/4761789/4761789-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4" />
+        </video>
+
+        {/* Gradient overlays */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,10,10,0.5) 0%, rgba(10,10,10,0.2) 50%, rgba(10,10,10,0.9) 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 40%, rgba(10,10,10,0.6) 100%)' }} />
+
+        {/* Gold line accent */}
+        <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent)' }} />
 
         {/* Content */}
-        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '80px 32px 60px', maxWidth: '720px', margin: '0 auto' }}>
-          <div className="anim-fadeup" style={{ animationDelay: '0ms', fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: '18px' }}>
-            Every sport · Every level · Any goal
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px', maxWidth: '880px', margin: '0 auto' }}>
+          <div style={{ animation: 'fadeSlideUp 0.6s ease both', fontSize: '11px', fontWeight: '700', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '24px', opacity: 0.9 }}>
+            Every Sport · Every Level · Any Goal
           </div>
-          <h1 className="anim-fadeup" style={{
-            animationDelay: '80ms',
+
+          <h1 className="hero-headline" style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: 'clamp(38px, 6.5vw, 64px)',
-            fontWeight: '900', lineHeight: '1.06',
-            color: '#fff', marginBottom: '20px',
-            textShadow: '0 2px 24px rgba(0,0,0,0.4)',
+            fontSize: '72px', fontWeight: '900', lineHeight: '1.04',
+            color: '#F5F0E8', marginBottom: '0',
+            letterSpacing: '-0.02em',
           }}>
-            Find your coach.<br />Any sport. 24/7.
+            <AnimatedHeadline text="Find your coach." delay={200} />
+            <br />
+            <span className="gold-shimmer" style={{ fontStyle: 'italic' }}>
+              <AnimatedHeadline text="Any sport. 24/7." delay={500} />
+            </span>
           </h1>
-          <p className="anim-fadeup" style={{
-            animationDelay: '160ms',
-            fontSize: '16px', color: 'rgba(255,255,255,0.75)',
-            lineHeight: '1.7', marginBottom: '36px', fontWeight: '300',
-          }}>
-            Real coaches across every discipline. Powered by AI.<br />Your program, community, and coach — all in one place.
+
+          <p style={{ animation: 'fadeSlideUp 0.7s ease 0.8s both', fontSize: '17px', color: 'rgba(245,240,232,0.55)', lineHeight: '1.7', marginBottom: '48px', marginTop: '24px', fontWeight: '300', maxWidth: '520px', margin: '24px auto 48px' }}>
+            Real coaches across every discipline — powered by AI.<br />Your program, community, and results, all in one place.
           </p>
 
-          <div className="anim-fadeup" style={{ animationDelay: '240ms', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ animation: 'fadeSlideUp 0.7s ease 1s both', display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
-              className="pill-btn"
               onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{ padding: '15px 32px', borderRadius: '100px', background: 'var(--orange)', color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s', boxShadow: '0 4px 20px rgba(232,99,58,0.5)' }}
+              style={{ padding: '16px 36px', borderRadius: '8px', background: '#C9A84C', color: '#0A0A0A', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s', boxShadow: '0 4px 24px rgba(201,168,76,0.35)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F0D080'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(201,168,76,0.5)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#C9A84C'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(201,168,76,0.35)'; }}
             >
               Find a coach
             </button>
             <button
-              className="pill-btn"
               onClick={() => navigate('/coach/signup')}
-              style={{ padding: '15px 32px', borderRadius: '100px', border: '2px solid rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: '#fff', transition: 'opacity 0.15s' }}
+              style={{ padding: '16px 36px', borderRadius: '8px', border: '1px solid rgba(201,168,76,0.4)', background: 'rgba(201,168,76,0.06)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: '#C9A84C', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.background = 'rgba(201,168,76,0.12)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'; e.currentTarget.style.background = 'rgba(201,168,76,0.06)'; }}
             >
               Become a coach
             </button>
           </div>
         </div>
 
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to bottom, transparent, var(--bg))' }} />
-      </section>
-
-      {/* ── Stats strip ─── */}
-      <section style={{ background: 'var(--card)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '28px 32px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-          {STATS.map((s, i) => (
-            <div key={i} className="anim-fadeup" style={{ textAlign: 'center', animationDelay: `${i * 80}ms` }}>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '26px', fontWeight: '800', color: 'var(--dark)' }}>{s.value}</div>
-              <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '3px', fontWeight: '500' }}>{s.label}</div>
-            </div>
-          ))}
+        {/* Scroll indicator */}
+        <div style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', animation: 'fadeSlideUp 0.7s ease 1.4s both' }}>
+          <span style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#444' }}>Scroll</span>
+          <div style={{ width: '1px', height: '40px', background: 'linear-gradient(to bottom, #C9A84C, transparent)', animation: 'pulse 2s ease infinite' }} />
         </div>
       </section>
 
-      {/* ── Category strip ─── */}
-      {!loadingCategories && categories.length > 0 && (
-        <div style={{ display: 'flex', gap: '8px', padding: '32px 32px 24px', overflowX: 'auto', scrollbarWidth: 'none', maxWidth: '1200px', margin: '0 auto' }}>
-          {[{ id: null, name: 'All', slug: null }].concat(categories).map((cat) => (
-            <button
-              key={cat.id ?? 'all'}
-              className="cat-btn"
-              onClick={() => setActiveCategory(cat.slug === activeCategory ? null : cat.slug)}
-              style={{
-                padding: '8px 18px', borderRadius: '100px',
-                border: '1.5px solid var(--border)',
-                background: (cat.slug === null ? activeCategory === null : activeCategory === cat.slug) ? 'var(--dark)' : 'var(--card)',
-                color: (cat.slug === null ? activeCategory === null : activeCategory === cat.slug) ? '#fff' : 'var(--muted)',
-                fontFamily: 'inherit', fontSize: '13px', fontWeight: '500',
-                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-                display: 'flex', alignItems: 'center', gap: '6px',
-                transition: 'all 0.15s',
-              }}
-            >
-              {cat.name}
-            </button>
-          ))}
+      {/* ── COACHES SECTION ── */}
+      <section id="coaches-grid" style={{ padding: '80px 32px', maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Section header */}
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '12px' }}>Our coaches</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: '800', color: '#F5F0E8', lineHeight: '1.15', margin: 0 }}>
+            Find the coach<br /><span style={{ color: '#444', fontStyle: 'italic' }}>that moves you.</span>
+          </h2>
         </div>
-      )}
 
-      {/* ── Coach grid ─── */}
-      <section id="coaches-grid" style={{ padding: '0 32px 80px', maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Category filter */}
+        {!loadingCategories && categories.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '40px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
+            {[{ id: null, name: 'All', slug: null }].concat(categories).map(cat => {
+              const isActive = cat.slug === null ? activeCategory === null : activeCategory === cat.slug;
+              return (
+                <button
+                  key={cat.id ?? 'all'}
+                  className="cat-pill"
+                  onClick={() => setActiveCategory(cat.slug === activeCategory ? null : cat.slug)}
+                  style={{
+                    padding: '8px 18px', borderRadius: '100px', whiteSpace: 'nowrap', flexShrink: 0,
+                    border: `1px solid ${isActive ? '#C9A84C' : '#2a2a2a'}`,
+                    background: isActive ? 'rgba(201,168,76,0.12)' : 'transparent',
+                    color: isActive ? '#C9A84C' : '#555',
+                    fontFamily: 'inherit', fontSize: '13px', fontWeight: '500',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}
+                >
+                  {cat.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Grid */}
         {loadingCoaches ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          <div className="coaches-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
             {[1, 2, 3].map(i => <LoadingSkeleton key={i} type="card" />)}
           </div>
         ) : coaches.length === 0 ? (
-          <EmptyState message="No coaches yet. Be the first to join Coachly." cta="Become a coach" onCta={() => navigate('/coach/signup')} />
+          <EmptyState message="No coaches yet." cta="Become a coach" onCta={() => navigate('/coach/signup')} />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          <div className="coaches-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
             {coaches.map((coach, i) => (
-              <CoachCard key={coach.id} coach={coach} onView={id => navigate(`/coach/${coach.slug || id}`)} delay={i * 60} />
+              <CoachCard key={coach.id} coach={coach} onView={id => navigate(`/coach/${coach.slug || id}`)} delay={i * 80} />
             ))}
           </div>
         )}
       </section>
 
-      {/* ── How it works ─── */}
-      <section style={{ background: 'var(--dark)', padding: '80px 32px' }}>
-        <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '14px' }}>
-              How it works
-            </div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: '700', color: '#fff', lineHeight: '1.2' }}>
-              Coaching, reimagined.
+      {/* ── HOW IT WORKS ── */}
+      <section style={{ padding: '100px 32px', background: '#0D0D0D', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '14px' }}>How it works</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: '800', color: '#F5F0E8', margin: 0 }}>
+              Coaching, <span style={{ fontStyle: 'italic', color: '#C9A84C' }}>reimagined.</span>
             </h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-            {HOW_IT_WORKS.map((step, i) => (
-              <div key={i} className="anim-scalein" style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                borderRadius: '20px', padding: '32px 28px',
-                animationDelay: `${i * 100}ms`,
-              }}>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: '40px', height: '40px', borderRadius: '12px',
-                  background: 'var(--orange)', marginBottom: '20px',
-                  fontFamily: "'Playfair Display', serif",
-                  fontSize: '15px', fontWeight: '800', color: '#fff',
-                }}>
-                  {step.num}
+          <div className="how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden' }}>
+            {[
+              { label: 'Subscribe', title: 'Choose your coach', body: 'Browse coaches across every sport and discipline. Pick a program built for your goals and subscribe monthly.' },
+              { label: 'Train', title: 'Get your AI + plan', body: "Your coach's AI is available 24/7. A custom training plan, nutrition guidance, and daily check-ins — tailored to you." },
+              { label: 'Grow', title: 'Track progress', body: 'Weekly reviews, direct coach messaging, and real progress tracking. Your coach adjusts your plan as you grow.' },
+            ].map((step, i) => (
+              <div key={i}
+                style={{ background: '#0D0D0D', padding: '40px 32px', position: 'relative', overflow: 'hidden', transition: 'background 0.3s' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#111'}
+                onMouseLeave={e => e.currentTarget.style.background = '#0D0D0D'}
+              >
+                <div style={{ position: 'absolute', top: '20px', right: '24px', fontFamily: "'Playfair Display', serif", fontSize: '80px', fontWeight: '900', color: 'rgba(201,168,76,0.04)', lineHeight: 1 }}>
+                  {String(i + 1).padStart(2, '0')}
                 </div>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '19px', fontWeight: '700', color: '#fff', marginBottom: '12px', lineHeight: '1.3' }}>
-                  {step.title}
-                </h3>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', fontWeight: '300', margin: 0 }}>
-                  {step.description}
-                </p>
+                <div style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '16px' }}>{step.label}</div>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: '#F5F0E8', marginBottom: '14px', lineHeight: '1.3' }}>{step.title}</h3>
+                <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.8', margin: 0, fontWeight: '300' }}>{step.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA banner ─── */}
-      <section style={{ background: 'var(--orange)', padding: '64px 32px', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: '800', color: '#fff', marginBottom: '14px' }}>
-          Ready to find your coach?
-        </h2>
-        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', marginBottom: '32px', fontWeight: '300' }}>
-          Join thousands of athletes already training smarter with Coachly.
-        </p>
-        <button
-          onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-          style={{ padding: '15px 36px', borderRadius: '100px', background: '#fff', color: 'var(--orange)', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
-        >
-          Browse coaches →
-        </button>
+      {/* ── CTA ── */}
+      <section style={{ padding: '120px 32px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(201,168,76,0.06) 0%, transparent 70%)' }} />
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '600px', margin: '0 auto' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C9A84C', marginBottom: '20px' }}>Start today</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: '900', color: '#F5F0E8', lineHeight: '1.1', marginBottom: '20px' }}>
+            Ready to find<br /><span style={{ fontStyle: 'italic', color: '#C9A84C' }}>your coach?</span>
+          </h2>
+          <p style={{ fontSize: '15px', color: '#555', marginBottom: '40px', lineHeight: '1.7', fontWeight: '300' }}>
+            Thousands of athletes are already training smarter. Your coach is waiting.
+          </p>
+          <button
+            onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
+            style={{ padding: '17px 44px', borderRadius: '8px', background: '#C9A84C', color: '#0A0A0A', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 40px rgba(201,168,76,0.3)', transition: 'all 0.2s', letterSpacing: '0.02em' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#F0D080'; e.currentTarget.style.boxShadow = '0 8px 60px rgba(201,168,76,0.5)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#C9A84C'; e.currentTarget.style.boxShadow = '0 4px 40px rgba(201,168,76,0.3)'; e.currentTarget.style.transform = 'none'; }}
+          >
+            Browse coaches →
+          </button>
+        </div>
       </section>
 
-      {/* ── Footer ─── */}
-      <footer style={{
-        padding: '32px', borderTop: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: '16px', background: 'var(--bg)',
-      }}>
-        {/* Logo — plain text, no background */}
-        <span style={{
-          fontFamily: "'Playfair Display', serif",
-          fontWeight: '800', fontSize: '16px',
-          color: 'var(--dark)', letterSpacing: '0.06em',
-        }}>
-          COACHLY<span style={{ color: 'var(--orange)' }}>.</span>
+      {/* ── FOOTER ── */}
+      <footer style={{ padding: '32px', borderTop: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+        <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: '800', fontSize: '16px', color: '#F5F0E8', letterSpacing: '0.08em' }}>
+          COACHLY<span style={{ color: '#C9A84C' }}>.</span>
         </span>
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <button onClick={() => navigate('/coach/signup')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
-            For coaches
-          </button>
-          <button onClick={() => setLegalModal('terms')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
-            Terms
-          </button>
-          <button onClick={() => setLegalModal('privacy')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer' }}>
-            Privacy
-          </button>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+          <button onClick={() => navigate('/coach/signup')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: '#444', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#C9A84C'} onMouseLeave={e => e.currentTarget.style.color = '#444'}>For coaches</button>
+          <button onClick={() => setLegalModal('terms')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: '#444', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#C9A84C'} onMouseLeave={e => e.currentTarget.style.color = '#444'}>Terms</button>
+          <button onClick={() => setLegalModal('privacy')} style={{ background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px', color: '#444', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#C9A84C'} onMouseLeave={e => e.currentTarget.style.color = '#444'}>Privacy</button>
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-          © {new Date().getFullYear()} Coachly
-        </div>
+        <div style={{ fontSize: '12px', color: '#333' }}>© {new Date().getFullYear()} Coachly</div>
       </footer>
     </div>
   );
