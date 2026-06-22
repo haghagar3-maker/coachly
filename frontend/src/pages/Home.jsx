@@ -6,30 +6,26 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
 
 /* ─── Theme tokens ───
-   White/beige base stays as the neutral canvas (cards, text, structure).
-   On top of it, a fixed ambient color-wash layer shifts hue as the user scrolls:
-   sunrise orange (hero) -> track blue (coaches) -> field green (CTA/footer).
-   This is the "colors swipe while scrolling" signature element.
+   Back to the black/dark base you approved originally, with a scroll-driven
+   motivational color wash layered on top: sunrise orange -> track blue -> field green.
 */
-const BG = '#FAF7F0';
-const SURFACE = '#FFFFFF';
-const SURFACE_2 = '#F3EEE3';
-const BORDER = '#E7E0D2';
-const GOLD = '#B8923D';
-const GOLD_LIGHT = '#D9B768';
-const TEXT = '#1C1A14';
-const TEXT_DIM = '#6B6555';
-const TEXT_FAINT = '#A39C87';
+const BG = '#0E0D0A';
+const SURFACE = '#1A1814';
+const SURFACE_2 = '#221F19';
+const BORDER = '#332F22';
+const GOLD = '#C9A84C';
+const GOLD_LIGHT = '#F0D080';
+const TEXT = '#F5F0E8';
+const TEXT_DIM = '#8C887A';
+const TEXT_FAINT = '#5C5848';
 
-// Scroll-wash stops: [r,g,b] — sunrise orange -> track blue -> field green
 const WASH_STOPS = [
-  [232, 119, 34],  // 0%   sunrise orange (hero)
-  [232, 119, 34],  // 10%  hold at hero
-  [44, 110, 196],  // 45%  track blue (coaches section)
-  [44, 110, 196],  // 65%  hold through how-it-works
-  [42, 157, 90],   // 100% field green (CTA/footer)
+  [232, 119, 34],
+  [232, 119, 34],
+  [44, 110, 196],
+  [44, 110, 196],
+  [42, 157, 90],
 ];
-
 function lerp(a, b, t) { return a + (b - a) * t; }
 function washColorAt(pct) {
   const n = WASH_STOPS.length - 1;
@@ -68,11 +64,11 @@ function LegalModal({ type, onClose }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(28,26,20,0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={onClose}>
-      <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '20px', maxWidth: '600px', width: '100%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 30px 80px rgba(28,26,20,0.18)' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={onClose}>
+      <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '20px', maxWidth: '600px', width: '100%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
         <div style={{ padding: '24px 28px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: TEXT }}>{content.title}</div>
-          <button onClick={onClose} style={{ background: SURFACE_2, border: `1px solid ${BORDER}`, color: TEXT_DIM, cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', fontSize: '16px' }}>×</button>
+          <button onClick={onClose} style={{ background: 'none', border: `1px solid ${BORDER}`, color: TEXT_DIM, cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', fontSize: '16px' }}>×</button>
         </div>
         <div style={{ overflowY: 'auto', padding: '24px 28px 32px' }}>
           {content.sections.map((s, i) => (
@@ -88,7 +84,7 @@ function LegalModal({ type, onClose }) {
 }
 
 /* ─── helpers ─── */
-const AVATAR_COLORS = ['#B8923D', '#2C6EC4', '#2A9D5A', '#d9603a', '#5a5ad0', '#8b5cf6', '#1ba1c2'];
+const AVATAR_COLORS = ['#C9A84C', '#2C6EC4', '#2A9D5A', '#d9603a', '#5a5ad0', '#8b5cf6', '#1ba1c2'];
 function avatarColor(id) {
   if (!id) return AVATAR_COLORS[0];
   let h = 0;
@@ -101,105 +97,84 @@ function initials(name) {
 }
 
 /* ─── Coach Card ───
-   FIX from last round: the reveal strip is now properly contained inside an
-   overflow:hidden wrapper with z-index below the card face, so it is fully
-   invisible until the card is dragged — no more permanent gold block under
-   every card.
+   LEAK-PROOF REVEAL: the card and the "View profile" action are both normal-flow
+   flex children of a fixed-width, overflow:hidden outer box. The card has a
+   negative right-margin equal to the action width, pulling the action fully
+   underneath/offscreen by default. Revealing just animates that margin to 0 —
+   nothing is absolutely positioned, so nothing can escape the outer box's clip,
+   regardless of how tall the card's own content is. This was the actual bug
+   in the last two rounds (an absolutely-positioned strip sized against an
+   auto-height parent, not the parent's overflow).
+
+   Interaction: click/tap toggles reveal. While revealed, a second click on the
+   action button (or on the card again) navigates. This works identically with
+   mouse and touch, no drag-tracking needed — and a real swipe still works via
+   onTouchEnd direction detection as a bonus, but isn't required.
 */
 function CoachCard({ coach, onView, delay = 0 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
-  const [dragX, setDragX] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const isDragging = useRef(false);
-  const startX = useRef(null);
-  const startedRevealed = useRef(false);
-  const didDrag = useRef(false);
+  const touchStartX = useRef(null);
 
-  const REVEAL_WIDTH = 88;
-  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const ACTION_WIDTH = 92;
+  const CARD_WIDTH = 272;
 
-  const onTouchStart = (e) => {
-    startX.current = e.touches[0].clientX;
-    startedRevealed.current = revealed;
-    didDrag.current = false;
-    isDragging.current = true;
-  };
-  const onTouchMove = (e) => {
-    if (startX.current == null) return;
-    const dx = e.touches[0].clientX - startX.current;
-    if (Math.abs(dx) > 6) didDrag.current = true;
-    const base = startedRevealed.current ? -REVEAL_WIDTH : 0;
-    setDragX(clamp(base + dx, -REVEAL_WIDTH, 0));
-  };
-  const onTouchEnd = () => {
-    const shouldReveal = dragX < -REVEAL_WIDTH / 2;
-    setRevealed(shouldReveal);
-    setDragX(shouldReveal ? -REVEAL_WIDTH : 0);
-    startX.current = null;
-    isDragging.current = false;
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchStartX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (dx < -30) { setRevealed(true); return; }   // swiped left -> reveal
+    if (dx > 30) { setRevealed(false); return; }    // swiped right -> close
+    // small movement = treat as tap below
   };
 
-  const handleCardClick = () => {
-    if (didDrag.current) { didDrag.current = false; return; }
-    if (revealed) { setRevealed(false); setDragX(0); return; }
-    onView(coach.slug || coach.id);
+  const handleCardTap = () => {
+    if (revealed) { onView(coach.slug || coach.id); return; }
+    setRevealed(true);
   };
 
   return (
     <div
       style={{
-        position: 'relative',
         flexShrink: 0,
-        width: '272px',
+        width: `${CARD_WIDTH}px`,
         scrollSnapAlign: 'start',
         borderRadius: '20px',
-        overflow: 'hidden',          // <- contains the reveal strip; nothing escapes the card bounds
+        overflow: 'hidden',              // the ONLY clip boundary needed — both children are in normal flow
+        display: 'flex',                 // row layout: [card][action]
         animation: 'fadeSlideUp 0.6s ease both',
         animationDelay: `${delay}ms`,
       }}
     >
-      {/* Action strip — sits behind the card face, fully hidden until dragX < 0 */}
-      <div
-        onClick={() => onView(coach.slug || coach.id)}
-        style={{
-          position: 'absolute', top: 0, right: 0, bottom: 0, width: `${REVEAL_WIDTH}px`,
-          background: `linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})`, color: '#fff',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', textAlign: 'center',
-          padding: '0 6px', zIndex: 0,
-        }}
-      >
-        <span style={{ fontSize: '18px' }}>→</span>
-        View<br />profile
-      </div>
-
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => { setHovered(false); setPressed(false); }}
         onMouseDown={() => setPressed(true)}
         onMouseUp={() => setPressed(false)}
         onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        onClick={handleCardClick}
+        onClick={handleCardTap}
         style={{
           WebkitTapHighlightColor: 'transparent',
           outline: 'none',
+          flexShrink: 0,
+          width: `${CARD_WIDTH}px`,
+          marginRight: revealed ? '0px' : `-${ACTION_WIDTH}px`,  // <- the entire reveal mechanism
+          transition: 'margin-right 0.28s cubic-bezier(0.22,1,0.36,1), transform 0.25s ease, border-color 0.25s, box-shadow 0.25s',
           position: 'relative',
-          zIndex: 1,                 // <- card face always sits on top of the strip
+          zIndex: 1,
           background: SURFACE,
           border: `1px solid ${hovered ? GOLD + '88' : BORDER}`,
           borderRadius: '20px',
-          overflow: 'hidden',
           cursor: 'pointer',
           userSelect: 'none',
-          transform: `translateX(${dragX}px) ${pressed ? 'scale(0.985)' : hovered ? 'translateY(-6px)' : ''}`,
-          transition: isDragging.current ? 'none' : 'transform 0.3s cubic-bezier(0.22,1,0.36,1), border-color 0.25s, box-shadow 0.25s',
-          boxShadow: hovered ? '0 20px 48px -16px rgba(28,26,20,0.18)' : '0 1px 3px rgba(28,26,20,0.06)',
+          transform: pressed ? 'scale(0.985)' : hovered ? 'translateY(-6px)' : 'none',
+          boxShadow: hovered ? '0 20px 48px -16px rgba(0,0,0,0.45)' : '0 2px 12px rgba(0,0,0,0.25)',
         }}
       >
-        <div style={{ height: '176px', background: coach.banner ? `url(${coach.banner}) center/cover` : `linear-gradient(135deg, ${SURFACE_2}, #e9dfc8)`, position: 'relative' }}>
+        <div style={{ height: '176px', background: coach.banner ? `url(${coach.banner}) center/cover` : `linear-gradient(135deg, ${SURFACE_2}, #2e2b1f)`, position: 'relative', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
           {!coach.banner && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '700', color: '#fff' }}>
@@ -211,7 +186,7 @@ function CoachCard({ coach, onView, delay = 0 }) {
             <img src={coach.photo} alt={coach.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           )}
           {coach.category_name && (
-            <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(6px)', color: GOLD, fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '5px 10px', borderRadius: '100px' }}>
+            <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(20,18,14,0.7)', backdropFilter: 'blur(6px)', color: GOLD, fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '5px 10px', borderRadius: '100px', border: `1px solid ${GOLD}44` }}>
               {coach.category_name}
             </span>
           )}
@@ -235,6 +210,24 @@ function CoachCard({ coach, onView, delay = 0 }) {
           </div>
         </div>
       </div>
+
+      {/* Action — normal flow flex child, fixed width, never absolutely positioned */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onView(coach.slug || coach.id); }}
+        style={{
+          flexShrink: 0,
+          width: `${ACTION_WIDTH}px`,
+          border: 'none',
+          background: `linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})`,
+          color: '#1a1408',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer', textAlign: 'center', padding: '0 6px',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span style={{ fontSize: '18px' }}>→</span>
+        View<br />profile
+      </button>
     </div>
   );
 }
@@ -323,12 +316,7 @@ function AnimatedHeadline({ text, delay = 0 }) {
   );
 }
 
-/* ─── Scroll-driven ambient color wash ───
-   Fixed full-viewport layer behind everything. Reads scroll % of the whole
-   page and interpolates through WASH_STOPS: sunrise orange -> track blue ->
-   field green. Two soft radial blobs drift and recolor; kept subtle (low
-   opacity, blurred) so body text stays readable throughout.
-*/
+/* ─── Scroll-driven ambient color wash ─── */
 function ScrollColorWash() {
   const [pct, setPct] = useState(0);
   const rafRef = useRef(null);
@@ -351,8 +339,8 @@ function ScrollColorWash() {
   }, []);
 
   const [r, g, b] = washColorAt(pct);
-  const c1 = `rgba(${r.toFixed(0)},${g.toFixed(0)},${b.toFixed(0)},0.16)`;
-  const c2 = `rgba(${r.toFixed(0)},${g.toFixed(0)},${b.toFixed(0)},0.08)`;
+  const c1 = `rgba(${r.toFixed(0)},${g.toFixed(0)},${b.toFixed(0)},0.22)`;
+  const c2 = `rgba(${r.toFixed(0)},${g.toFixed(0)},${b.toFixed(0)},0.12)`;
 
   return (
     <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
@@ -360,13 +348,13 @@ function ScrollColorWash() {
         position: 'absolute', width: '70vw', height: '70vw', maxWidth: '900px', maxHeight: '900px',
         top: `${-10 + pct * 30}%`, left: `${-15 + pct * 20}%`,
         background: `radial-gradient(circle, ${c1} 0%, transparent 70%)`,
-        filter: 'blur(40px)', transition: 'background 0.2s linear',
+        filter: 'blur(50px)', transition: 'background 0.2s linear',
       }} />
       <div style={{
         position: 'absolute', width: '60vw', height: '60vw', maxWidth: '800px', maxHeight: '800px',
         bottom: `${-15 + (1 - pct) * 20}%`, right: `${-10 + (1 - pct) * 25}%`,
         background: `radial-gradient(circle, ${c2} 0%, transparent 70%)`,
-        filter: 'blur(50px)', transition: 'background 0.2s linear',
+        filter: 'blur(60px)', transition: 'background 0.2s linear',
       }} />
     </div>
   );
@@ -385,7 +373,7 @@ export default function Home() {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const id = 'coachly-home-v5';
+    const id = 'coachly-home-v6';
     if (!document.getElementById(id)) {
       const s = document.createElement('style');
       s.id = id;
@@ -402,11 +390,11 @@ export default function Home() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
         }
-        * { -webkit-tap-highlight-color: transparent; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         button { -webkit-tap-highlight-color: transparent; outline: none; }
         button:focus { outline: none; }
         .gold-shimmer {
-          background: linear-gradient(90deg, ${GOLD}, ${GOLD_LIGHT}, ${GOLD}, #8f6b22);
+          background: linear-gradient(90deg, ${GOLD}, ${GOLD_LIGHT}, ${GOLD}, #A87830);
           background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -464,8 +452,8 @@ export default function Home() {
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 32px',
-        background: 'rgba(250,247,240,0.88)', backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${BORDER}`,
+        background: 'rgba(14,13,10,0.85)', backdropFilter: 'blur(20px)',
+        borderBottom: `1px solid ${BORDER}66`,
       }}>
         <div onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
           <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: '800', fontSize: '20px', color: TEXT, letterSpacing: '0.08em' }}>
@@ -477,11 +465,11 @@ export default function Home() {
             For coaches
           </button>
           {token && tokenType === 'user' ? (
-            <button onClick={() => navigate('/dashboard')} style={{ padding: '9px 20px', borderRadius: '8px', background: GOLD, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+            <button onClick={() => navigate('/dashboard')} style={{ padding: '9px 20px', borderRadius: '8px', background: GOLD, color: BG, border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
               My dashboard
             </button>
           ) : token && tokenType === 'coach' ? (
-            <button onClick={() => navigate('/coach/dashboard')} style={{ padding: '9px 20px', borderRadius: '8px', background: GOLD, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+            <button onClick={() => navigate('/coach/dashboard')} style={{ padding: '9px 20px', borderRadius: '8px', background: GOLD, color: BG, border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
               Coach dashboard
             </button>
           ) : (
@@ -491,7 +479,7 @@ export default function Home() {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = TEXT_DIM; }}>
                 Log in
               </button>
-              <button onClick={() => navigate('/user/login')} style={{ padding: '9px 20px', borderRadius: '8px', background: GOLD, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'opacity 0.2s' }}
+              <button onClick={() => navigate('/user/login')} style={{ padding: '9px 20px', borderRadius: '8px', background: GOLD, color: BG, border: 'none', fontFamily: 'inherit', fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'opacity 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                 Get started
@@ -507,25 +495,26 @@ export default function Home() {
           ref={videoRef}
           autoPlay muted loop playsInline
           onLoadedData={() => setVideoLoaded(true)}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: videoLoaded ? 0.85 : 0, transition: 'opacity 1.2s ease' }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: videoLoaded ? 0.45 : 0, transition: 'opacity 1.5s ease' }}
         >
-          {/* TODO: replace with your own direct file URL grabbed from the "Free download" button at
-              https://www.pexels.com/video/a-female-athlete-practicing-kick-boxing-with-a-coach-5752065/
-              (vertical) or search pexels.com/search/videos/athlete for a 16:9 option — Pexels mints
-              a fresh signed CDN link per request so it must be pulled fresh, not hardcoded by me. */}
+          {/* Restored your original placeholder. Replace with your own verified Pexels
+              direct-download link (copy it from the "Free download" button on the
+              video's page) once you've picked one — e.g. an athlete/coach clip from
+              https://www.pexels.com/search/videos/athlete/ */}
           <source src="https://videos.pexels.com/video-files/4761789/4761789-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4" />
         </video>
 
-        {/* Much lighter wash than last round — video should clearly read through now */}
-        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(250,247,240,0.15) 0%, rgba(250,247,240,0.05) 40%, rgba(250,247,240,0.92) 92%)` }} />
-        <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${GOLD}55, transparent)` }} />
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(14,13,10,0.5) 0%, rgba(14,13,10,0.2) 50%, rgba(14,13,10,0.92) 100%)` }} />
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at center, transparent 40%, rgba(14,13,10,0.6) 100%)` }} />
+        <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${GOLD}4D, transparent)` }} />
 
         <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px', maxWidth: '880px', margin: '0 auto' }}>
-          <div style={{ animation: 'fadeSlideUp 0.6s ease both', fontSize: '11px', fontWeight: '700', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.4)', marginBottom: '24px' }}>
+          <div style={{ animation: 'fadeSlideUp 0.6s ease both', fontSize: '11px', fontWeight: '700', letterSpacing: '0.22em', textTransform: 'uppercase', color: GOLD, marginBottom: '24px' }}>
             Every Sport · Every Level · Any Goal
           </div>
 
-          <h1 className="hero-headline" style={{ fontFamily: "'Playfair Display', serif", fontSize: '72px', fontWeight: '900', lineHeight: '1.04', color: '#fff', textShadow: '0 4px 24px rgba(0,0,0,0.35)', margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 className="hero-headline" style={{ fontFamily: "'Playfair Display', serif", fontSize: '72px', fontWeight: '900', lineHeight: '1.04', color: TEXT, margin: 0, letterSpacing: '-0.02em' }}>
             <AnimatedHeadline text="Find your coach." delay={200} />
             <br />
             <span className="gold-shimmer" style={{ fontStyle: 'italic' }}>
@@ -533,33 +522,33 @@ export default function Home() {
             </span>
           </h1>
 
-          <p style={{ animation: 'fadeSlideUp 0.7s ease 0.8s both', fontSize: '17px', color: 'rgba(255,255,255,0.92)', textShadow: '0 2px 10px rgba(0,0,0,0.35)', lineHeight: '1.7', fontWeight: '400', maxWidth: '520px', margin: '24px auto 48px' }}>
+          <p style={{ animation: 'fadeSlideUp 0.7s ease 0.8s both', fontSize: '17px', color: 'rgba(245,240,232,0.6)', lineHeight: '1.7', fontWeight: '300', maxWidth: '520px', margin: '24px auto 48px' }}>
             Real coaches across every discipline, each with their own AI assistant to support you.<br />Your program, community, and progress, all in one place.
           </p>
 
           <div style={{ animation: 'fadeSlideUp 0.7s ease 1s both', display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{ padding: '16px 36px', borderRadius: '8px', background: GOLD, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s', boxShadow: '0 6px 24px rgba(0,0,0,0.3)' }}
-              onMouseEnter={e => { e.currentTarget.style.background = GOLD_LIGHT; }}
-              onMouseLeave={e => { e.currentTarget.style.background = GOLD; }}
+              style={{ padding: '16px 36px', borderRadius: '8px', background: GOLD, color: BG, border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s', boxShadow: '0 4px 24px rgba(201,168,76,0.35)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = GOLD_LIGHT; e.currentTarget.style.boxShadow = '0 8px 40px rgba(201,168,76,0.5)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = GOLD; e.currentTarget.style.boxShadow = '0 4px 24px rgba(201,168,76,0.35)'; }}
             >
               Find a coach
             </button>
             <button
               onClick={() => navigate('/coach/signup')}
-              style={{ padding: '16px 36px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: '#fff', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.22)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+              style={{ padding: '16px 36px', borderRadius: '8px', border: `1px solid ${GOLD}66`, background: 'rgba(201,168,76,0.06)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: GOLD, transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = 'rgba(201,168,76,0.12)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = GOLD + '66'; e.currentTarget.style.background = 'rgba(201,168,76,0.06)'; }}
             >
               Become a coach
             </button>
           </div>
         </div>
 
-        <div style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', animation: 'fadeSlideUp 0.7s ease 1.4s both', zIndex: 2 }}>
-          <span style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>Scroll</span>
-          <div style={{ width: '1px', height: '40px', background: 'linear-gradient(to bottom, #fff, transparent)', animation: 'pulse 2s ease infinite' }} />
+        <div style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', animation: 'fadeSlideUp 0.7s ease 1.4s both' }}>
+          <span style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: TEXT_FAINT }}>Scroll</span>
+          <div style={{ width: '1px', height: '40px', background: `linear-gradient(to bottom, ${GOLD}, transparent)`, animation: 'pulse 2s ease infinite' }} />
         </div>
       </section>
 
@@ -589,7 +578,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '100px 32px', background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(2px)', borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
+      <section style={{ position: 'relative', zIndex: 1, padding: '100px 32px', background: SURFACE, borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '64px' }}>
             <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, marginBottom: '14px' }}>How it works</div>
@@ -608,7 +597,7 @@ export default function Home() {
                 onMouseEnter={e => e.currentTarget.style.background = SURFACE_2}
                 onMouseLeave={e => e.currentTarget.style.background = SURFACE}
               >
-                <div style={{ position: 'absolute', top: '20px', right: '24px', fontFamily: "'Playfair Display', serif", fontSize: '80px', fontWeight: '900', color: 'rgba(184,146,61,0.08)', lineHeight: 1 }}>
+                <div style={{ position: 'absolute', top: '20px', right: '24px', fontFamily: "'Playfair Display', serif", fontSize: '80px', fontWeight: '900', color: 'rgba(201,168,76,0.06)', lineHeight: 1 }}>
                   {String(i + 1).padStart(2, '0')}
                 </div>
                 <div style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.2em', textTransform: 'uppercase', color: GOLD, marginBottom: '16px' }}>{step.label}</div>
@@ -621,20 +610,20 @@ export default function Home() {
       </section>
 
       {/* ── CTA ── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '120px 32px', textAlign: 'center' }}>
+      <section style={{ position: 'relative', zIndex: 1, padding: '120px 32px', textAlign: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '600px', margin: '0 auto' }}>
           <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, marginBottom: '20px' }}>Start today</div>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: '900', color: TEXT, lineHeight: '1.1', marginBottom: '20px' }}>
             Ready to find<br /><span style={{ fontStyle: 'italic', color: GOLD }}>your coach?</span>
           </h2>
-          <p style={{ fontSize: '15px', color: TEXT_DIM, marginBottom: '40px', lineHeight: '1.7' }}>
+          <p style={{ fontSize: '15px', color: TEXT_DIM, marginBottom: '40px', lineHeight: '1.7', fontWeight: '300' }}>
             Athletes everywhere are already training smarter. Your coach is waiting.
           </p>
           <button
             onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-            style={{ padding: '17px 44px', borderRadius: '8px', background: GOLD, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 8px 32px rgba(184,146,61,0.28)', transition: 'all 0.2s', letterSpacing: '0.02em' }}
-            onMouseEnter={e => { e.currentTarget.style.background = GOLD_LIGHT; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = GOLD; e.currentTarget.style.transform = 'none'; }}
+            style={{ padding: '17px 44px', borderRadius: '8px', background: GOLD, color: BG, border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 40px rgba(201,168,76,0.3)', transition: 'all 0.2s', letterSpacing: '0.02em' }}
+            onMouseEnter={e => { e.currentTarget.style.background = GOLD_LIGHT; e.currentTarget.style.boxShadow = '0 8px 60px rgba(201,168,76,0.5)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = GOLD; e.currentTarget.style.boxShadow = '0 4px 40px rgba(201,168,76,0.3)'; e.currentTarget.style.transform = 'none'; }}
           >
             Browse coaches →
           </button>
