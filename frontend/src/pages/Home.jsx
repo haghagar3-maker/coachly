@@ -6,18 +6,39 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
 
 /* ─── Theme tokens ───
-   White / beige theme, gold kept as the one signature accent thread
-   (carried over from the existing brand identity instead of introducing a new color).
+   White/beige base stays as the neutral canvas (cards, text, structure).
+   On top of it, a fixed ambient color-wash layer shifts hue as the user scrolls:
+   sunrise orange (hero) -> track blue (coaches) -> field green (CTA/footer).
+   This is the "colors swipe while scrolling" signature element.
 */
-const BG = '#FAF7F0';        // warm off-white page background
-const SURFACE = '#FFFFFF';   // card surface
-const SURFACE_2 = '#F3EEE3'; // beige secondary surface (sections, hover states)
+const BG = '#FAF7F0';
+const SURFACE = '#FFFFFF';
+const SURFACE_2 = '#F3EEE3';
 const BORDER = '#E7E0D2';
-const GOLD = '#B8923D';      // deepened slightly from #C9A84C for AA contrast on white
+const GOLD = '#B8923D';
 const GOLD_LIGHT = '#D9B768';
 const TEXT = '#1C1A14';
 const TEXT_DIM = '#6B6555';
 const TEXT_FAINT = '#A39C87';
+
+// Scroll-wash stops: [r,g,b] — sunrise orange -> track blue -> field green
+const WASH_STOPS = [
+  [232, 119, 34],  // 0%   sunrise orange (hero)
+  [232, 119, 34],  // 10%  hold at hero
+  [44, 110, 196],  // 45%  track blue (coaches section)
+  [44, 110, 196],  // 65%  hold through how-it-works
+  [42, 157, 90],   // 100% field green (CTA/footer)
+];
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function washColorAt(pct) {
+  const n = WASH_STOPS.length - 1;
+  const segment = Math.min(Math.floor(pct * n), n - 1);
+  const localT = pct * n - segment;
+  const [r1, g1, b1] = WASH_STOPS[segment];
+  const [r2, g2, b2] = WASH_STOPS[segment + 1];
+  return [lerp(r1, r2, localT), lerp(g1, g2, localT), lerp(b1, b2, localT)];
+}
 
 /* ─── Legal Modal ─── */
 function LegalModal({ type, onClose }) {
@@ -67,7 +88,7 @@ function LegalModal({ type, onClose }) {
 }
 
 /* ─── helpers ─── */
-const AVATAR_COLORS = ['#B8923D', '#3a8a5f', '#5a5ad0', '#d9603a', '#2d7a52', '#8b5cf6', '#1ba1c2'];
+const AVATAR_COLORS = ['#B8923D', '#2C6EC4', '#2A9D5A', '#d9603a', '#5a5ad0', '#8b5cf6', '#1ba1c2'];
 function avatarColor(id) {
   if (!id) return AVATAR_COLORS[0];
   let h = 0;
@@ -80,28 +101,29 @@ function initials(name) {
 }
 
 /* ─── Coach Card ───
-   Redesigned: full-bleed photo top, no floating avatar overlap (that was a v1/v2 holdover).
-   Swipe-left on touch reveals a "View profile →" action strip underneath the card,
-   like a native list swipe-action. Click still navigates directly (swipe is a bonus
-   affordance on touch devices, not the only path).
+   FIX from last round: the reveal strip is now properly contained inside an
+   overflow:hidden wrapper with z-index below the card face, so it is fully
+   invisible until the card is dragged — no more permanent gold block under
+   every card.
 */
 function CoachCard({ coach, onView, delay = 0 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
-  const [dragX, setDragX] = useState(0);     // current visual offset while dragging
-  const [revealed, setRevealed] = useState(false); // settled "swiped open" state
+  const [dragX, setDragX] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const isDragging = useRef(false);
   const startX = useRef(null);
   const startedRevealed = useRef(false);
   const didDrag = useRef(false);
 
-  const REVEAL_WIDTH = 96; // px the action strip occupies
-
+  const REVEAL_WIDTH = 88;
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
   const onTouchStart = (e) => {
     startX.current = e.touches[0].clientX;
     startedRevealed.current = revealed;
     didDrag.current = false;
+    isDragging.current = true;
   };
   const onTouchMove = (e) => {
     if (startX.current == null) return;
@@ -115,11 +137,12 @@ function CoachCard({ coach, onView, delay = 0 }) {
     setRevealed(shouldReveal);
     setDragX(shouldReveal ? -REVEAL_WIDTH : 0);
     startX.current = null;
+    isDragging.current = false;
   };
 
   const handleCardClick = () => {
-    if (didDrag.current) { didDrag.current = false; return; } // swipe, not a tap
-    if (revealed) { setRevealed(false); setDragX(0); return; } // tap closes the reveal
+    if (didDrag.current) { didDrag.current = false; return; }
+    if (revealed) { setRevealed(false); setDragX(0); return; }
     onView(coach.slug || coach.id);
   };
 
@@ -131,19 +154,20 @@ function CoachCard({ coach, onView, delay = 0 }) {
         width: '272px',
         scrollSnapAlign: 'start',
         borderRadius: '20px',
-        overflow: 'hidden',
+        overflow: 'hidden',          // <- contains the reveal strip; nothing escapes the card bounds
         animation: 'fadeSlideUp 0.6s ease both',
         animationDelay: `${delay}ms`,
       }}
     >
-      {/* Action strip underneath, revealed by swipe */}
+      {/* Action strip — sits behind the card face, fully hidden until dragX < 0 */}
       <div
         onClick={() => onView(coach.slug || coach.id)}
         style={{
           position: 'absolute', top: 0, right: 0, bottom: 0, width: `${REVEAL_WIDTH}px`,
-          background: GOLD, color: '#fff', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: '6px',
-          fontSize: '12px', fontWeight: '700', cursor: 'pointer', textAlign: 'center', padding: '0 8px',
+          background: `linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})`, color: '#fff',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', textAlign: 'center',
+          padding: '0 6px', zIndex: 0,
         }}
       >
         <span style={{ fontSize: '18px' }}>→</span>
@@ -163,6 +187,7 @@ function CoachCard({ coach, onView, delay = 0 }) {
           WebkitTapHighlightColor: 'transparent',
           outline: 'none',
           position: 'relative',
+          zIndex: 1,                 // <- card face always sits on top of the strip
           background: SURFACE,
           border: `1px solid ${hovered ? GOLD + '88' : BORDER}`,
           borderRadius: '20px',
@@ -170,27 +195,20 @@ function CoachCard({ coach, onView, delay = 0 }) {
           cursor: 'pointer',
           userSelect: 'none',
           transform: `translateX(${dragX}px) ${pressed ? 'scale(0.985)' : hovered ? 'translateY(-6px)' : ''}`,
-          transition: startX.current == null ? 'transform 0.3s cubic-bezier(0.22,1,0.36,1), border-color 0.25s, box-shadow 0.25s' : 'none',
-          boxShadow: hovered ? '0 20px 48px -16px rgba(28,26,20,0.16)' : '0 1px 3px rgba(28,26,20,0.06)',
+          transition: isDragging.current ? 'none' : 'transform 0.3s cubic-bezier(0.22,1,0.36,1), border-color 0.25s, box-shadow 0.25s',
+          boxShadow: hovered ? '0 20px 48px -16px rgba(28,26,20,0.18)' : '0 1px 3px rgba(28,26,20,0.06)',
         }}
       >
         <div style={{ height: '176px', background: coach.banner ? `url(${coach.banner}) center/cover` : `linear-gradient(135deg, ${SURFACE_2}, #e9dfc8)`, position: 'relative' }}>
           {!coach.banner && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{
-                width: '64px', height: '64px', borderRadius: '50%',
-                background: avatarColor(coach.id),
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '20px', fontWeight: '700', color: '#fff',
-              }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '700', color: '#fff' }}>
                 {initials(coach.name)}
               </div>
             </div>
           )}
           {coach.photo && (
-            <div style={{ position: 'absolute', inset: 0 }}>
-              <img src={coach.photo} alt={coach.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
+            <img src={coach.photo} alt={coach.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           )}
           {coach.category_name && (
             <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(6px)', color: GOLD, fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '5px 10px', borderRadius: '100px' }}>
@@ -221,7 +239,7 @@ function CoachCard({ coach, onView, delay = 0 }) {
   );
 }
 
-/* ─── Coach Row (Netflix-style: one category per row, independently scrollable) ─── */
+/* ─── Coach Row ─── */
 function CoachRow({ title, coaches, onView }) {
   const trackRef = useRef(null);
   const [canLeft, setCanLeft] = useState(false);
@@ -305,11 +323,60 @@ function AnimatedHeadline({ text, delay = 0 }) {
   );
 }
 
+/* ─── Scroll-driven ambient color wash ───
+   Fixed full-viewport layer behind everything. Reads scroll % of the whole
+   page and interpolates through WASH_STOPS: sunrise orange -> track blue ->
+   field green. Two soft radial blobs drift and recolor; kept subtle (low
+   opacity, blurred) so body text stays readable throughout.
+*/
+function ScrollColorWash() {
+  const [pct, setPct] = useState(0);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setPct(max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0);
+        rafRef.current = null;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  const [r, g, b] = washColorAt(pct);
+  const c1 = `rgba(${r.toFixed(0)},${g.toFixed(0)},${b.toFixed(0)},0.16)`;
+  const c2 = `rgba(${r.toFixed(0)},${g.toFixed(0)},${b.toFixed(0)},0.08)`;
+
+  return (
+    <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', width: '70vw', height: '70vw', maxWidth: '900px', maxHeight: '900px',
+        top: `${-10 + pct * 30}%`, left: `${-15 + pct * 20}%`,
+        background: `radial-gradient(circle, ${c1} 0%, transparent 70%)`,
+        filter: 'blur(40px)', transition: 'background 0.2s linear',
+      }} />
+      <div style={{
+        position: 'absolute', width: '60vw', height: '60vw', maxWidth: '800px', maxHeight: '800px',
+        bottom: `${-15 + (1 - pct) * 20}%`, right: `${-10 + (1 - pct) * 25}%`,
+        background: `radial-gradient(circle, ${c2} 0%, transparent 70%)`,
+        filter: 'blur(50px)', transition: 'background 0.2s linear',
+      }} />
+    </div>
+  );
+}
+
 /* ─── Main ─── */
 export default function Home() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
-  const [coachesByCategory, setCoachesByCategory] = useState({}); // { categorySlug: [coaches] }
+  const [coachesByCategory, setCoachesByCategory] = useState({});
   const [topCoaches, setTopCoaches] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
@@ -317,9 +384,8 @@ export default function Home() {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef(null);
 
-  // Inject styles
   useEffect(() => {
-    const id = 'coachly-home-v4';
+    const id = 'coachly-home-v5';
     if (!document.getElementById(id)) {
       const s = document.createElement('style');
       s.id = id;
@@ -348,7 +414,6 @@ export default function Home() {
           animation: shimmer 4s linear infinite;
         }
         .nav-btn:hover { color: ${GOLD} !important; }
-        .cat-pill:hover { border-color: ${GOLD} !important; color: ${GOLD} !important; }
         .carousel-track::-webkit-scrollbar { display: none; }
         .row-arrow:hover { border-color: ${GOLD} !important; }
         @media (max-width: 768px) {
@@ -370,7 +435,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setLoadingCoaches(true);
     getRankedCoaches().catch(() => getCoaches(null)).then(setTopCoaches).catch(() => setTopCoaches([]));
   }, []);
 
@@ -390,7 +454,8 @@ export default function Home() {
   const tokenType = localStorage.getItem('coachly_token_type');
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: TEXT, fontFamily: "'Inter', system-ui, sans-serif", overflowX: 'hidden' }}>
+    <div style={{ position: 'relative', minHeight: '100vh', background: BG, color: TEXT, fontFamily: "'Inter', system-ui, sans-serif", overflowX: 'hidden' }}>
+      <ScrollColorWash />
       <Toast />
       {legalModal && <LegalModal type={legalModal} onClose={() => setLegalModal(null)} />}
 
@@ -442,26 +507,25 @@ export default function Home() {
           ref={videoRef}
           autoPlay muted loop playsInline
           onLoadedData={() => setVideoLoaded(true)}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: videoLoaded ? 0.5 : 0, transition: 'opacity 1.5s ease' }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: videoLoaded ? 0.85 : 0, transition: 'opacity 1.2s ease' }}
         >
-          {/* Source: Pexels — "Group of athletes training with coach", license-free.
-              Swap with your own download URL from https://www.pexels.com/video/a-female-athlete-practicing-kick-boxing-with-a-coach-5752065/
-              (grab the direct file link from the page's Free Download button — Pexels regenerates
-              the exact CDN URL per request, so paste the fresh one here before shipping). */}
+          {/* TODO: replace with your own direct file URL grabbed from the "Free download" button at
+              https://www.pexels.com/video/a-female-athlete-practicing-kick-boxing-with-a-coach-5752065/
+              (vertical) or search pexels.com/search/videos/athlete for a 16:9 option — Pexels mints
+              a fresh signed CDN link per request so it must be pulled fresh, not hardcoded by me. */}
           <source src="https://videos.pexels.com/video-files/4761789/4761789-uhd_2560_1440_25fps.mp4" type="video/mp4" />
         </video>
 
-        {/* Light gradient wash so the video sits under a readable, on-brand overlay */}
-        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(250,247,240,0.55) 0%, rgba(250,247,240,0.25) 45%, rgba(250,247,240,0.96) 100%)` }} />
-        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at center, transparent 35%, rgba(250,247,240,0.5) 100%)` }} />
+        {/* Much lighter wash than last round — video should clearly read through now */}
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(250,247,240,0.15) 0%, rgba(250,247,240,0.05) 40%, rgba(250,247,240,0.92) 92%)` }} />
         <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${GOLD}55, transparent)` }} />
 
         <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px', maxWidth: '880px', margin: '0 auto' }}>
-          <div style={{ animation: 'fadeSlideUp 0.6s ease both', fontSize: '11px', fontWeight: '700', letterSpacing: '0.22em', textTransform: 'uppercase', color: GOLD, marginBottom: '24px' }}>
+          <div style={{ animation: 'fadeSlideUp 0.6s ease both', fontSize: '11px', fontWeight: '700', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.4)', marginBottom: '24px' }}>
             Every Sport · Every Level · Any Goal
           </div>
 
-          <h1 className="hero-headline" style={{ fontFamily: "'Playfair Display', serif", fontSize: '72px', fontWeight: '900', lineHeight: '1.04', color: TEXT, margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 className="hero-headline" style={{ fontFamily: "'Playfair Display', serif", fontSize: '72px', fontWeight: '900', lineHeight: '1.04', color: '#fff', textShadow: '0 4px 24px rgba(0,0,0,0.35)', margin: 0, letterSpacing: '-0.02em' }}>
             <AnimatedHeadline text="Find your coach." delay={200} />
             <br />
             <span className="gold-shimmer" style={{ fontStyle: 'italic' }}>
@@ -469,38 +533,38 @@ export default function Home() {
             </span>
           </h1>
 
-          <p style={{ animation: 'fadeSlideUp 0.7s ease 0.8s both', fontSize: '17px', color: TEXT_DIM, lineHeight: '1.7', fontWeight: '400', maxWidth: '520px', margin: '24px auto 48px' }}>
+          <p style={{ animation: 'fadeSlideUp 0.7s ease 0.8s both', fontSize: '17px', color: 'rgba(255,255,255,0.92)', textShadow: '0 2px 10px rgba(0,0,0,0.35)', lineHeight: '1.7', fontWeight: '400', maxWidth: '520px', margin: '24px auto 48px' }}>
             Real coaches across every discipline, each with their own AI assistant to support you.<br />Your program, community, and progress, all in one place.
           </p>
 
           <div style={{ animation: 'fadeSlideUp 0.7s ease 1s both', display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{ padding: '16px 36px', borderRadius: '8px', background: GOLD, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s', boxShadow: '0 6px 24px rgba(184,146,61,0.3)' }}
-              onMouseEnter={e => { e.currentTarget.style.background = GOLD_LIGHT; e.currentTarget.style.boxShadow = '0 10px 32px rgba(184,146,61,0.4)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = GOLD; e.currentTarget.style.boxShadow = '0 6px 24px rgba(184,146,61,0.3)'; }}
+              style={{ padding: '16px 36px', borderRadius: '8px', background: GOLD, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s', boxShadow: '0 6px 24px rgba(0,0,0,0.3)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = GOLD_LIGHT; }}
+              onMouseLeave={e => { e.currentTarget.style.background = GOLD; }}
             >
               Find a coach
             </button>
             <button
               onClick={() => navigate('/coach/signup')}
-              style={{ padding: '16px 36px', borderRadius: '8px', border: `1px solid ${GOLD}77`, background: SURFACE, fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: GOLD, transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.background = SURFACE_2; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = GOLD + '77'; e.currentTarget.style.background = SURFACE; }}
+              style={{ padding: '16px 36px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', fontFamily: 'inherit', fontSize: '15px', fontWeight: '500', cursor: 'pointer', color: '#fff', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.22)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
             >
               Become a coach
             </button>
           </div>
         </div>
 
-        <div style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', animation: 'fadeSlideUp 0.7s ease 1.4s both' }}>
-          <span style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: TEXT_FAINT }}>Scroll</span>
-          <div style={{ width: '1px', height: '40px', background: `linear-gradient(to bottom, ${GOLD}, transparent)`, animation: 'pulse 2s ease infinite' }} />
+        <div style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', animation: 'fadeSlideUp 0.7s ease 1.4s both', zIndex: 2 }}>
+          <span style={{ fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>Scroll</span>
+          <div style={{ width: '1px', height: '40px', background: 'linear-gradient(to bottom, #fff, transparent)', animation: 'pulse 2s ease infinite' }} />
         </div>
       </section>
 
-      {/* ── COACHES SECTION (Netflix-style rows by category) ── */}
-      <section id="coaches-grid" style={{ padding: '80px 32px', maxWidth: '1280px', margin: '0 auto' }}>
+      {/* ── COACHES SECTION ── */}
+      <section id="coaches-grid" style={{ position: 'relative', zIndex: 1, padding: '80px 32px', maxWidth: '1280px', margin: '0 auto' }}>
         <div style={{ marginBottom: '48px' }}>
           <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, marginBottom: '12px' }}>Our coaches</div>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: '800', color: TEXT, lineHeight: '1.15', margin: 0 }}>
@@ -518,19 +582,14 @@ export default function Home() {
           <>
             <CoachRow title="Top rated" coaches={topCoaches} onView={id => navigate(`/coach/${id}`)} />
             {categories.map(cat => (
-              <CoachRow
-                key={cat.id}
-                title={cat.name}
-                coaches={coachesByCategory[cat.slug] || []}
-                onView={id => navigate(`/coach/${id}`)}
-              />
+              <CoachRow key={cat.id} title={cat.name} coaches={coachesByCategory[cat.slug] || []} onView={id => navigate(`/coach/${id}`)} />
             ))}
           </>
         )}
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section style={{ padding: '100px 32px', background: SURFACE_2, borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
+      <section style={{ position: 'relative', zIndex: 1, padding: '100px 32px', background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(2px)', borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '64px' }}>
             <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, marginBottom: '14px' }}>How it works</div>
@@ -562,8 +621,7 @@ export default function Home() {
       </section>
 
       {/* ── CTA ── */}
-      <section style={{ padding: '120px 32px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(184,146,61,0.08) 0%, transparent 70%)' }} />
+      <section style={{ position: 'relative', zIndex: 1, padding: '120px 32px', textAlign: 'center' }}>
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '600px', margin: '0 auto' }}>
           <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, marginBottom: '20px' }}>Start today</div>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: '900', color: TEXT, lineHeight: '1.1', marginBottom: '20px' }}>
@@ -575,8 +633,8 @@ export default function Home() {
           <button
             onClick={() => document.getElementById('coaches-grid')?.scrollIntoView({ behavior: 'smooth' })}
             style={{ padding: '17px 44px', borderRadius: '8px', background: GOLD, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 8px 32px rgba(184,146,61,0.28)', transition: 'all 0.2s', letterSpacing: '0.02em' }}
-            onMouseEnter={e => { e.currentTarget.style.background = GOLD_LIGHT; e.currentTarget.style.boxShadow = '0 12px 40px rgba(184,146,61,0.36)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = GOLD; e.currentTarget.style.boxShadow = '0 8px 32px rgba(184,146,61,0.28)'; e.currentTarget.style.transform = 'none'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = GOLD_LIGHT; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = GOLD; e.currentTarget.style.transform = 'none'; }}
           >
             Browse coaches →
           </button>
@@ -584,7 +642,7 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ padding: '32px', borderTop: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <footer style={{ position: 'relative', zIndex: 1, padding: '32px', borderTop: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: '800', fontSize: '16px', color: TEXT, letterSpacing: '0.08em' }}>
           COACHLY<span style={{ color: GOLD }}>.</span>
         </span>
