@@ -698,19 +698,26 @@ export default function Store() {
           {activeTab === 'community' && (
             <div>
               {!currentUser ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '60px 24px', textAlign: 'center', background: '#fff', borderRadius: '16px', border: '1px solid #eee' }}>
-                  <div style={{ fontSize: '36px' }}>🔒</div>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#111', fontFamily: 'Georgia, serif', maxWidth: '320px', lineHeight: '1.4' }}>
-                    "The people around you shape who you become."
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#888', maxWidth: '300px', lineHeight: '1.6' }}>
-                    Join the community — share your wins, get support, and stay accountable.
-                  </div>
-                  <button onClick={handleSubscribeClick} style={{ padding: '14px 32px', borderRadius: '100px', border: 'none', background: accentColor, color: isDarkAccent ? '#111' : '#fff', fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit', boxShadow: `0 4px 20px ${accentColor}66` }}>
-                    Subscribe to join →
-                  </button>
-                </div>
-              ) : posts.length === 0 ? (
+                <div style={{ position: 'relative' }}>
+                  {/* Fake dummy posts — always blurred, never real data */}
+                  <div style={{ filter: 'blur(7px)', pointerEvents: 'none', userSelect: 'none' }}>
+                    {[
+                      { name: 'Sarah M.', time: '2h ago', text: 'Just finished week 3 and I can already see the difference. Down 4kg and my energy is through the roof!', likes: 14, comments: 6 },
+                      { name: 'James K.', time: '5h ago', text: 'The meal plan this week is 🔥 Finally understanding how to eat for my goals. Coach knows what he\'s doing.', likes: 9, comments: 3 },
+                      { name: 'Priya D.', time: '1d ago', text: 'Hit a new PR on squats today. Never thought I\'d be doing this 6 weeks ago. Keep pushing everyone!', likes: 22, comments: 8 },
+                    ].map((post, i) => (
+                      <div key={i} style={{ background: '#fff', border: '1px solid #eee', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: AVATAR_COLORS[i % AVATAR_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#fff' }}>
+                            {post.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#111' }}>{post.name}</div>
+                            <div style={{ fontSize: '11px', color: '#888' }}>{post.time}</div>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '14px', lineHeight: '1.7', color: '#333', margin: 0 }}>{post.text}</p>
+                        <div style={{ marginTop: '12px', fontSize: '12px', color: '#aaa', display: 'flex', gap: '16px' }}>
                 <div style={{ padding: '40px', textAlign: 'center', color: '#888', fontSize: '14px' }}>No community posts yet.</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
