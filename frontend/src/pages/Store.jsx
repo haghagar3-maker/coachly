@@ -697,7 +697,7 @@ export default function Store() {
           {/* COMMUNITY TAB */}
           {activeTab === 'community' && (
             <div>
-              {!currentUser ? (
+              {!isSubscribed ? (
                 <div style={{ position: 'relative' }}>
                   <div style={{ filter: 'blur(7px)', pointerEvents: 'none', userSelect: 'none' }}>
                     {[
