@@ -1,14 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCategories, getCoaches, getRankedCoaches } from '../api';
 import EmptyState from '../components/EmptyState';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
 
-/* ─── Theme tokens ───
-   Back to the black/dark base you approved originally, with a scroll-driven
-   motivational color wash layered on top: sunrise orange -> track blue -> field green.
-*/
+/* ─── Theme tokens ─── */
 const BG = '#0E0D0A';
 const SURFACE = '#1A1814';
 const SURFACE_2 = '#221F19';
@@ -97,19 +94,10 @@ function initials(name) {
 }
 
 /* ─── Coach Card ───
-   LEAK-PROOF REVEAL: the card and the "View profile" action are both normal-flow
-   flex children of a fixed-width, overflow:hidden outer box. The card has a
-   negative right-margin equal to the action width, pulling the action fully
-   underneath/offscreen by default. Revealing just animates that margin to 0 —
-   nothing is absolutely positioned, so nothing can escape the outer box's clip,
-   regardless of how tall the card's own content is. This was the actual bug
-   in the last two rounds (an absolutely-positioned strip sized against an
-   auto-height parent, not the parent's overflow).
-
-   Interaction: click/tap toggles reveal. While revealed, a second click on the
-   action button (or on the card again) navigates. This works identically with
-   mouse and touch, no drag-tracking needed — and a real swipe still works via
-   onTouchEnd direction detection as a bonus, but isn't required.
+   Bigger, magazine-style card. Shows the coach's actual store banner (coach.banner)
+   as a tall hero image — falling back to coach.photo, then an avatar tile only if
+   neither exists. Reveal mechanism unchanged from the last fix (normal-flow flex
+   children inside an overflow:hidden box — no absolute positioning, so it can't leak).
 */
 function CoachCard({ coach, onView, delay = 0 }) {
   const [hovered, setHovered] = useState(false);
@@ -117,17 +105,18 @@ function CoachCard({ coach, onView, delay = 0 }) {
   const [revealed, setRevealed] = useState(false);
   const touchStartX = useRef(null);
 
-  const ACTION_WIDTH = 92;
-  const CARD_WIDTH = 272;
+  const ACTION_WIDTH = 100;
+  const CARD_WIDTH = '100%';
+
+  const heroImage = coach.banner || coach.photo || null;
 
   const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
   const onTouchEnd = (e) => {
     if (touchStartX.current == null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
-    if (dx < -30) { setRevealed(true); return; }   // swiped left -> reveal
-    if (dx > 30) { setRevealed(false); return; }    // swiped right -> close
-    // small movement = treat as tap below
+    if (dx < -30) { setRevealed(true); return; }
+    if (dx > 30) { setRevealed(false); return; }
   };
 
   const handleCardTap = () => {
@@ -138,12 +127,10 @@ function CoachCard({ coach, onView, delay = 0 }) {
   return (
     <div
       style={{
-        flexShrink: 0,
-        width: `${CARD_WIDTH}px`,
-        scrollSnapAlign: 'start',
-        borderRadius: '20px',
-        overflow: 'hidden',              // the ONLY clip boundary needed — both children are in normal flow
-        display: 'flex',                 // row layout: [card][action]
+        width: '100%',
+        borderRadius: '22px',
+        overflow: 'hidden',
+        display: 'flex',
         animation: 'fadeSlideUp 0.6s ease both',
         animationDelay: `${delay}ms`,
       }}
@@ -159,59 +146,77 @@ function CoachCard({ coach, onView, delay = 0 }) {
         style={{
           WebkitTapHighlightColor: 'transparent',
           outline: 'none',
-          flexShrink: 0,
-          width: `${CARD_WIDTH}px`,
-          marginRight: revealed ? '0px' : `-${ACTION_WIDTH}px`,  // <- the entire reveal mechanism
+          flex: '1 1 auto',
+          minWidth: 0,
+          width: CARD_WIDTH,
+          marginRight: revealed ? '0px' : `-${ACTION_WIDTH}px`,
           transition: 'margin-right 0.28s cubic-bezier(0.22,1,0.36,1), transform 0.25s ease, border-color 0.25s, box-shadow 0.25s',
           position: 'relative',
           zIndex: 1,
           background: SURFACE,
           border: `1px solid ${hovered ? GOLD + '88' : BORDER}`,
-          borderRadius: '20px',
+          borderRadius: '22px',
           cursor: 'pointer',
           userSelect: 'none',
-          transform: pressed ? 'scale(0.985)' : hovered ? 'translateY(-6px)' : 'none',
-          boxShadow: hovered ? '0 20px 48px -16px rgba(0,0,0,0.45)' : '0 2px 12px rgba(0,0,0,0.25)',
+          transform: pressed ? 'scale(0.99)' : hovered ? 'translateY(-8px)' : 'none',
+          boxShadow: hovered ? '0 28px 64px -20px rgba(0,0,0,0.55)' : '0 4px 16px rgba(0,0,0,0.3)',
         }}
       >
-        <div style={{ height: '176px', background: coach.banner ? `url(${coach.banner}) center/cover` : `linear-gradient(135deg, ${SURFACE_2}, #2e2b1f)`, position: 'relative', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
-          {!coach.banner && (
+        {/* Big hero banner — this is the coach's real store banner/photo, not just an avatar */}
+        <div style={{ height: '300px', position: 'relative', overflow: 'hidden', borderRadius: '22px 22px 0 0', background: heroImage ? '#000' : `linear-gradient(135deg, ${SURFACE_2}, #2e2b1f)` }}>
+          {heroImage ? (
+            <img
+              src={heroImage}
+              alt={coach.name}
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                transform: hovered ? 'scale(1.06)' : 'scale(1)',
+                transition: 'transform 0.5s ease',
+              }}
+            />
+          ) : (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '700', color: '#fff' }}>
+              <div style={{ width: '88px', height: '88px', borderRadius: '50%', background: avatarColor(coach.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: '700', color: '#fff' }}>
                 {initials(coach.name)}
               </div>
             </div>
           )}
-          {coach.photo && (
-            <img src={coach.photo} alt={coach.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-          )}
+
+          {/* Bottom gradient so name/category always read over any banner */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 35%, rgba(0,0,0,0.78) 100%)' }} />
+
           {coach.category_name && (
-            <span style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(20,18,14,0.7)', backdropFilter: 'blur(6px)', color: GOLD, fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '5px 10px', borderRadius: '100px', border: `1px solid ${GOLD}44` }}>
+            <span style={{ position: 'absolute', top: '16px', left: '16px', background: 'rgba(20,18,14,0.7)', backdropFilter: 'blur(8px)', color: GOLD, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 12px', borderRadius: '100px', border: `1px solid ${GOLD}55` }}>
               {coach.category_name}
             </span>
           )}
+
+          {coach.plan_price != null && (
+            <span style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(20,18,14,0.7)', backdropFilter: 'blur(8px)', color: TEXT, fontSize: '13px', fontWeight: '700', padding: '6px 12px', borderRadius: '100px', border: `1px solid ${BORDER}` }}>
+              <span style={{ color: GOLD }}>${Number(coach.plan_price).toFixed(0)}</span>
+              <span style={{ color: TEXT_FAINT, fontWeight: '400' }}>/mo</span>
+            </span>
+          )}
+
+          {/* Name overlaps the bottom of the banner, magazine-cover style */}
+          <div style={{ position: 'absolute', bottom: '16px', left: '20px', right: '20px' }}>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '24px', fontWeight: '800', color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+              {coach.name}
+            </div>
+          </div>
         </div>
 
-        <div style={{ padding: '18px 18px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '17px', fontWeight: '700', color: TEXT }}>{coach.name}</div>
-            {coach.plan_price != null && (
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '16px', fontWeight: '700', color: GOLD }}>${Number(coach.plan_price).toFixed(0)}</div>
-                <div style={{ fontSize: '10px', color: TEXT_FAINT }}>/month</div>
-              </div>
-            )}
-          </div>
-          {coach.tagline && <p style={{ fontSize: '12px', color: TEXT_DIM, lineHeight: '1.5', margin: '0 0 12px' }}>{coach.tagline}</p>}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '12px', borderTop: `1px solid ${BORDER}` }}>
-            {coach.rating > 0 && <span style={{ fontSize: '11px', color: GOLD, fontWeight: '600' }}>★ {coach.rating}</span>}
-            {coach.subscriber_count > 0 && <span style={{ fontSize: '11px', color: TEXT_FAINT }}>{coach.subscriber_count} clients</span>}
-            {coach.years_experience > 0 && <span style={{ fontSize: '11px', color: TEXT_FAINT }}>{coach.years_experience}y exp</span>}
+        <div style={{ padding: '20px 22px 22px' }}>
+          {coach.tagline && <p style={{ fontSize: '13.5px', color: TEXT_DIM, lineHeight: '1.6', margin: '0 0 16px' }}>{coach.tagline}</p>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingTop: '14px', borderTop: `1px solid ${BORDER}` }}>
+            {coach.rating > 0 && <span style={{ fontSize: '12px', color: GOLD, fontWeight: '700' }}>★ {coach.rating}</span>}
+            {coach.subscriber_count > 0 && <span style={{ fontSize: '12px', color: TEXT_FAINT }}>{coach.subscriber_count} clients</span>}
+            {coach.years_experience > 0 && <span style={{ fontSize: '12px', color: TEXT_FAINT }}>{coach.years_experience}y exp</span>}
           </div>
         </div>
       </div>
 
-      {/* Action — normal flow flex child, fixed width, never absolutely positioned */}
+      {/* Action strip — normal-flow flex child, never absolutely positioned */}
       <button
         onClick={(e) => { e.stopPropagation(); onView(coach.slug || coach.id); }}
         style={{
@@ -221,73 +226,13 @@ function CoachCard({ coach, onView, delay = 0 }) {
           background: `linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})`,
           color: '#1a1408',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer', textAlign: 'center', padding: '0 6px',
+          gap: '8px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', textAlign: 'center', padding: '0 8px',
           fontFamily: 'inherit',
         }}
       >
-        <span style={{ fontSize: '18px' }}>→</span>
+        <span style={{ fontSize: '20px' }}>→</span>
         View<br />profile
       </button>
-    </div>
-  );
-}
-
-/* ─── Coach Row ─── */
-function CoachRow({ title, coaches, onView }) {
-  const trackRef = useRef(null);
-  const [canLeft, setCanLeft] = useState(false);
-  const [canRight, setCanRight] = useState(false);
-
-  const updateArrows = useCallback(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    setCanLeft(el.scrollLeft > 8);
-    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
-  }, []);
-
-  useEffect(() => {
-    updateArrows();
-    const el = trackRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', updateArrows, { passive: true });
-    window.addEventListener('resize', updateArrows);
-    return () => {
-      el.removeEventListener('scroll', updateArrows);
-      window.removeEventListener('resize', updateArrows);
-    };
-  }, [coaches, updateArrows]);
-
-  const scrollByCards = (dir) => {
-    const el = trackRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir * (272 + 18) * 2, behavior: 'smooth' });
-  };
-
-  if (!coaches.length) return null;
-
-  return (
-    <div style={{ marginBottom: '44px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '16px', paddingLeft: '4px' }}>
-        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: '700', color: TEXT, margin: 0 }}>{title}</h3>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => scrollByCards(-1)} disabled={!canLeft} className="row-arrow" aria-label="Scroll left"
-            style={{ width: '32px', height: '32px', borderRadius: '50%', border: `1px solid ${BORDER}`, background: SURFACE, color: canLeft ? GOLD : TEXT_FAINT, cursor: canLeft ? 'pointer' : 'default', fontSize: '13px', opacity: canLeft ? 1 : 0.4, transition: 'opacity 0.2s, border-color 0.2s' }}>←</button>
-          <button onClick={() => scrollByCards(1)} disabled={!canRight} className="row-arrow" aria-label="Scroll right"
-            style={{ width: '32px', height: '32px', borderRadius: '50%', border: `1px solid ${BORDER}`, background: SURFACE, color: canRight ? GOLD : TEXT_FAINT, cursor: canRight ? 'pointer' : 'default', fontSize: '13px', opacity: canRight ? 1 : 0.4, transition: 'opacity 0.2s, border-color 0.2s' }}>→</button>
-        </div>
-      </div>
-      <div style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 0, bottom: '16px', right: 0, width: '32px', background: `linear-gradient(to left, ${BG}, transparent)`, zIndex: 2, pointerEvents: 'none', opacity: canRight ? 1 : 0, transition: 'opacity 0.3s' }} />
-        <div
-          ref={trackRef}
-          className="carousel-track"
-          style={{ display: 'flex', gap: '18px', overflowX: 'auto', scrollSnapType: 'x proximity', paddingBottom: '16px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-        >
-          {coaches.map((coach, i) => (
-            <CoachCard key={coach.id} coach={coach} onView={onView} delay={i * 60} />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -364,8 +309,8 @@ function ScrollColorWash() {
 export default function Home() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
-  const [coachesByCategory, setCoachesByCategory] = useState({});
-  const [topCoaches, setTopCoaches] = useState([]);
+  const [coaches, setCoaches] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
   const [legalModal, setLegalModal] = useState(null);
@@ -373,7 +318,7 @@ export default function Home() {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const id = 'coachly-home-v6';
+    const id = 'coachly-home-v7';
     if (!document.getElementById(id)) {
       const s = document.createElement('style');
       s.id = id;
@@ -402,13 +347,16 @@ export default function Home() {
           animation: shimmer 4s linear infinite;
         }
         .nav-btn:hover { color: ${GOLD} !important; }
-        .carousel-track::-webkit-scrollbar { display: none; }
-        .row-arrow:hover { border-color: ${GOLD} !important; }
+        .cat-pill:hover { border-color: ${GOLD} !important; color: ${GOLD} !important; }
+        .coaches-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+        @media (max-width: 1100px) {
+          .coaches-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
         @media (max-width: 768px) {
           .hero-headline { font-size: 38px !important; }
           .how-grid { grid-template-columns: 1fr !important; }
           .nav-for-coaches { display: none !important; }
-          .row-arrow { display: none !important; }
+          .coaches-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 500px) {
           .hero-headline { font-size: 30px !important; }
@@ -423,20 +371,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    getRankedCoaches().catch(() => getCoaches(null)).then(setTopCoaches).catch(() => setTopCoaches([]));
-  }, []);
-
-  useEffect(() => {
-    if (!categories.length) { setLoadingCoaches(false); return; }
-    Promise.all(
-      categories.map(cat => getCoaches(cat.slug).then(list => [cat.slug, list]).catch(() => [cat.slug, []]))
-    ).then(entries => {
-      const map = {};
-      entries.forEach(([slug, list]) => { map[slug] = list; });
-      setCoachesByCategory(map);
-    }).catch(() => showToast('Failed to load coaches', 'error'))
+    setLoadingCoaches(true);
+    (activeCategory ? getCoaches(activeCategory) : getRankedCoaches().catch(() => getCoaches(null)))
+      .then(setCoaches).catch(() => { setCoaches([]); showToast('Failed to load coaches', 'error'); })
       .finally(() => setLoadingCoaches(false));
-  }, [categories]);
+  }, [activeCategory]);
 
   const token = localStorage.getItem('coachly_token');
   const tokenType = localStorage.getItem('coachly_token_type');
@@ -497,10 +436,6 @@ export default function Home() {
           onLoadedData={() => setVideoLoaded(true)}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: videoLoaded ? 0.45 : 0, transition: 'opacity 1.5s ease' }}
         >
-          {/* Restored your original placeholder. Replace with your own verified Pexels
-              direct-download link (copy it from the "Free download" button on the
-              video's page) once you've picked one — e.g. an athlete/coach clip from
-              https://www.pexels.com/search/videos/athlete/ */}
           <source src="https://videos.pexels.com/video-files/4761789/4761789-uhd_2560_1440_25fps.mp4" type="video/mp4" />
           <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4" />
         </video>
@@ -552,28 +487,54 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── COACHES SECTION ── */}
+      {/* ── COACHES SECTION — filter bar + single grid of big cards ── */}
       <section id="coaches-grid" style={{ position: 'relative', zIndex: 1, padding: '80px 32px', maxWidth: '1280px', margin: '0 auto' }}>
-        <div style={{ marginBottom: '48px' }}>
+        <div style={{ marginBottom: '40px' }}>
           <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: GOLD, marginBottom: '12px' }}>Our coaches</div>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: '800', color: TEXT, lineHeight: '1.15', margin: 0 }}>
             Find the coach<br /><span style={{ color: TEXT_FAINT, fontStyle: 'italic' }}>that moves you.</span>
           </h2>
         </div>
 
-        {loadingCoaches ? (
-          <div style={{ display: 'flex', gap: '18px', overflow: 'hidden' }}>
-            {[1, 2, 3, 4].map(i => <div key={i} style={{ width: '272px', flexShrink: 0 }}><LoadingSkeleton type="card" /></div>)}
+        {/* Category filter bar */}
+        {!loadingCategories && categories.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '36px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
+            {[{ id: null, name: 'All', slug: null }].concat(categories).map(cat => {
+              const isActive = cat.slug === null ? activeCategory === null : activeCategory === cat.slug;
+              return (
+                <button
+                  key={cat.id ?? 'all'}
+                  className="cat-pill"
+                  onClick={() => setActiveCategory(cat.slug === activeCategory ? null : cat.slug)}
+                  style={{
+                    padding: '9px 20px', borderRadius: '100px', whiteSpace: 'nowrap', flexShrink: 0,
+                    border: `1px solid ${isActive ? GOLD : BORDER}`,
+                    background: isActive ? 'rgba(201,168,76,0.14)' : 'transparent',
+                    color: isActive ? GOLD : TEXT_DIM,
+                    fontFamily: 'inherit', fontSize: '13px', fontWeight: '600',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}
+                >
+                  {cat.name}
+                </button>
+              );
+            })}
           </div>
-        ) : topCoaches.length === 0 && Object.values(coachesByCategory).every(l => l.length === 0) ? (
+        )}
+
+        {/* Grid of big cards */}
+        {loadingCoaches ? (
+          <div className="coaches-grid">
+            {[1, 2, 3].map(i => <LoadingSkeleton key={i} type="card" />)}
+          </div>
+        ) : coaches.length === 0 ? (
           <EmptyState message="No coaches yet." cta="Become a coach" onCta={() => navigate('/coach/signup')} />
         ) : (
-          <>
-            <CoachRow title="Top rated" coaches={topCoaches} onView={id => navigate(`/coach/${id}`)} />
-            {categories.map(cat => (
-              <CoachRow key={cat.id} title={cat.name} coaches={coachesByCategory[cat.slug] || []} onView={id => navigate(`/coach/${id}`)} />
+          <div className="coaches-grid">
+            {coaches.map((coach, i) => (
+              <CoachCard key={coach.id} coach={coach} onView={id => navigate(`/coach/${id}`)} delay={i * 70} />
             ))}
-          </>
+          </div>
         )}
       </section>
 
