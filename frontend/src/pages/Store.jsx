@@ -698,8 +698,8 @@ export default function Store() {
           {activeTab === 'community' && (
             <div>
               {!currentUser ? (
-                <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '16px' }}>
-                  <div style={{ pointerEvents: 'none', userSelect: 'none', maxHeight: '320px', overflow: 'hidden' }}>
+                <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', minHeight: '380px' }}>
+                  <div style={{ pointerEvents: 'none', userSelect: 'none', opacity: 0.4 }}>
                     {[
                       { name: 'Sarah M.', time: '2h ago', text: 'Just finished week 3 and I can already see the difference. Down 4kg and my energy is through the roof!', likes: 14, comments: 6 },
                       { name: 'James K.', time: '5h ago', text: 'The meal plan this week is 🔥 Finally understanding how to eat for my goals. Coach knows what he\'s doing.', likes: 9, comments: 3 },
@@ -723,7 +723,7 @@ export default function Store() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(248,247,244,0) 0%, rgba(248,247,244,0.85) 40%, rgba(248,247,244,1) 60%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', padding: '40px', textAlign: 'center' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(248,247,244,0.3) 0%, rgba(248,247,244,0.95) 35%, rgba(248,247,244,1) 50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '40px', textAlign: 'center' }}>
                     <div style={{ fontSize: '36px' }}>🔒</div>
                     <div style={{ fontSize: '18px', fontWeight: '800', color: '#111', fontFamily: 'Georgia, serif', maxWidth: '320px', lineHeight: '1.4' }}>
                       "The people around you shape who you become."
