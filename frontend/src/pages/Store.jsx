@@ -696,9 +696,9 @@ export default function Store() {
 
           {/* COMMUNITY TAB */}
           {activeTab === 'community' && (
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', minHeight: !currentUser ? '400px' : 'auto' }}>
               {/* Blurred preview */}
-              <div style={{ filter: !currentUser ? 'blur(6px)' : 'none', pointerEvents: !currentUser ? 'none' : 'auto', userSelect: 'none' }}>
+              <div style={{ filter: !currentUser ? 'blur(6px)' : 'none', pointerEvents: !currentUser ? 'none' : 'auto', userSelect: 'none', maxHeight: !currentUser ? '400px' : 'none', overflow: 'hidden' }}>
               {posts.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#888', fontSize: '14px' }}>No community posts yet.</div>
               ) : (
