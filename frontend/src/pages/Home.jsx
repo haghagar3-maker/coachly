@@ -13,7 +13,7 @@ const ORANGE      = '#F97316';
 const NAVY        = '#0B1528';
 
 /* Dark card */
-const CARD_BG    = '#15203A';
+const CARD_BG    = '#1C2B4A';
 const BORDER     = 'rgba(255,255,255,0.07)';
 const TEXT       = '#F1F5F9';
 const TEXT_DIM   = '#94A3B8';
@@ -21,7 +21,7 @@ const TEXT_FAINT = '#475569';
 
 /* Beige */
 const BEIGE      = '#F5EFE4';
-const BEIGE2     = '#EDE4D3';
+const BEIGE2     = '#E8F5D0';
 const TEXT_B     = '#1C1712';
 const TEXT_B_DIM = '#6B6151';
 const TEXT_B_F   = '#9E9282';
@@ -452,7 +452,7 @@ export default function Home(){
         );
         background-size: 500% 500%;
         animation: bgWave 16s ease infinite;
-        opacity:0.22;
+        opacity:0.38;
         z-index:0;
       }
 
@@ -461,15 +461,15 @@ export default function Home(){
         position:absolute;inset:0;
         background: linear-gradient(
           270deg,
-          #F97316,
           #C8FF00,
-          #FDE68A,
           #8FB800,
-          #F97316
+          #DEFF6E,
+          #C8FF00,
+          #8FB800
         );
         background-size: 500% 500%;
         animation: bgWave 17s ease infinite;
-        opacity:0.22;
+        opacity:0.28;
         z-index:0;
       }
 
