@@ -493,11 +493,11 @@ export default function Home(){
       (getRankedCoaches ? getRankedCoaches() : getCoaches()).catch(()=>[])
     ]).then(([cats,coaches])=>{
       const sorted=[...coaches].sort((a,b)=>rankScore(b)-rankScore(a));
-      setCategories(cats.slice(0,8));
+      setCategories(cats);
       setTopCoaches(sorted.slice(0,10));
       setAllCoaches(sorted);
       const map={};
-      cats.slice(0,8).forEach(cat=>{
+      cats.forEach(cat=>{
         map[cat.slug]=sorted.filter(c=>c.category_slug===cat.slug||(c.category_name||'').toLowerCase()===cat.name.toLowerCase()).slice(0,8);
       });
       setCoachesByCat(map);
@@ -650,12 +650,36 @@ onCanPlay={()=>setVideoLoaded(true)}
                 {searchQuery&&<button onClick={()=>setSearchQuery('')} style={{position:'absolute',right:'12px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:TEXT_FAINT,cursor:'pointer',fontSize:'18px',lineHeight:1,padding:'2px'}}>×</button>}
               </div>
               {!loading&&categories.length>0&&(
-                <div className="pill-bar" style={{display:'flex',flexWrap:'wrap',gap:'8px',flex:1}}>
-                  <button onClick={()=>setActiveFilter('all')} style={makePill(activeFilter==='all')}
+                <div
+  className="pill-bar"
+  style={{
+    display:'flex',
+    gap:'8px',
+    flex:1,
+    flexWrap:'nowrap',
+    overflowX:'auto',
+    overflowY:'hidden',
+    paddingBottom:'6px',
+    scrollbarWidth:'none',
+    msOverflowStyle:'none'
+  }}
+>
+                  <button
+  onClick={()=>setActiveFilter('all')}
+  style={{
+    ...makePill(activeFilter==='all'),
+    flexShrink:0
+  }}
                     onMouseEnter={e=>{if(activeFilter!=='all'){e.currentTarget.style.borderColor=GREEN;e.currentTarget.style.color=GREEN;}}}
                     onMouseLeave={e=>{if(activeFilter!=='all'){e.currentTarget.style.borderColor='rgba(255,255,255,0.12)';e.currentTarget.style.color=TEXT_DIM;}}}>All</button>
                   {categories.map(cat=>(
-                    <button key={cat.id} onClick={()=>setActiveFilter(cat.slug)} style={makePill(activeFilter===cat.slug)}
+                    <button
+  key={cat.id}
+  onClick={()=>setActiveFilter(cat.slug)}
+  style={{
+    ...makePill(activeFilter===cat.slug),
+    flexShrink:0
+  }}
                       onMouseEnter={e=>{if(activeFilter!==cat.slug){e.currentTarget.style.borderColor=GREEN;e.currentTarget.style.color=GREEN;}}}
                       onMouseLeave={e=>{if(activeFilter!==cat.slug){e.currentTarget.style.borderColor='rgba(255,255,255,0.12)';e.currentTarget.style.color=TEXT_DIM;}}}>
                       {cat.name}
