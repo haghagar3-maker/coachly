@@ -575,6 +575,7 @@ export default function Home(){
       <section style={{position:'relative',height:'100vh',minHeight:'600px',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
         <div className="hero-wave-bg"/>
         <video
+  controls
   ref={videoRef}
   autoPlay
   muted
