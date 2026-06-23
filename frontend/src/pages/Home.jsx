@@ -70,29 +70,13 @@ function initials(name) {
   return name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
 }
 
-/* ─── Coach Card — ORIGINAL STYLE ─── */
+/* ─── Coach Card ─── */
 function CoachCard({ coach, onView, delay = 0 }) {
-  const [hovered, setHovered]   = useState(false);
-  const [pressed, setPressed]   = useState(false);
-  const [revealed, setRevealed] = useState(false);
-  const touchStartX = useRef(null);
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
 
-  const ACTION_W   = 100;
   const heroImage  = coach.banner || null;
   const profilePic = coach.photo  || null;
-
-  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-  const onTouchEnd   = (e) => {
-    if (touchStartX.current == null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (dx < -30) { setRevealed(true); return; }
-    if (dx > 30)  { setRevealed(false); return; }
-  };
-  const handleTap = () => {
-    if (revealed) { onView(coach.slug || coach.id); return; }
-    setRevealed(true);
-  };
 
   let specialties = [];
   if (coach.specialties) {
@@ -100,153 +84,143 @@ function CoachCard({ coach, onView, delay = 0 }) {
     catch { specialties = String(coach.specialties).split(',').map(s=>s.trim()).filter(Boolean); }
   }
   const starRating = coach.rating > 0 ? Number(coach.rating).toFixed(1) : null;
+  const go = () => onView(coach.slug || coach.id);
 
   return (
-    <div style={{ width:'100%', borderRadius:'22px', overflow:'hidden', display:'flex', animation:'fadeUp 0.55s ease both', animationDelay:`${delay}ms` }}>
-      {/* ── Card face ── */}
+    <div
+      onMouseEnter={()=>setHovered(true)}
+      onMouseLeave={()=>{ setHovered(false); setPressed(false); }}
+      style={{
+        width:'100%',
+        borderRadius:'24px',
+        background: CARD_BG,
+        border: `1.5px solid ${hovered ? GREEN : BORDER}`,
+        boxShadow: hovered
+          ? `0 32px 64px -18px rgba(0,0,0,0.65), 0 0 0 1px ${GREEN}55, 0 0 36px ${GREEN}26`
+          : '0 4px 24px rgba(0,0,0,0.35)',
+        transform: pressed ? 'scale(0.99)' : hovered ? 'translateY(-9px)' : 'none',
+        transition: 'transform 0.25s cubic-bezier(0.22,1,0.36,1), border-color 0.25s, box-shadow 0.25s',
+        display:'flex', flexDirection:'column', overflow:'hidden',
+        animation:'fadeUp 0.55s ease both', animationDelay:`${delay}ms`,
+      }}
+    >
+      {/* ── BANNER ── */}
       <div
-        onMouseEnter={()=>setHovered(true)}
-        onMouseLeave={()=>{ setHovered(false); setPressed(false); }}
-        onMouseDown={()=>setPressed(true)}
-        onMouseUp={()=>setPressed(false)}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onClick={handleTap}
-        style={{
-          WebkitTapHighlightColor:'transparent', outline:'none',
-          flex:'1 1 auto', minWidth:0,
-          marginRight: revealed ? '0px' : `-${ACTION_W}px`,
-          transition:'margin-right 0.28s cubic-bezier(0.22,1,0.36,1), transform 0.22s ease, border-color 0.22s, box-shadow 0.22s',
-          position:'relative', zIndex:1,
-          background: CARD_BG,
-          border:`1px solid ${hovered ? GREEN+'66' : BORDER}`,
-          borderRadius:'22px',
-          cursor:'pointer', userSelect:'none',
-          transform: pressed ? 'scale(0.985)' : hovered ? 'translateY(-8px) scale(1.005)' : 'none',
-          boxShadow: hovered
-            ? `0 28px 60px -16px rgba(0,0,0,0.6), 0 0 0 1px ${GREEN}33`
-            : '0 4px 24px rgba(0,0,0,0.4)',
-          display:'flex', flexDirection:'column',
-        }}
-      >
-        {/* ── BANNER 240px ── */}
-        <div style={{ height:'240px', position:'relative', overflow:'hidden', borderRadius:'22px 22px 0 0', flexShrink:0,
-          background: heroImage ? '#000' : `linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.02) 100%)` }}>
-          {heroImage ? (
-            <img src={heroImage} alt={coach.name} style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hovered?'scale(1.06)':'scale(1)',transition:'transform 0.55s ease' }} />
-          ) : (
-            <div style={{ position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center' }}>
-              <div style={{ width:'80px',height:'80px',borderRadius:'50%',background:`${avatarColor(coach.id)}20`,border:`2px dashed ${avatarColor(coach.id)}55`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'26px',fontWeight:'700',color:avatarColor(coach.id) }}>
-                {initials(coach.name)}
-              </div>
+        onClick={go}
+        style={{ cursor:'pointer', height:'240px', position:'relative', overflow:'hidden', flexShrink:0,
+        background: heroImage ? '#000' : `linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.02) 100%)` }}>
+        {heroImage ? (
+          <img src={heroImage} alt={coach.name} style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hovered?'scale(1.06)':'scale(1)',transition:'transform 0.55s ease' }} />
+        ) : (
+          <div style={{ position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center' }}>
+            <div style={{ width:'80px',height:'80px',borderRadius:'50%',background:`${avatarColor(coach.id)}20`,border:`2px dashed ${avatarColor(coach.id)}55`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'26px',fontWeight:'700',color:avatarColor(coach.id) }}>
+              {initials(coach.name)}
             </div>
-          )}
-          <div style={{ position:'absolute',inset:0,background:'linear-gradient(to bottom, rgba(0,0,0,0.05) 30%, rgba(0,0,0,0.75) 100%)' }} />
+          </div>
+        )}
+        <div style={{ position:'absolute',inset:0,background:'linear-gradient(to bottom, rgba(0,0,0,0.05) 30%, rgba(0,0,0,0.78) 100%)' }} />
 
-          {coach.category_name && (
-            <span style={{ position:'absolute',top:'14px',left:'14px',background:'rgba(0,0,0,0.65)',backdropFilter:'blur(10px)',color:GREEN,fontSize:'10px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'0.09em',padding:'5px 11px',borderRadius:'100px',border:`1px solid ${GREEN}44` }}>
-              {coach.category_name}
-            </span>
-          )}
-          {coach.plan_price != null && (
-            <span style={{ position:'absolute',top:'14px',right:'14px',background:'rgba(0,0,0,0.65)',backdropFilter:'blur(10px)',color:'#fff',fontSize:'13px',fontWeight:'700',padding:'5px 12px',borderRadius:'100px',border:'1px solid rgba(255,255,255,0.15)' }}>
-              <span style={{ color:GREEN }}>${Number(coach.plan_price).toFixed(0)}</span>
-              <span style={{ color:'rgba(255,255,255,0.4)',fontWeight:'400',fontSize:'11px' }}>/mo</span>
-            </span>
-          )}
-          {starRating && (
-            <span style={{ position:'absolute',bottom:'14px',right:'14px',background:'rgba(0,0,0,0.65)',backdropFilter:'blur(10px)',color:GREEN,fontSize:'12px',fontWeight:'800',padding:'5px 10px',borderRadius:'100px',border:`1px solid ${GREEN}44`,display:'flex',alignItems:'center',gap:'4px' }}>
-              ★ {starRating}
-            </span>
-          )}
-        </div>
+        {coach.category_name && (
+          <span style={{ position:'absolute',top:'14px',left:'14px',background:'rgba(0,0,0,0.65)',backdropFilter:'blur(10px)',color:GREEN_LIGHT,fontSize:'10px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'0.09em',padding:'5px 11px',borderRadius:'100px',border:`1px solid ${GREEN}44` }}>
+            {coach.category_name}
+          </span>
+        )}
+        {coach.plan_price != null && (
+          <span style={{ position:'absolute',top:'14px',right:'14px',background:'rgba(0,0,0,0.65)',backdropFilter:'blur(10px)',color:'#fff',fontSize:'13px',fontWeight:'700',padding:'5px 12px',borderRadius:'100px',border:'1px solid rgba(255,255,255,0.18)' }}>
+            <span style={{ color:GREEN_LIGHT }}>${Number(coach.plan_price).toFixed(0)}</span>
+            <span style={{ color:'rgba(255,255,255,0.55)',fontWeight:'400',fontSize:'11px' }}>/mo</span>
+          </span>
+        )}
+        {starRating && (
+          <span style={{ position:'absolute',bottom:'14px',right:'14px',background:'rgba(0,0,0,0.65)',backdropFilter:'blur(10px)',color:GREEN_LIGHT,fontSize:'12px',fontWeight:'800',padding:'5px 10px',borderRadius:'100px',border:`1px solid ${GREEN}44`,display:'flex',alignItems:'center',gap:'4px' }}>
+            ★ {starRating}
+          </span>
+        )}
 
-        {/* ── BODY ── */}
-        <div style={{ padding:'18px 20px 0', flex:1 }}>
-          {specialties.length > 0 && (
-            <div style={{ display:'flex',flexWrap:'wrap',gap:'5px',marginBottom:'12px' }}>
-              {specialties.slice(0,4).map((sp,i)=>(
-                <span key={i} style={{ fontSize:'10px',fontWeight:'600',color:GREEN,background:`${GREEN}12`,border:`1px solid ${GREEN}30`,borderRadius:'100px',padding:'3px 10px' }}>
-                  {sp}
-                </span>
-              ))}
-            </div>
-          )}
-          {coach.tagline && (
-            <p style={{ fontSize:'13px',color:TEXT_DIM,lineHeight:'1.6',margin:'0 0 12px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',fontStyle:'italic' }}>
-              "{coach.tagline}"
-            </p>
-          )}
-          {coach.bio && (
-            <p style={{ fontSize:'12px',color:TEXT_FAINT,lineHeight:'1.65',margin:'0 0 12px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden' }}>
-              {coach.bio}
-            </p>
-          )}
-          <div style={{ display:'flex',alignItems:'center',flexWrap:'wrap',gap:'10px',paddingBottom:'14px' }}>
-            {starRating && (
-              <div style={{ display:'flex',alignItems:'center',gap:'3px' }}>
-                {[1,2,3,4,5].map(n=>(
-                  <span key={n} style={{ fontSize:'11px',color:n<=Math.round(Number(starRating))?GREEN:BORDER }}>★</span>
-                ))}
-                <span style={{ fontSize:'11px',color:TEXT_DIM,marginLeft:'3px' }}>({starRating})</span>
-              </div>
-            )}
-            {coach.subscriber_count > 0 && (
-              <span style={{ fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.05)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}` }}>
-                👥 {coach.subscriber_count} clients
-              </span>
-            )}
-            {coach.years_experience > 0 && (
-              <span style={{ fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.05)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}` }}>
-                🏅 {coach.years_experience}y exp
-              </span>
-            )}
-            {coach.sessions_count > 0 && (
-              <span style={{ fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.05)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}` }}>
-                ⚡ {coach.sessions_count} sessions
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* ── BOTTOM STRIP — profile pic + name + location ── */}
-        <div style={{ padding:'14px 20px 18px',borderTop:`1px solid ${BORDER}`,display:'flex',alignItems:'center',gap:'12px',marginTop:'auto',background:'rgba(0,0,0,0.2)',borderRadius:'0 0 22px 22px' }}>
-          <div style={{ width:'42px',height:'42px',borderRadius:'50%',flexShrink:0,overflow:'hidden',background:profilePic?'#000':avatarColor(coach.id),border:`2px solid ${GREEN}55`,display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 0 0 3px ${GREEN}22` }}>
-            {profilePic
-              ? <img src={profilePic} alt={coach.name} style={{ width:'100%',height:'100%',objectFit:'cover' }} />
-              : <span style={{ fontSize:'14px',fontWeight:'700',color:'#fff' }}>{initials(coach.name)}</span>
-            }
-          </div>
-          <div style={{ minWidth:0,flex:1 }}>
-            <div style={{ fontSize:'14px',fontWeight:'700',color:TEXT,lineHeight:'1.2',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis' }}>
-              {coach.name}
-            </div>
-            <div style={{ fontSize:'11px',color:TEXT_FAINT,marginTop:'2px',display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap' }}>
-              {coach.location && <span>📍 {coach.location}</span>}
-              {coach.response_time && <span>⏱ {coach.response_time}</span>}
-            </div>
-          </div>
-          <div style={{ fontSize:'11px',color:revealed?GREEN:TEXT_FAINT,transition:'color 0.2s',flexShrink:0,display:'flex',alignItems:'center',gap:'3px',fontWeight:'600' }}>
-            {revealed ? <span style={{ color:GREEN }}>→</span> : <span style={{ fontSize:'14px' }}>⋯</span>}
-          </div>
+        {/* profile pic overlapping bottom of banner */}
+        <div style={{ position:'absolute',bottom:'-26px',left:'18px',width:'52px',height:'52px',borderRadius:'50%',overflow:'hidden',background:profilePic?'#000':avatarColor(coach.id),border:`3px solid ${CARD_BG}`,boxShadow:`0 0 0 2px ${hovered?GREEN:'rgba(255,255,255,0.12)'}`,transition:'box-shadow 0.25s',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2 }}>
+          {profilePic
+            ? <img src={profilePic} alt={coach.name} style={{ width:'100%',height:'100%',objectFit:'cover' }} />
+            : <span style={{ fontSize:'16px',fontWeight:'700',color:'#fff' }}>{initials(coach.name)}</span>
+          }
         </div>
       </div>
 
-      {/* ── Action strip ── */}
+      {/* ── BODY ── */}
+      <div onClick={go} style={{ cursor:'pointer', padding:'38px 20px 0', flex:1 }}>
+        <div style={{ fontSize:'17px',fontWeight:'800',color:'#FFFFFF',lineHeight:'1.2',marginBottom:'3px' }}>
+          {coach.name}
+        </div>
+        <div style={{ fontSize:'12px',color:TEXT_DIM,marginBottom:'14px',display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap' }}>
+          {coach.location && <span>📍 {coach.location}</span>}
+          {coach.response_time && <span>⏱ {coach.response_time}</span>}
+        </div>
+
+        {specialties.length > 0 && (
+          <div style={{ display:'flex',flexWrap:'wrap',gap:'5px',marginBottom:'12px' }}>
+            {specialties.slice(0,4).map((sp,i)=>(
+              <span key={i} style={{ fontSize:'10px',fontWeight:'700',color:GREEN_LIGHT,background:`${GREEN}1A`,border:`1px solid ${GREEN}40`,borderRadius:'100px',padding:'3px 10px' }}>
+                {sp}
+              </span>
+            ))}
+          </div>
+        )}
+        {coach.tagline && (
+          <p style={{ fontSize:'13px',color:'#E2E8F0',lineHeight:'1.6',margin:'0 0 12px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',fontStyle:'italic' }}>
+            "{coach.tagline}"
+          </p>
+        )}
+        {coach.bio && (
+          <p style={{ fontSize:'12px',color:TEXT_DIM,lineHeight:'1.65',margin:'0 0 12px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden' }}>
+            {coach.bio}
+          </p>
+        )}
+        <div style={{ display:'flex',alignItems:'center',flexWrap:'wrap',gap:'10px',paddingBottom:'16px' }}>
+          {starRating && (
+            <div style={{ display:'flex',alignItems:'center',gap:'3px' }}>
+              {[1,2,3,4,5].map(n=>(
+                <span key={n} style={{ fontSize:'11px',color:n<=Math.round(Number(starRating))?GREEN:BORDER }}>★</span>
+              ))}
+              <span style={{ fontSize:'11px',color:TEXT_DIM,marginLeft:'3px' }}>({starRating})</span>
+            </div>
+          )}
+          {coach.subscriber_count > 0 && (
+            <span style={{ fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.06)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}` }}>
+              👥 {coach.subscriber_count} clients
+            </span>
+          )}
+          {coach.years_experience > 0 && (
+            <span style={{ fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.06)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}` }}>
+              🏅 {coach.years_experience}y exp
+            </span>
+          )}
+          {coach.sessions_count > 0 && (
+            <span style={{ fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.06)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}` }}>
+              ⚡ {coach.sessions_count} sessions
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── VIEW PROFILE — full width, under the card ── */}
       <button
-        onClick={(e)=>{ e.stopPropagation(); onView(coach.slug||coach.id); }}
+        onClick={(e)=>{ e.stopPropagation(); go(); }}
         style={{
-          flexShrink:0, width:`${ACTION_W}px`,
-          border:'none',
-          background:`linear-gradient(160deg, ${GREEN_DARK}, ${GREEN}, ${GREEN_LIGHT})`,
-          color:'#03200a',
-          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-          gap:'6px', fontSize:'11px', fontWeight:'800', cursor:'pointer', textAlign:'center', padding:'0 8px',
-          fontFamily:'inherit', letterSpacing:'0.05em', textTransform:'uppercase',
+          margin:'0 16px 16px', padding:'13px 0',
+          border:`1.5px solid ${hovered ? GREEN : 'rgba(255,255,255,0.16)'}`,
+          borderRadius:'12px',
+          background: hovered
+            ? `linear-gradient(135deg, ${GREEN}, ${GREEN_LIGHT})`
+            : 'rgba(255,255,255,0.04)',
+          color: hovered ? '#06240F' : '#FFFFFF',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:'8px',
+          fontSize:'13.5px', fontWeight:'700', cursor:'pointer',
+          fontFamily:'inherit', letterSpacing:'0.02em',
+          transition:'all 0.25s ease',
         }}
       >
-        <span style={{ fontSize:'24px' }}>→</span>
-        View<br />Profile
+        View Profile
+        <span style={{ fontSize:'15px', transform: hovered ? 'translateX(3px)' : 'none', transition:'transform 0.25s ease' }}>→</span>
       </button>
     </div>
   );
@@ -302,7 +276,7 @@ function CoachesCarousel({ coaches, onView }) {
       {canLeft  && <div style={{ position:'absolute',left:0,top:0,bottom:0,width:'60px',background:`linear-gradient(to right,${PAGE_BG},transparent)`,zIndex:10,pointerEvents:'none' }} />}
       {canRight && <div style={{ position:'absolute',right:0,top:0,bottom:0,width:'60px',background:`linear-gradient(to left,${PAGE_BG},transparent)`,zIndex:10,pointerEvents:'none' }} />}
 
-      <div ref={rowRef} style={{ display:'flex',gap:'20px',overflowX:'auto',scrollSnapType:'x mandatory',scrollbarWidth:'none',paddingBottom:'8px',paddingLeft:'2px',paddingRight:'2px' }}>
+      <div ref={rowRef} style={{ display:'flex',gap:'20px',overflowX:'auto',scrollSnapType:'x mandatory',scrollbarWidth:'none',paddingBottom:'8px',paddingTop:'30px',paddingLeft:'2px',paddingRight:'2px' }}>
         {coaches.map((coach,i)=>(
           <div key={coach.id} data-coach-card="" style={{ flex:'0 0 calc(25% - 15px)',minWidth:'280px',maxWidth:'380px',scrollSnapAlign:'start' }}>
             <CoachCard coach={coach} onView={onView} delay={i*55} />
@@ -327,7 +301,7 @@ export default function Home() {
   const videoRef = useRef(null);
 
   useEffect(()=>{
-    const id='coachly-v12';
+    const id='coachly-v13';
     if (document.getElementById(id)) return;
     const s=document.createElement('style'); s.id=id;
     s.textContent=`
@@ -348,6 +322,7 @@ export default function Home() {
         .how-grid{grid-template-columns:1fr!important}
         .hide-nav{display:none!important}
         .footer-row{flex-direction:column!important;align-items:center!important;text-align:center!important}
+        .nav-side{display:none!important}
       }
       @media(max-width:480px){
         [data-coach-card]{flex:0 0 84vw!important;min-width:0!important}
@@ -380,36 +355,47 @@ export default function Home() {
       <Toast />
       {legalModal && <LegalModal type={legalModal} onClose={()=>setLegalModal(null)} />}
 
-      {/* ── NAVBAR ── */}
-      <header style={{ position:'fixed',top:0,left:0,right:0,zIndex:100,height:'64px',background:'rgba(15,23,42,0.92)',backdropFilter:'blur(20px)',borderBottom:`1px solid ${BORDER}` }}>
-        <div className="nav-inner" style={{ maxWidth:'1440px',margin:'0 auto',height:'100%',padding:'0 40px',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
-          <div onClick={()=>window.scrollTo({top:0,behavior:'smooth'})} style={{ cursor:'pointer' }}>
-            <span style={{ fontFamily:"'Playfair Display',serif",fontWeight:'800',fontSize:'20px',color:TEXT,letterSpacing:'0.08em' }}>
-              COACHLY<span style={{ color:GREEN }}>.</span>
-            </span>
-          </div>
-          <div style={{ display:'flex',alignItems:'center',gap:'8px' }}>
+      {/* ── NAVBAR — logo centered ── */}
+      <header style={{ position:'fixed',top:0,left:0,right:0,zIndex:100,height:'68px',background:'rgba(15,23,42,0.92)',backdropFilter:'blur(20px)',borderBottom:`1px solid ${BORDER}` }}>
+        <div className="nav-inner" style={{ maxWidth:'1440px',margin:'0 auto',height:'100%',padding:'0 32px',position:'relative',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+
+          <div className="nav-side" style={{ display:'flex',alignItems:'center' }}>
             <button className="hide-nav" onClick={()=>navigate('/coach/signup')}
               style={{ background:'none',border:'none',fontFamily:'inherit',fontSize:'13px',color:TEXT_DIM,cursor:'pointer',padding:'8px 14px',transition:'color 0.2s' }}
               onMouseEnter={e=>e.currentTarget.style.color=GREEN}
               onMouseLeave={e=>e.currentTarget.style.color=TEXT_DIM}>
               For coaches
             </button>
+          </div>
+
+          {/* centered wordmark logo */}
+          <div onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}
+            style={{ position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',cursor:'pointer',display:'flex',alignItems:'center',gap:'6px' }}>
+            <span style={{
+              fontFamily:"'Playfair Display',serif", fontWeight:'800', fontSize:'23px',
+              color:'#FFFFFF', letterSpacing:'0.16em',
+            }}>
+              COACHLY
+            </span>
+            <span style={{ width:'7px',height:'7px',borderRadius:'50%',background:GREEN,boxShadow:`0 0 10px ${GREEN}`,display:'inline-block',marginBottom:'-2px' }} />
+          </div>
+
+          <div className="nav-side" style={{ display:'flex',alignItems:'center',gap:'10px' }}>
             {token && tokenType==='user' ? (
-              <button onClick={()=>navigate('/dashboard')} style={{ padding:'9px 20px',borderRadius:'8px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer' }}>My dashboard</button>
+              <button onClick={()=>navigate('/dashboard')} style={{ padding:'10px 22px',borderRadius:'10px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 16px ${GREEN}33` }}>My dashboard</button>
             ) : token && tokenType==='coach' ? (
-              <button onClick={()=>navigate('/coach/dashboard')} style={{ padding:'9px 20px',borderRadius:'8px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer' }}>Coach dashboard</button>
+              <button onClick={()=>navigate('/coach/dashboard')} style={{ padding:'10px 22px',borderRadius:'10px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 16px ${GREEN}33` }}>Coach dashboard</button>
             ) : (<>
               <button onClick={()=>navigate('/user/login')}
-                style={{ padding:'9px 18px',borderRadius:'8px',border:`1px solid ${BORDER}`,background:'none',fontFamily:'inherit',fontSize:'13px',color:TEXT_DIM,cursor:'pointer',transition:'all 0.2s' }}
-                onMouseEnter={e=>{ e.currentTarget.style.borderColor=GREEN; e.currentTarget.style.color=GREEN; }}
-                onMouseLeave={e=>{ e.currentTarget.style.borderColor=BORDER; e.currentTarget.style.color=TEXT_DIM; }}>
+                style={{ padding:'10px 20px',borderRadius:'10px',border:`1.5px solid rgba(255,255,255,0.18)`,background:'rgba(255,255,255,0.04)',fontFamily:'inherit',fontSize:'13px',fontWeight:'600',color:'#FFFFFF',cursor:'pointer',transition:'all 0.2s' }}
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor='#FFFFFF'; e.currentTarget.style.background='rgba(255,255,255,0.1)'; }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor='rgba(255,255,255,0.18)'; e.currentTarget.style.background='rgba(255,255,255,0.04)'; }}>
                 Log in
               </button>
               <button onClick={()=>navigate('/user/login')}
-                style={{ padding:'9px 20px',borderRadius:'8px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer',transition:'opacity 0.2s' }}
-                onMouseEnter={e=>e.currentTarget.style.opacity='0.85'}
-                onMouseLeave={e=>e.currentTarget.style.opacity='1'}>
+                style={{ padding:'10px 22px',borderRadius:'10px',background:`linear-gradient(135deg, ${GREEN}, ${GREEN_DARK})`,color:'#FFFFFF',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 18px ${GREEN}44`,transition:'all 0.2s' }}
+                onMouseEnter={e=>{ e.currentTarget.style.boxShadow=`0 6px 26px ${GREEN}66`; e.currentTarget.style.transform='translateY(-1px)'; }}
+                onMouseLeave={e=>{ e.currentTarget.style.boxShadow=`0 4px 18px ${GREEN}44`; e.currentTarget.style.transform='none'; }}>
                 Get started
               </button>
             </>)}
@@ -442,17 +428,17 @@ export default function Home() {
           <p style={{ animation:'fadeUp 0.6s ease 0.8s both',fontSize:'16px',color:'rgba(241,245,249,0.45)',lineHeight:'1.8',fontWeight:'300',maxWidth:'460px',margin:'20px auto 40px' }}>
             Real coaches across every discipline — each with their own AI assistant to support you between sessions.
           </p>
-          <div style={{ animation:'fadeUp 0.6s ease 1s both',display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap' }}>
+          <div style={{ animation:'fadeUp 0.6s ease 1s both',display:'flex',gap:'14px',justifyContent:'center',flexWrap:'wrap' }}>
             <button onClick={()=>document.getElementById('coaches-section')?.scrollIntoView({behavior:'smooth'})}
-              style={{ padding:'14px 34px',borderRadius:'8px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 28px ${GREEN}44`,transition:'all 0.2s' }}
-              onMouseEnter={e=>{ e.currentTarget.style.background='#4ade80'; e.currentTarget.style.boxShadow=`0 8px 44px ${GREEN}66`; }}
-              onMouseLeave={e=>{ e.currentTarget.style.background=GREEN; e.currentTarget.style.boxShadow=`0 4px 28px ${GREEN}44`; }}>
+              style={{ padding:'15px 36px',borderRadius:'10px',background:'#FFFFFF',color:'#0F172A',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:'0 4px 28px rgba(255,255,255,0.18)',transition:'all 0.2s' }}
+              onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 8px 38px rgba(255,255,255,0.3)'; }}
+              onMouseLeave={e=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='0 4px 28px rgba(255,255,255,0.18)'; }}>
               Find a coach
             </button>
             <button onClick={()=>navigate('/coach/signup')}
-              style={{ padding:'14px 34px',borderRadius:'8px',border:`1px solid ${GREEN}55`,background:`${GREEN}0A`,fontFamily:'inherit',fontSize:'15px',fontWeight:'500',cursor:'pointer',color:GREEN,transition:'all 0.2s' }}
-              onMouseEnter={e=>{ e.currentTarget.style.borderColor=GREEN; e.currentTarget.style.background=`${GREEN}18`; }}
-              onMouseLeave={e=>{ e.currentTarget.style.borderColor=`${GREEN}55`; e.currentTarget.style.background=`${GREEN}0A`; }}>
+              style={{ padding:'15px 36px',borderRadius:'10px',border:'1.5px solid rgba(255,255,255,0.5)',background:'rgba(255,255,255,0.06)',backdropFilter:'blur(6px)',fontFamily:'inherit',fontSize:'15px',fontWeight:'600',cursor:'pointer',color:'#FFFFFF',transition:'all 0.2s' }}
+              onMouseEnter={e=>{ e.currentTarget.style.borderColor='#FFFFFF'; e.currentTarget.style.background='rgba(255,255,255,0.14)'; }}
+              onMouseLeave={e=>{ e.currentTarget.style.borderColor='rgba(255,255,255,0.5)'; e.currentTarget.style.background='rgba(255,255,255,0.06)'; }}>
               Become a coach
             </button>
           </div>
@@ -544,9 +530,9 @@ export default function Home() {
             Athletes everywhere are already training smarter. Your coach is waiting.
           </p>
           <button onClick={()=>document.getElementById('coaches-section')?.scrollIntoView({behavior:'smooth'})}
-            style={{ padding:'15px 44px',borderRadius:'8px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 36px ${GREEN}33`,transition:'all 0.2s',letterSpacing:'0.02em' }}
-            onMouseEnter={e=>{ e.currentTarget.style.background='#4ade80'; e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow=`0 8px 56px ${GREEN}55`; }}
-            onMouseLeave={e=>{ e.currentTarget.style.background=GREEN; e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow=`0 4px 36px ${GREEN}33`; }}>
+            style={{ padding:'15px 44px',borderRadius:'10px',background:'#FFFFFF',color:'#0F172A',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:'0 4px 36px rgba(255,255,255,0.18)',transition:'all 0.2s',letterSpacing:'0.02em' }}
+            onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 8px 50px rgba(255,255,255,0.3)'; }}
+            onMouseLeave={e=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='0 4px 36px rgba(255,255,255,0.18)'; }}>
             Browse coaches →
           </button>
         </div>
