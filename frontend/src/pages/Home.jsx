@@ -576,7 +576,7 @@ export default function Home(){
         <div className="hero-wave-bg"/>
         <video
   controls
- 
+  poster="https://www.pexels.com/fr-fr/download/video/27629557/"
   
   ref={videoRef}
   autoPlay
