@@ -574,16 +574,8 @@ export default function Home(){
       {/* ══ HERO ══ */}
       <section style={{position:'relative',height:'100vh',minHeight:'600px',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
         <div className="hero-wave-bg"/>
-        <video
-  preload="auto"
-  ref={videoRef}
-  autoPlay
-  muted
-  loop
-  playsInline
-  preload="auto"
-  webkitPlaysInline onLoadedData={()=>setVideoLoaded(true)}
-          style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:videoLoaded?0.32:0,transition:'opacity 1.5s ease',zIndex:1}}>
+        <video ref={videoRef} autoPlay muted loop playsInline onLoadedData={()=>setVideoLoaded(true)}
+          style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:0.32,transition:'opacity 1.5s ease',zIndex:1}}>
           <source src="https://bdtmcsyownhzpogzoljl.supabase.co/storage/v1/object/public/videos/WhatsApp%20Video%202026-06-23%20at%2012.12.24%20(1).mp4" type="video/mp4"/>
         </video>
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:2}}>
