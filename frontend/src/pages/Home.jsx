@@ -576,8 +576,8 @@ export default function Home(){
         <div className="hero-wave-bg"/>
         <video ref={videoRef} autoPlay muted loop playsInline onLoadedData={()=>setVideoLoaded(true)}
           style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:videoLoaded?0.32:0,transition:'opacity 1.5s ease',zIndex:1}}>
-          <source src="https://videos.pexels.com/video-files/4761789/4761789-uhd_2560_1440_25fps.mp4" type="video/mp4"/>
-          <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4"/>
+          <source src="https://bdtmcsyownhzpogzoljl.supabase.co/storage/v1/object/public/videos/WhatsApp%20Video%202026-06-23%20at%2012.12.24%20(1).mp4" type="video/mp4"/>
+          <source src="https://bdtmcsyownhzpogzoljl.supabase.co/storage/v1/object/public/videos/WhatsApp%20Video%202026-06-23%20at%2012.12.24%20(1).mp4" type="video/mp4"/>
         </video>
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:2}}>
           <div style={{position:'absolute',top:'-20%',left:'-10%',width:'160%',height:'70%',background:`radial-gradient(ellipse 60% 55% at 35% 50%,${GREEN}14 0%,transparent 65%)`,animation:'waveX 18s ease-in-out infinite'}}/>
