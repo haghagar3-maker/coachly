@@ -296,6 +296,33 @@ function CoachRow({title,label,coaches,onView,bgDark=true}){
   );
 }
 
+/* ─── Motivational ticker — auto-scrolling carousel of short motivational lines ─── */
+const MOTIVATIONAL_WORDS=[
+  'Stronger every day',
+  'Discipline beats motivation',
+  'Your coach is waiting',
+  'Progress, not perfection',
+  'Show up for yourself',
+  'Train smart. Grow fast.',
+  'Consistency is the win',
+  'No excuses, just reps',
+];
+function MotivationalTicker(){
+  const items=[...MOTIVATIONAL_WORDS,...MOTIVATIONAL_WORDS];
+  return (
+    <div className="ticker-bar">
+      <div className="ticker-track">
+        {items.map((word,i)=>(
+          <span key={i} className="ticker-item">
+            {word}
+            <span className="ticker-dot">●</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main ─── */
 export default function Home(){
   const navigate=useNavigate();
@@ -411,6 +438,66 @@ export default function Home(){
         animation: bgWave 18s ease infinite;
         z-index:0;
       }
+
+      /* ── HOW IT WORKS background color wave — bright, eye-catching, no flat beige ── */
+      .how-wave-bg{
+        position:absolute;inset:0;
+        background: linear-gradient(
+          270deg,
+          #C8FF00,
+          #F97316,
+          #DEFF6E,
+          #FDBA74,
+          #C8FF00
+        );
+        background-size: 500% 500%;
+        animation: bgWave 16s ease infinite;
+        opacity:0.22;
+        z-index:0;
+      }
+
+      /* ── CTA section background color wave ── */
+      .cta-wave-bg{
+        position:absolute;inset:0;
+        background: linear-gradient(
+          270deg,
+          #F97316,
+          #C8FF00,
+          #FDE68A,
+          #8FB800,
+          #F97316
+        );
+        background-size: 500% 500%;
+        animation: bgWave 17s ease infinite;
+        opacity:0.22;
+        z-index:0;
+      }
+
+      /* ── Motivational ticker bar ── */
+      .ticker-bar{
+        position:relative;overflow:hidden;
+        background: linear-gradient(270deg,${GREEN_DARK},${ORANGE},${GREEN},${GREEN_DARK});
+        background-size:400% 400%;
+        animation: bgWave 10s ease infinite;
+        padding:16px 0;
+      }
+      .ticker-track{
+        display:flex;width:max-content;
+        animation:tickerScroll 32s linear infinite;
+      }
+      .ticker-track:hover{animation-play-state:paused}
+      @keyframes tickerScroll{
+        0%{transform:translateX(0)}
+        100%{transform:translateX(-50%)}
+      }
+      .ticker-item{
+        display:flex;align-items:center;gap:10px;
+        padding:0 32px;white-space:nowrap;
+        font-size:14px;font-weight:700;letter-spacing:0.04em;
+        color:#0a1a00;
+        font-family:'Playfair Display',serif;
+      }
+      .ticker-dot{font-size:10px;color:rgba(10,26,0,0.45)}
 
       @media(max-width:1100px){[data-coach-card]{flex:0 0 calc(40% - 16px)!important}}
 
@@ -663,12 +750,16 @@ export default function Home(){
         </div>
       </section>
 
+      {/* ══ MOTIVATIONAL TICKER ══ */}
+      <MotivationalTicker/>
+
       {/* ══ HOW IT WORKS — beige, clean separation ══ */}
       <section style={{background:BEIGE,position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
           <div style={{position:'absolute',top:'-40%',left:'-15%',width:'130%',height:'80%',background:`radial-gradient(ellipse 55% 55% at 40% 50%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX 19s ease-in-out infinite'}}/>
           <div style={{position:'absolute',bottom:'-30%',right:'-15%',width:'110%',height:'70%',background:`radial-gradient(ellipse 50% 55% at 60% 55%,${ORANGE}0D 0%,transparent 65%)`,animation:'waveX2 24s ease-in-out infinite'}}/>
         </div>
+        <div className="how-wave-bg"/>
         <div className="sec-pad" style={{padding:'80px 52px 100px',maxWidth:'980px',margin:'0 auto',position:'relative',zIndex:1}}>
           <Reveal>
             <div style={{textAlign:'center',marginBottom:'56px'}}>
@@ -706,6 +797,7 @@ export default function Home(){
           <div style={{position:'absolute',top:'-50%',left:'-10%',width:'120%',height:'100%',background:`radial-gradient(ellipse 60% 55% at 45% 55%,${ORANGE}12 0%,transparent 65%)`,animation:'waveX 16s ease-in-out infinite'}}/>
           <div style={{position:'absolute',top:'-30%',right:'-20%',width:'100%',height:'90%',background:`radial-gradient(ellipse 50% 50% at 65% 45%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX2 21s ease-in-out infinite'}}/>
         </div>
+        <div className="cta-wave-bg"/>
         <div className="sec-pad" style={{padding:'110px 52px',textAlign:'center',position:'relative',zIndex:1,maxWidth:'580px',margin:'0 auto'}}>
           <Reveal>
             <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:ORANGE,marginBottom:'18px'}}>Start today</div>
@@ -730,17 +822,17 @@ export default function Home(){
       </section>
 
       {/* ══ FOOTER ══ */}
-      <footer style={{padding:'24px 52px',borderTop:'1px solid rgba(0,0,0,0.07)',background:BEIGE2,position:'relative',zIndex:1}}>
+      <footer style={{padding:'24px 52px',borderTop:`1px solid ${BORDER}`,background:NAVY,position:'relative',zIndex:1}}>
         <div className="footer-row" style={{maxWidth:'1440px',margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'14px'}}>
-          <span style={{fontFamily:"'Playfair Display',serif",fontWeight:'900',fontSize:'17px',color:TEXT_B,letterSpacing:'0.1em'}}>COACHLY<span style={{color:GREEN_DARK}}>.</span></span>
+          <span style={{fontFamily:"'Playfair Display',serif",fontWeight:'900',fontSize:'17px',color:TEXT,letterSpacing:'0.1em'}}>COACHLY<span style={{color:GREEN}}>.</span></span>
           <div style={{display:'flex',gap:'24px',alignItems:'center'}}>
             {[['For coaches',()=>navigate('/coach/signup')],['Terms',()=>setLegalModal('terms')],['Privacy',()=>setLegalModal('privacy')]].map(([label,fn])=>(
-              <button key={label} onClick={fn} style={{background:'none',border:'none',fontFamily:'inherit',fontSize:'13px',color:TEXT_B_F,cursor:'pointer',transition:'color 0.18s'}}
-                onMouseEnter={e=>e.currentTarget.style.color=TEXT_B}
-                onMouseLeave={e=>e.currentTarget.style.color=TEXT_B_F}>{label}</button>
+              <button key={label} onClick={fn} style={{background:'none',border:'none',fontFamily:'inherit',fontSize:'13px',color:TEXT_DIM,cursor:'pointer',transition:'color 0.18s'}}
+                onMouseEnter={e=>e.currentTarget.style.color=GREEN_LIGHT}
+                onMouseLeave={e=>e.currentTarget.style.color=TEXT_DIM}>{label}</button>
             ))}
           </div>
-          <div style={{fontSize:'12px',color:TEXT_B_F}}>© {new Date().getFullYear()} Coachly</div>
+          <div style={{fontSize:'12px',color:TEXT_FAINT}}>© {new Date().getFullYear()} Coachly</div>
         </div>
       </footer>
     </div>
