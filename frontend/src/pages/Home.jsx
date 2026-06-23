@@ -6,9 +6,9 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
 
 /* ─── Palette ─── */
-const GREEN       = '#C8FF00';
-const GREEN_DARK  = '#8FB800';
-const GREEN_LIGHT = '#DEFF6E';
+const GREEN       = '#C8FF00';          // lime-green matching login page
+const GREEN_DARK  = '#8FB800';          // darker lime for gradients/text on light
+const GREEN_LIGHT = '#DEFF6E';          // lighter lime for shimmer
 const ORANGE      = '#F97316';
 const NAVY        = '#0B1528';
 
@@ -77,7 +77,7 @@ function avatarColor(id){
 function initials(name){ if(!name) return '?'; return name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2); }
 function rankScore(c){ return (Number(c.rating)||0)*40+(Number(c.subscriber_count)||0)*2+(Number(c.sessions_count)||0)*0.5+(Number(c.years_experience)||0)*3; }
 
-/* ─── Coach Card ─── */
+/* ─── Coach Card — original dark style, taller banner ─── */
 function CoachCard({coach,onView,delay=0}){
   const [hovered,setHovered]=useState(false);
   const [pressed,setPressed]=useState(false);
@@ -100,9 +100,6 @@ function CoachCard({coach,onView,delay=0}){
     catch{specialties=String(coach.specialties).split(',').map(s=>s.trim()).filter(Boolean);}
   }
   const starRating=coach.rating>0?Number(coach.rating).toFixed(1):null;
-
-  /* No-banner fallback: a rich dark gradient using the coach's avatar color */
-  const ac = avatarColor(coach.id);
 
   return (
     <div ref={wrapRef} style={{width:'100%',borderRadius:'22px',display:'flex',flexDirection:'column',animation:'fadeUp 0.55s ease both',animationDelay:`${delay}ms`}}>
@@ -127,11 +124,11 @@ function CoachCard({coach,onView,delay=0}){
         }}
       >
         {/* BANNER */}
-        <div style={{height:'270px',position:'relative',overflow:'hidden',borderRadius:'22px 22px 0 0',flexShrink:0,background:heroImage?'#000':`linear-gradient(145deg,#1a2a4a 0%,#0e1a30 40%,${ac}18 70%,#0B1528 100%)`}}>
+        <div style={{height:'270px',position:'relative',overflow:'hidden',borderRadius:'22px 22px 0 0',flexShrink:0,background:heroImage?'#000':`linear-gradient(135deg,rgba(200,255,0,0.08) 0%,rgba(200,255,0,0.02) 100%)`}}>
           {heroImage
             ? <img src={heroImage} alt={coach.name} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hovered?'scale(1.06)':'scale(1)',transition:'transform 0.55s ease'}}/>
             : <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                <div style={{width:'90px',height:'90px',borderRadius:'50%',background:`${ac}22`,border:`2px solid ${ac}55`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'30px',fontWeight:'700',color:ac,textShadow:`0 0 20px ${ac}66`}}>{initials(coach.name)}</div>
+                <div style={{width:'90px',height:'90px',borderRadius:'50%',background:`${avatarColor(coach.id)}20`,border:`2px dashed ${avatarColor(coach.id)}55`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'30px',fontWeight:'700',color:avatarColor(coach.id)}}>{initials(coach.name)}</div>
               </div>
           }
           <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,0.05) 30%,rgba(0,0,0,0.75) 100%)'}}/>
@@ -159,10 +156,10 @@ function CoachCard({coach,onView,delay=0}){
             </div>
           )}
           {coach.tagline && (
-            <p style={{fontSize:'13px',color:'rgba(241,245,249,0.65)',lineHeight:'1.6',margin:'0 0 12px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',fontStyle:'italic'}}>"{coach.tagline}"</p>
+            <p style={{fontSize:'13px',color:TEXT_DIM,lineHeight:'1.6',margin:'0 0 12px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden',fontStyle:'italic'}}>"{coach.tagline}"</p>
           )}
           {coach.bio && (
-            <p style={{fontSize:'12px',color:'rgba(241,245,249,0.38)',lineHeight:'1.65',margin:'0 0 12px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{coach.bio}</p>
+            <p style={{fontSize:'12px',color:TEXT_FAINT,lineHeight:'1.65',margin:'0 0 12px',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{coach.bio}</p>
           )}
           <div style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:'10px',paddingBottom:'14px'}}>
             {starRating && (
@@ -179,17 +176,17 @@ function CoachCard({coach,onView,delay=0}){
 
         {/* BOTTOM STRIP */}
         <div style={{padding:'14px 20px 18px',borderTop:`1px solid ${BORDER}`,display:'flex',alignItems:'center',gap:'12px',marginTop:'auto',background:'rgba(0,0,0,0.2)',borderRadius:revealed?'0':'0 0 22px 22px'}}>
-          <div style={{width:'42px',height:'42px',borderRadius:'50%',flexShrink:0,overflow:'hidden',background:profilePic?'#000':ac,border:`2px solid ${GREEN}55`,display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 0 0 3px ${GREEN}22`}}>
+          <div style={{width:'42px',height:'42px',borderRadius:'50%',flexShrink:0,overflow:'hidden',background:profilePic?'#000':avatarColor(coach.id),border:`2px solid ${GREEN}55`,display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 0 0 3px ${GREEN}22`}}>
             {profilePic?<img src={profilePic} alt={coach.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:'14px',fontWeight:'700',color:'#000'}}>{initials(coach.name)}</span>}
           </div>
           <div style={{minWidth:0,flex:1}}>
-            <div style={{fontSize:'14px',fontWeight:'700',color:'#F1F5F9',lineHeight:'1.2',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{coach.name}</div>
-            <div style={{fontSize:'11px',color:'rgba(241,245,249,0.38)',marginTop:'2px',display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}}>
+            <div style={{fontSize:'14px',fontWeight:'700',color:TEXT,lineHeight:'1.2',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{coach.name}</div>
+            <div style={{fontSize:'11px',color:TEXT_FAINT,marginTop:'2px',display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap'}}>
               {coach.location&&<span>{coach.location}</span>}
               {coach.response_time&&<span>{coach.response_time}</span>}
             </div>
           </div>
-          <div style={{fontSize:'11px',color:revealed?GREEN:'rgba(241,245,249,0.3)',transition:'color 0.2s,transform 0.25s',flexShrink:0,fontWeight:'600',transform:revealed?'rotate(90deg)':'none'}}>
+          <div style={{fontSize:'11px',color:revealed?GREEN:TEXT_FAINT,transition:'color 0.2s,transform 0.25s',flexShrink:0,fontWeight:'600',transform:revealed?'rotate(90deg)':'none'}}>
             <span style={{fontSize:'14px'}}>⋯</span>
           </div>
         </div>
@@ -299,7 +296,7 @@ function CoachRow({title,label,coaches,onView,bgDark=true}){
   );
 }
 
-/* ─── Motivational ticker ─── */
+/* ─── Motivational ticker — auto-scrolling carousel of short motivational lines ─── */
 const MOTIVATIONAL_WORDS=[
   'Stronger every day',
   'Discipline beats motivation',
@@ -342,18 +339,22 @@ export default function Home(){
 
   /* ── fonts & keyframes ── */
   useEffect(()=>{
-    const id='coachly-v20';
+    const id='coachly-v19';
     if(document.getElementById(id)) return;
     const s=document.createElement('style'); s.id=id;
     s.textContent=`
       @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=Inter:wght@300;400;500;600;700&display=swap');
       @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
       @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+      /* ── Page-wide background color wave ── */
+      /* A slow hue shift travels left→right across the whole page */
       @keyframes bgWave{
         0%   { background-position: 0% 50%; }
         50%  { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
       }
+
       @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
       @keyframes waveX{
         0%  {transform:translateX(-30%) scaleY(1)}
@@ -387,53 +388,92 @@ export default function Home(){
         background-clip:text;
         animation:shimmer 4s linear infinite
       }
+
+      /* ── NAVBAR color wave overlay ── */
       .nav-wave{
         position:absolute;inset:0;
-        background: linear-gradient(270deg,rgba(200,255,0,0.07),rgba(249,115,22,0.05),rgba(200,255,0,0.04),rgba(59,130,246,0.05),rgba(200,255,0,0.07));
+        background: linear-gradient(
+          270deg,
+          rgba(200,255,0,0.07),
+          rgba(249,115,22,0.05),
+          rgba(200,255,0,0.04),
+          rgba(59,130,246,0.05),
+          rgba(200,255,0,0.07)
+        );
         background-size: 400% 400%;
         animation: bgWave 14s ease infinite;
-        pointer-events:none;z-index:0;
+        pointer-events:none;
+        z-index:0;
       }
+
+      /* ── HERO background color wave (behind video) ── */
       .hero-wave-bg{
         position:absolute;inset:0;
-        background: linear-gradient(270deg,#0B1528,#0d1f10,#1a1208,#0B1528,#0a1520,#0B1528);
+        background: linear-gradient(
+          270deg,
+          #0B1528,
+          #0d1f10,
+          #1a1208,
+          #0B1528,
+          #0a1520,
+          #0B1528
+        );
         background-size: 600% 600%;
         animation: bgWave 20s ease infinite;
         z-index:0;
       }
+
+      /* ── COACHES SECTION background color wave ── */
       .coaches-wave-bg{
         position:absolute;inset:0;
-        background: linear-gradient(270deg,#0B1528,#0e1f14,#161008,#0c1426,#0B1528);
+        background: linear-gradient(
+          270deg,
+          #0B1528,
+          #0e1f14,
+          #161008,
+          #0c1426,
+          #0B1528
+        );
         background-size: 500% 500%;
         animation: bgWave 18s ease infinite;
         z-index:0;
       }
 
-      /* How It Works + CTA share one continuous animated gradient — no separation */
-      .light-sections-wrap{
-        position:relative;
+      /* ── HOW IT WORKS background color wave — bright, eye-catching, no flat beige ── */
+      .how-wave-bg{
+        position:absolute;inset:0;
         background: linear-gradient(
           270deg,
-          #e8f5c8,
-          #f5d9b0,
-          #f0eecc,
-          #fde8cc,
-          #dff5b0,
-          #f5d9b0
+          #C8FF00,
+          #F97316,
+          #DEFF6E,
+          #FDBA74,
+          #C8FF00
         );
-        background-size: 600% 600%;
-        animation: bgWave 20s ease infinite;
-      }
-
-      /* wave overlay tint on top of the shared gradient */
-      .light-wave-overlay{
-        position:absolute;inset:0;
-        background: linear-gradient(270deg,rgba(200,255,0,0.12),rgba(249,115,22,0.10),rgba(200,255,0,0.08),rgba(249,115,22,0.12));
         background-size: 500% 500%;
-        animation: bgWave 15s ease infinite reverse;
-        pointer-events:none;z-index:0;
+        animation: bgWave 16s ease infinite;
+        opacity:0.22;
+        z-index:0;
       }
 
+      /* ── CTA section background color wave ── */
+      .cta-wave-bg{
+        position:absolute;inset:0;
+        background: linear-gradient(
+          270deg,
+          #F97316,
+          #C8FF00,
+          #FDE68A,
+          #8FB800,
+          #F97316
+        );
+        background-size: 500% 500%;
+        animation: bgWave 17s ease infinite;
+        opacity:0.22;
+        z-index:0;
+      }
+
+      /* ── Motivational ticker bar ── */
       .ticker-bar{
         position:relative;overflow:hidden;
         background: linear-gradient(270deg,${GREEN_DARK},${ORANGE},${GREEN},${GREEN_DARK});
@@ -460,6 +500,8 @@ export default function Home(){
       .ticker-dot{font-size:10px;color:rgba(10,26,0,0.45)}
 
       @media(max-width:1100px){[data-coach-card]{flex:0 0 calc(40% - 16px)!important}}
+
+      /* ── Mobile fixes for search + pills ── */
       @media(max-width:750px){
         [data-coach-card]{flex:0 0 calc(72% - 16px)!important;min-width:250px!important}
         .hero-h1{font-size:36px!important;line-height:1.08!important}
@@ -469,9 +511,22 @@ export default function Home(){
         .footer-row{flex-direction:column!important;align-items:center!important;text-align:center!important}
         .nav-inner{padding:0 16px!important}
         .pill-bar{gap:6px!important}
-        .search-filter-wrap{flex-direction:column!important;align-items:stretch!important;gap:12px!important;}
-        .search-box{min-width:0!important;max-width:100%!important;width:100%!important;}
-        .pill-bar{flex-wrap:wrap!important;width:100%!important;}
+
+        /* search full width on top, pills wrap below */
+        .search-filter-wrap{
+          flex-direction:column!important;
+          align-items:stretch!important;
+          gap:12px!important;
+        }
+        .search-box{
+          min-width:0!important;
+          max-width:100%!important;
+          width:100%!important;
+        }
+        .pill-bar{
+          flex-wrap:wrap!important;
+          width:100%!important;
+        }
       }
       @media(max-width:480px){
         [data-coach-card]{flex:0 0 86vw!important;min-width:0!important}
@@ -538,6 +593,7 @@ export default function Home(){
 
       {/* ══ NAVBAR ══ */}
       <header style={{position:'fixed',top:0,left:0,right:0,zIndex:100,height:'66px',background:'rgba(8,14,28,0.93)',backdropFilter:'blur(20px)',borderBottom:'1px solid rgba(255,255,255,0.06)',overflow:'hidden'}}>
+        {/* subtle color wave behind the navbar */}
         <div className="nav-wave"/>
         <div className="nav-inner" style={{maxWidth:'1440px',margin:'0 auto',height:'100%',padding:'0 40px',display:'grid',gridTemplateColumns:'1fr auto 1fr',alignItems:'center',position:'relative',zIndex:1}}>
           <div>
@@ -572,17 +628,23 @@ export default function Home(){
 
       {/* ══ HERO ══ */}
       <section style={{position:'relative',height:'100vh',minHeight:'600px',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+        {/* animated bg color wave — visible before/behind video */}
         <div className="hero-wave-bg"/>
+
         <video ref={videoRef} autoPlay muted loop playsInline onLoadedData={()=>setVideoLoaded(true)}
           style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:videoLoaded?0.32:0,transition:'opacity 1.5s ease',zIndex:1}}>
           <source src="https://videos.pexels.com/video-files/4761789/4761789-uhd_2560_1440_25fps.mp4" type="video/mp4"/>
           <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4"/>
         </video>
+
+        {/* ambient blobs */}
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:2}}>
           <div style={{position:'absolute',top:'-20%',left:'-10%',width:'160%',height:'70%',background:`radial-gradient(ellipse 60% 55% at 35% 50%,${GREEN}14 0%,transparent 65%)`,animation:'waveX 18s ease-in-out infinite'}}/>
           <div style={{position:'absolute',bottom:'-20%',right:'-15%',width:'140%',height:'65%',background:`radial-gradient(ellipse 55% 50% at 65% 50%,${ORANGE}0E 0%,transparent 65%)`,animation:'waveX2 22s ease-in-out infinite'}}/>
         </div>
+
         <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(6,13,26,0.15) 0%,rgba(6,13,26,0) 40%,rgba(11,21,40,1) 100%)',zIndex:3}}/>
+
         <div style={{position:'relative',zIndex:4,textAlign:'center',padding:'0 24px',maxWidth:'860px',margin:'0 auto'}}>
           <div style={{animation:'fadeUp 0.5s ease both',fontSize:'11px',fontWeight:'700',letterSpacing:'0.22em',textTransform:'uppercase',color:GREEN,marginBottom:'20px'}}>Every Sport · Every Level · Any Goal</div>
           <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:'68px',fontWeight:'900',lineHeight:'1.05',color:'#F1F5F9',margin:0,letterSpacing:'-0.02em'}}>
@@ -612,14 +674,22 @@ export default function Home(){
 
       {/* ══ COACHES SECTION ══ */}
       <section id="coaches-section" style={{background:NAVY,position:'relative',overflow:'hidden'}}>
+        {/* animated bg color wave */}
         <div className="coaches-wave-bg"/>
+
+        {/* ambient blobs on top of wave */}
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:1}}>
           <div style={{position:'absolute',top:'-30%',right:'-20%',width:'120%',height:'80%',background:`radial-gradient(ellipse 50% 60% at 70% 40%,${GREEN}09 0%,transparent 65%)`,animation:'waveX2 20s ease-in-out infinite'}}/>
           <div style={{position:'absolute',bottom:'-30%',left:'-20%',width:'120%',height:'80%',background:`radial-gradient(ellipse 55% 55% at 30% 60%,${ORANGE}06 0%,transparent 65%)`,animation:'waveX 25s ease-in-out infinite'}}/>
         </div>
+
         <div className="sec-pad" style={{padding:'60px 52px 80px',maxWidth:'1440px',margin:'0 auto',position:'relative',zIndex:2}}>
+
+          {/* search + pills — mobile stacks vertically */}
           <Reveal>
             <div className="search-filter-wrap" style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:'16px',marginBottom:'32px'}}>
+
+              {/* search */}
               <div className="search-box" style={{position:'relative',flex:'0 0 auto',minWidth:'260px',maxWidth:'400px'}}>
                 <div style={{position:'absolute',left:'16px',top:'50%',transform:'translateY(-50%)',color:searchFocus?GREEN:TEXT_FAINT,transition:'color 0.2s',pointerEvents:'none'}}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -637,6 +707,8 @@ export default function Home(){
                 />
                 {searchQuery&&<button onClick={()=>setSearchQuery('')} style={{position:'absolute',right:'12px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:TEXT_FAINT,cursor:'pointer',fontSize:'18px',lineHeight:1,padding:'2px'}}>×</button>}
               </div>
+
+              {/* category pills */}
               {!loading&&categories.length>0&&(
                 <div className="pill-bar" style={{display:'flex',flexWrap:'wrap',gap:'8px',flex:1}}>
                   <button onClick={()=>setActiveFilter('all')} style={makePill(activeFilter==='all')}
@@ -681,76 +753,73 @@ export default function Home(){
       {/* ══ MOTIVATIONAL TICKER ══ */}
       <MotivationalTicker/>
 
-      {/* ══ HOW IT WORKS + CTA — single seamless animated wrapper ══ */}
-      <div className="light-sections-wrap">
-        <div className="light-wave-overlay"/>
-
-        {/* HOW IT WORKS */}
-        <section style={{position:'relative',overflow:'hidden'}}>
-          <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
-            <div style={{position:'absolute',top:'-40%',left:'-15%',width:'130%',height:'80%',background:`radial-gradient(ellipse 55% 55% at 40% 50%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX 19s ease-in-out infinite'}}/>
-            <div style={{position:'absolute',bottom:'-30%',right:'-15%',width:'110%',height:'70%',background:`radial-gradient(ellipse 50% 55% at 60% 55%,${ORANGE}0D 0%,transparent 65%)`,animation:'waveX2 24s ease-in-out infinite'}}/>
-          </div>
-          <div className="sec-pad" style={{padding:'80px 52px 100px',maxWidth:'980px',margin:'0 auto',position:'relative',zIndex:1}}>
-            <Reveal>
-              <div style={{textAlign:'center',marginBottom:'56px'}}>
-                <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:ORANGE,marginBottom:'12px'}}>How it works</div>
-                <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(24px,3vw,40px)',fontWeight:'800',color:TEXT_B,margin:0}}>
-                  Coaching, <span style={{fontStyle:'italic',color:GREEN_DARK}}>reimagined.</span>
-                </h2>
-              </div>
-            </Reveal>
-            <div className="how-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'3px',borderRadius:'22px',overflow:'hidden',boxShadow:'0 8px 48px rgba(0,0,0,0.09)'}}>
-              {[
-                {label:'Subscribe',color:GREEN_DARK,num:'01',title:'Choose your coach',body:'Browse real coaches across every sport and discipline. Pick the program built for your goals and subscribe monthly.'},
-                {label:'Train',color:ORANGE,num:'02',title:'Get your plan + AI helper',body:'Each coach sets you a custom training plan and a built-in AI assistant for quick questions between sessions.'},
-                {label:'Grow',color:GREEN_DARK,num:'03',title:'Track your progress',body:'Weekly reviews, direct coach messaging, and real progress tracking. Your coach adjusts your plan as you improve.'},
-              ].map((step,i)=>(
-                <Reveal key={i} delay={i*110} style={{display:'contents'}}>
-                  <div style={{background:'rgba(255,255,255,0.6)',padding:'44px 30px',position:'relative',overflow:'hidden',transition:'background 0.22s,transform 0.22s',cursor:'default'}}
-                    onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.88)';e.currentTarget.style.transform='translateY(-3px)';}}
-                    onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.6)';e.currentTarget.style.transform='none';}}>
-                    <div style={{position:'absolute',top:'8px',right:'12px',fontFamily:"'Playfair Display',serif",fontSize:'72px',fontWeight:'900',color:'rgba(0,0,0,0.04)',lineHeight:1,userSelect:'none'}}>{step.num}</div>
-                    <div style={{width:'36px',height:'3px',borderRadius:'2px',background:step.color,marginBottom:'20px'}}/>
-                    <div style={{fontSize:'10px',fontWeight:'700',letterSpacing:'0.2em',textTransform:'uppercase',color:step.color,marginBottom:'14px'}}>{step.label}</div>
-                    <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:'19px',fontWeight:'700',color:TEXT_B,marginBottom:'14px',lineHeight:'1.3'}}>{step.title}</h3>
-                    <p style={{fontSize:'13px',color:TEXT_B_DIM,lineHeight:'1.85',margin:0}}>{step.body}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA — no top border, flows directly from How It Works */}
-        <section style={{position:'relative',overflow:'hidden'}}>
-          <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
-            <div style={{position:'absolute',top:'-50%',left:'-10%',width:'120%',height:'100%',background:`radial-gradient(ellipse 60% 55% at 45% 55%,${ORANGE}12 0%,transparent 65%)`,animation:'waveX 16s ease-in-out infinite'}}/>
-            <div style={{position:'absolute',top:'-30%',right:'-20%',width:'100%',height:'90%',background:`radial-gradient(ellipse 50% 50% at 65% 45%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX2 21s ease-in-out infinite'}}/>
-          </div>
-          <div className="sec-pad" style={{padding:'110px 52px',textAlign:'center',position:'relative',zIndex:1,maxWidth:'580px',margin:'0 auto'}}>
-            <Reveal>
-              <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:ORANGE,marginBottom:'18px'}}>Start today</div>
-              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,52px)',fontWeight:'900',color:TEXT_B,lineHeight:'1.1',marginBottom:'18px'}}>
-                Ready to find<br/><span style={{fontStyle:'italic',color:GREEN_DARK}}>your coach?</span>
+      {/* ══ HOW IT WORKS — beige, clean separation ══ */}
+      <section style={{background:BEIGE,position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
+          <div style={{position:'absolute',top:'-40%',left:'-15%',width:'130%',height:'80%',background:`radial-gradient(ellipse 55% 55% at 40% 50%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX 19s ease-in-out infinite'}}/>
+          <div style={{position:'absolute',bottom:'-30%',right:'-15%',width:'110%',height:'70%',background:`radial-gradient(ellipse 50% 55% at 60% 55%,${ORANGE}0D 0%,transparent 65%)`,animation:'waveX2 24s ease-in-out infinite'}}/>
+        </div>
+        <div className="how-wave-bg"/>
+        <div className="sec-pad" style={{padding:'80px 52px 100px',maxWidth:'980px',margin:'0 auto',position:'relative',zIndex:1}}>
+          <Reveal>
+            <div style={{textAlign:'center',marginBottom:'56px'}}>
+              <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:ORANGE,marginBottom:'12px'}}>How it works</div>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(24px,3vw,40px)',fontWeight:'800',color:TEXT_B,margin:0}}>
+                Coaching, <span style={{fontStyle:'italic',color:GREEN_DARK}}>reimagined.</span>
               </h2>
-              <p style={{fontSize:'15px',color:TEXT_B_DIM,marginBottom:'40px',lineHeight:'1.8',fontWeight:'300'}}>
-                Athletes everywhere are already training smarter. Your coach is waiting.
-              </p>
-              <div style={{display:'flex',gap:'14px',justifyContent:'center',flexWrap:'wrap'}}>
-                <button onClick={()=>document.getElementById('coaches-section')?.scrollIntoView({behavior:'smooth'})}
-                  style={{padding:'15px 44px',borderRadius:'100px',background:`linear-gradient(135deg,${GREEN_DARK},${GREEN})`,color:'#0a1a00',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 6px 32px ${GREEN}44`,transition:'all 0.22s'}}
-                  onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow=`0 10px 44px ${GREEN}66`;}}
-                  onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow=`0 6px 32px ${GREEN}44`;}}>Browse coaches</button>
-                <button onClick={()=>navigate('/coach/signup')}
-                  style={{padding:'15px 44px',borderRadius:'100px',border:'1.5px solid rgba(0,0,0,0.1)',background:'rgba(255,255,255,0.45)',fontFamily:'inherit',fontSize:'15px',fontWeight:'600',cursor:'pointer',color:TEXT_B_DIM,transition:'all 0.22s',backdropFilter:'blur(8px)'}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=ORANGE;e.currentTarget.style.color=ORANGE;}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(0,0,0,0.1)';e.currentTarget.style.color=TEXT_B_DIM;}}>Become a coach</button>
-              </div>
-            </Reveal>
+            </div>
+          </Reveal>
+          <div className="how-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'3px',borderRadius:'22px',overflow:'hidden',boxShadow:'0 8px 48px rgba(0,0,0,0.09)'}}>
+            {[
+              {label:'Subscribe',color:GREEN_DARK,num:'01',title:'Choose your coach',body:'Browse real coaches across every sport and discipline. Pick the program built for your goals and subscribe monthly.'},
+              {label:'Train',color:ORANGE,num:'02',title:'Get your plan + AI helper',body:'Each coach sets you a custom training plan and a built-in AI assistant for quick questions between sessions.'},
+              {label:'Grow',color:GREEN_DARK,num:'03',title:'Track your progress',body:'Weekly reviews, direct coach messaging, and real progress tracking. Your coach adjusts your plan as you improve.'},
+            ].map((step,i)=>(
+              <Reveal key={i} delay={i*110} style={{display:'contents'}}>
+                <div style={{background:'rgba(255,255,255,0.75)',padding:'44px 30px',position:'relative',overflow:'hidden',transition:'background 0.22s,transform 0.22s',cursor:'default'}}
+                  onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.97)';e.currentTarget.style.transform='translateY(-3px)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.75)';e.currentTarget.style.transform='none';}}>
+                  <div style={{position:'absolute',top:'8px',right:'12px',fontFamily:"'Playfair Display',serif",fontSize:'72px',fontWeight:'900',color:'rgba(0,0,0,0.04)',lineHeight:1,userSelect:'none'}}>{step.num}</div>
+                  <div style={{width:'36px',height:'3px',borderRadius:'2px',background:step.color,marginBottom:'20px'}}/>
+                  <div style={{fontSize:'10px',fontWeight:'700',letterSpacing:'0.2em',textTransform:'uppercase',color:step.color,marginBottom:'14px'}}>{step.label}</div>
+                  <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:'19px',fontWeight:'700',color:TEXT_B,marginBottom:'14px',lineHeight:'1.3'}}>{step.title}</h3>
+                  <p style={{fontSize:'13px',color:TEXT_B_DIM,lineHeight:'1.85',margin:0}}>{step.body}</p>
+                </div>
+              </Reveal>
+            ))}
           </div>
-        </section>
-      </div>{/* end light-sections-wrap */}
+        </div>
+      </section>
+
+      {/* ══ CTA ══ */}
+      <section style={{background:BEIGE2,position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
+          <div style={{position:'absolute',top:'-50%',left:'-10%',width:'120%',height:'100%',background:`radial-gradient(ellipse 60% 55% at 45% 55%,${ORANGE}12 0%,transparent 65%)`,animation:'waveX 16s ease-in-out infinite'}}/>
+          <div style={{position:'absolute',top:'-30%',right:'-20%',width:'100%',height:'90%',background:`radial-gradient(ellipse 50% 50% at 65% 45%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX2 21s ease-in-out infinite'}}/>
+        </div>
+        <div className="cta-wave-bg"/>
+        <div className="sec-pad" style={{padding:'110px 52px',textAlign:'center',position:'relative',zIndex:1,maxWidth:'580px',margin:'0 auto'}}>
+          <Reveal>
+            <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:ORANGE,marginBottom:'18px'}}>Start today</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,52px)',fontWeight:'900',color:TEXT_B,lineHeight:'1.1',marginBottom:'18px'}}>
+              Ready to find<br/><span style={{fontStyle:'italic',color:GREEN_DARK}}>your coach?</span>
+            </h2>
+            <p style={{fontSize:'15px',color:TEXT_B_DIM,marginBottom:'40px',lineHeight:'1.8',fontWeight:'300'}}>
+              Athletes everywhere are already training smarter. Your coach is waiting.
+            </p>
+            <div style={{display:'flex',gap:'14px',justifyContent:'center',flexWrap:'wrap'}}>
+              <button onClick={()=>document.getElementById('coaches-section')?.scrollIntoView({behavior:'smooth'})}
+                style={{padding:'15px 44px',borderRadius:'100px',background:`linear-gradient(135deg,${GREEN_DARK},${GREEN})`,color:'#0a1a00',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 6px 32px ${GREEN}44`,transition:'all 0.22s'}}
+                onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow=`0 10px 44px ${GREEN}66`;}}
+                onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow=`0 6px 32px ${GREEN}44`;}}>Browse coaches</button>
+              <button onClick={()=>navigate('/coach/signup')}
+                style={{padding:'15px 44px',borderRadius:'100px',border:'1.5px solid rgba(0,0,0,0.1)',background:'rgba(255,255,255,0.55)',fontFamily:'inherit',fontSize:'15px',fontWeight:'600',cursor:'pointer',color:TEXT_B_DIM,transition:'all 0.22s',backdropFilter:'blur(8px)'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=ORANGE;e.currentTarget.style.color=ORANGE;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(0,0,0,0.1)';e.currentTarget.style.color=TEXT_B_DIM;}}>Become a coach</button>
+            </div>
+          </Reveal>
+        </div>
+      </section>
 
       {/* ══ FOOTER ══ */}
       <footer style={{padding:'24px 52px',borderTop:`1px solid ${BORDER}`,background:NAVY,position:'relative',zIndex:1}}>
