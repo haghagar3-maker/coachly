@@ -171,9 +171,9 @@ function CoachCard({coach,onView,delay=0}){
                 <span style={{fontSize:'11px',color:TEXT_DIM,marginLeft:'3px'}}>({starRating})</span>
               </div>
             )}
-            {coach.subscriber_count>0 && <span style={{fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.05)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}`}}>{coach.subscriber_count} clients</span>}
-            {coach.years_experience>0 && <span style={{fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.05)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}`}}>{coach.years_experience}y exp</span>}
-            {coach.sessions_count>0 && <span style={{fontSize:'11px',color:TEXT_DIM,background:'rgba(255,255,255,0.05)',padding:'3px 9px',borderRadius:'100px',border:`1px solid ${BORDER}`}}>{coach.sessions_count} sessions</span>}
+            {coach.subscriber_count>0 && <span style={{fontSize:'11px',fontWeight:'700',color:'#fff',background:`linear-gradient(120deg,${ORANGE},#fb923c)`,padding:'4px 11px',borderRadius:'100px',boxShadow:`0 2px 10px ${ORANGE}55`}}>{coach.subscriber_count} clients</span>}
+            {coach.years_experience>0 && <span style={{fontSize:'11px',fontWeight:'700',color:'#fff',background:'linear-gradient(120deg,#3B82F6,#60A5FA)',padding:'4px 11px',borderRadius:'100px',boxShadow:'0 2px 10px rgba(59,130,246,0.45)'}}>{coach.years_experience}y exp</span>}
+            {coach.sessions_count>0 && <span style={{fontSize:'11px',fontWeight:'700',color:'#0a1a00',background:`linear-gradient(120deg,${GREEN_DARK},${GREEN})`,padding:'4px 11px',borderRadius:'100px',boxShadow:`0 2px 10px ${GREEN}55`}}>{coach.sessions_count} sessions</span>}
           </div>
         </div>
 
@@ -332,6 +332,7 @@ export default function Home(){
   const [categories,setCategories]=useState([]);
   const [topCoaches,setTopCoaches]=useState([]);
   const [coachesByCat,setCoachesByCat]=useState({});
+  const [allCoaches,setAllCoaches]=useState([]);
   const [activeFilter,setActiveFilter]=useState('all');
   const [searchQuery,setSearchQuery]=useState('');
   const [searchFocus,setSearchFocus]=useState(false);
@@ -494,6 +495,7 @@ export default function Home(){
       const sorted=[...coaches].sort((a,b)=>rankScore(b)-rankScore(a));
       setCategories(cats.slice(0,8));
       setTopCoaches(sorted.slice(0,10));
+      setAllCoaches(sorted);
       const map={};
       cats.slice(0,8).forEach(cat=>{
         map[cat.slug]=sorted.filter(c=>c.category_slug===cat.slug||(c.category_name||'').toLowerCase()===cat.name.toLowerCase()).slice(0,8);
@@ -505,8 +507,7 @@ export default function Home(){
   },[]);
 
   /* ── filter+search ── */
-  const allForFilter=Object.values(coachesByCat).flat();
-  const filteredCoaches=allForFilter
+  const filteredCoaches=allCoaches
     .filter(c=>{
       if(activeFilter!=='all'&&c.category_slug!==activeFilter&&(c.category_name||'').toLowerCase()!==activeFilter) return false;
       if(searchQuery.trim()){
@@ -516,7 +517,7 @@ export default function Home(){
       return true;
     })
     .sort((a,b)=>rankScore(b)-rankScore(a))
-    .slice(0,20);
+    .slice(0,50);
 
   const token=localStorage.getItem('coachly_token');
   const tokenType=localStorage.getItem('coachly_token_type');
@@ -659,21 +660,43 @@ export default function Home(){
               {[1,2,3].map(i=><div key={i} style={{flex:'0 0 calc(28% - 16px)',minWidth:'280px'}}><LoadingSkeleton type="card"/></div>)}
             </div>
           ) : isFiltering ? (
-            <CoachRow
-              title={activeFilter==='all'?`Results for "${searchQuery}"`:categories.find(c=>c.slug===activeFilter)?.name||activeFilter}
-              coaches={filteredCoaches}
-              onView={id=>navigate(`/coach/${id}`)}
-              bgDark={true}
-            />
+            filteredCoaches.length>0 ? (
+              <CoachRow
+                title={activeFilter==='all'?`Results for "${searchQuery}"`:categories.find(c=>c.slug===activeFilter)?.name||activeFilter}
+                coaches={filteredCoaches}
+                onView={id=>navigate(`/coach/${id}`)}
+                bgDark={true}
+              />
+            ) : (
+              <Reveal>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',textAlign:'center',padding:'70px 24px',background:'rgba(255,255,255,0.03)',border:`1px solid ${BORDER}`,borderRadius:'24px'}}>
+                  <div style={{width:'64px',height:'64px',borderRadius:'50%',background:`${GREEN}14`,border:`1px solid ${GREEN}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'26px',marginBottom:'18px'}}>🔍</div>
+                  <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:'20px',fontWeight:'700',color:TEXT,margin:'0 0 8px'}}>No coaches yet</h3>
+                  <p style={{fontSize:'13px',color:TEXT_DIM,maxWidth:'360px',margin:0,lineHeight:'1.7'}}>
+                    {searchQuery.trim()
+                      ? `We couldn't find any coaches matching "${searchQuery}".`
+                      : `There aren't any coaches in ${activeFilter==='all'?'this category':(categories.find(c=>c.slug===activeFilter)?.name||activeFilter)} yet — check back soon.`}
+                  </p>
+                </div>
+              </Reveal>
+            )
           ) : (
-            <>
+            topCoaches.length===0 ? (
+              <Reveal>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',textAlign:'center',padding:'70px 24px',background:'rgba(255,255,255,0.03)',border:`1px solid ${BORDER}`,borderRadius:'24px'}}>
+                  <div style={{width:'64px',height:'64px',borderRadius:'50%',background:`${GREEN}14`,border:`1px solid ${GREEN}33`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'26px',marginBottom:'18px'}}>🔍</div>
+                  <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:'20px',fontWeight:'700',color:TEXT,margin:'0 0 8px'}}>No coaches yet</h3>
+                  <p style={{fontSize:'13px',color:TEXT_DIM,maxWidth:'360px',margin:0,lineHeight:'1.7'}}>We're still onboarding coaches — check back soon.</p>
+                </div>
+              </Reveal>
+            ) : (<>
               <CoachRow title="Featured coaches" label="Top rated" coaches={topCoaches} onView={id=>navigate(`/coach/${id}`)} bgDark={true}/>
               {categories.map(cat=>(
                 coachesByCat[cat.slug]?.length>0 && (
                   <CoachRow key={cat.id} title={cat.name} coaches={coachesByCat[cat.slug]} onView={id=>navigate(`/coach/${id}`)} bgDark={true}/>
                 )
               ))}
-            </>
+            </>)
           )}
         </div>
       </section>
