@@ -6,9 +6,9 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import Toast, { showToast } from '../components/Toast';
 
 /* ─── Palette ─── */
-const GREEN       = '#22C55E';
-const GREEN_DARK  = '#15803D';
-const GREEN_LIGHT = '#86efac';
+const GREEN       = '#C8FF00';          // lime-green matching login page
+const GREEN_DARK  = '#8FB800';          // darker lime for gradients/text on light
+const GREEN_LIGHT = '#DEFF6E';          // lighter lime for shimmer
 const ORANGE      = '#F97316';
 const NAVY        = '#0B1528';
 
@@ -68,7 +68,7 @@ function LegalModal({ type, onClose }) {
 }
 
 /* ─── helpers ─── */
-const AVATAR_COLORS=['#22C55E','#3B82F6','#F59E0B','#8B5CF6','#06B6D4','#EF4444','#EC4899'];
+const AVATAR_COLORS=['#C8FF00','#3B82F6','#F59E0B','#8B5CF6','#06B6D4','#EF4444','#EC4899'];
 function avatarColor(id){
   if(!id) return AVATAR_COLORS[0];
   let h=0; for(let i=0;i<id.length;i++) h=id.charCodeAt(i)+((h<<5)-h);
@@ -124,7 +124,7 @@ function CoachCard({coach,onView,delay=0}){
         }}
       >
         {/* BANNER */}
-        <div style={{height:'270px',position:'relative',overflow:'hidden',borderRadius:'22px 22px 0 0',flexShrink:0,background:heroImage?'#000':`linear-gradient(135deg,rgba(34,197,94,0.08) 0%,rgba(34,197,94,0.02) 100%)`}}>
+        <div style={{height:'270px',position:'relative',overflow:'hidden',borderRadius:'22px 22px 0 0',flexShrink:0,background:heroImage?'#000':`linear-gradient(135deg,rgba(200,255,0,0.08) 0%,rgba(200,255,0,0.02) 100%)`}}>
           {heroImage
             ? <img src={heroImage} alt={coach.name} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transform:hovered?'scale(1.06)':'scale(1)',transition:'transform 0.55s ease'}}/>
             : <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -177,7 +177,7 @@ function CoachCard({coach,onView,delay=0}){
         {/* BOTTOM STRIP */}
         <div style={{padding:'14px 20px 18px',borderTop:`1px solid ${BORDER}`,display:'flex',alignItems:'center',gap:'12px',marginTop:'auto',background:'rgba(0,0,0,0.2)',borderRadius:revealed?'0':'0 0 22px 22px'}}>
           <div style={{width:'42px',height:'42px',borderRadius:'50%',flexShrink:0,overflow:'hidden',background:profilePic?'#000':avatarColor(coach.id),border:`2px solid ${GREEN}55`,display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 0 0 3px ${GREEN}22`}}>
-            {profilePic?<img src={profilePic} alt={coach.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:'14px',fontWeight:'700',color:'#fff'}}>{initials(coach.name)}</span>}
+            {profilePic?<img src={profilePic} alt={coach.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:'14px',fontWeight:'700',color:'#000'}}>{initials(coach.name)}</span>}
           </div>
           <div style={{minWidth:0,flex:1}}>
             <div style={{fontSize:'14px',fontWeight:'700',color:TEXT,lineHeight:'1.2',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{coach.name}</div>
@@ -196,7 +196,7 @@ function CoachCard({coach,onView,delay=0}){
       <div style={{maxHeight:revealed?`${ACTION_H}px`:'0px',overflow:'hidden',transition:'max-height 0.28s cubic-bezier(0.22,1,0.36,1)',borderRadius:'0 0 22px 22px'}}>
         <button
           onClick={(e)=>{e.stopPropagation();onView(coach.slug||coach.id);}}
-          style={{width:'100%',height:`${ACTION_H}px`,border:'none',background:`linear-gradient(100deg,${GREEN_DARK},${GREEN},${GREEN_LIGHT})`,color:'#03200a',display:'flex',alignItems:'center',justifyContent:'center',gap:'9px',fontSize:'13px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit',letterSpacing:'0.05em',textTransform:'uppercase',borderRadius:'0 0 22px 22px'}}>
+          style={{width:'100%',height:`${ACTION_H}px`,border:'none',background:`linear-gradient(100deg,${GREEN_DARK},${GREEN},${GREEN_LIGHT})`,color:'#0a1a00',display:'flex',alignItems:'center',justifyContent:'center',gap:'9px',fontSize:'13px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit',letterSpacing:'0.05em',textTransform:'uppercase',borderRadius:'0 0 22px 22px'}}>
           View Profile <span style={{fontSize:'17px'}}>→</span>
         </button>
       </div>
@@ -272,13 +272,13 @@ function CoachRow({title,label,coaches,onView,bgDark=true}){
         </div>
         <div style={{position:'relative'}}>
           {canLeft&&(
-            <button onClick={()=>scroll(-1)} style={{position:'absolute',top:'42%',transform:'translateY(-50%)',left:'-22px',zIndex:20,width:'44px',height:'44px',borderRadius:'50%',background:bgDark?CARD_BG:'#fff',border:`1px solid ${GREEN}88`,color:GREEN,fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 20px rgba(34,197,94,0.2)',transition:'all 0.18s'}}
-              onMouseEnter={e=>{e.currentTarget.style.background=GREEN;e.currentTarget.style.color='#fff';}}
+            <button onClick={()=>scroll(-1)} style={{position:'absolute',top:'42%',transform:'translateY(-50%)',left:'-22px',zIndex:20,width:'44px',height:'44px',borderRadius:'50%',background:bgDark?CARD_BG:'#fff',border:`1px solid ${GREEN}88`,color:GREEN,fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 4px 20px rgba(200,255,0,0.2)`,transition:'all 0.18s'}}
+              onMouseEnter={e=>{e.currentTarget.style.background=GREEN;e.currentTarget.style.color='#000';}}
               onMouseLeave={e=>{e.currentTarget.style.background=bgDark?CARD_BG:'#fff';e.currentTarget.style.color=GREEN;}}>‹</button>
           )}
           {canRight&&(
-            <button onClick={()=>scroll(1)} style={{position:'absolute',top:'42%',transform:'translateY(-50%)',right:'-22px',zIndex:20,width:'44px',height:'44px',borderRadius:'50%',background:bgDark?CARD_BG:'#fff',border:`1px solid ${GREEN}88`,color:GREEN,fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 20px rgba(34,197,94,0.2)',transition:'all 0.18s'}}
-              onMouseEnter={e=>{e.currentTarget.style.background=GREEN;e.currentTarget.style.color='#fff';}}
+            <button onClick={()=>scroll(1)} style={{position:'absolute',top:'42%',transform:'translateY(-50%)',right:'-22px',zIndex:20,width:'44px',height:'44px',borderRadius:'50%',background:bgDark?CARD_BG:'#fff',border:`1px solid ${GREEN}88`,color:GREEN,fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 4px 20px rgba(200,255,0,0.2)`,transition:'all 0.18s'}}
+              onMouseEnter={e=>{e.currentTarget.style.background=GREEN;e.currentTarget.style.color='#000';}}
               onMouseLeave={e=>{e.currentTarget.style.background=bgDark?CARD_BG:'#fff';e.currentTarget.style.color=GREEN;}}>›</button>
           )}
           {canLeft&&<div style={{position:'absolute',left:0,top:0,bottom:0,width:'70px',background:`linear-gradient(to right,${fadeColor},transparent)`,zIndex:10,pointerEvents:'none'}}/>}
@@ -300,8 +300,8 @@ function CoachRow({title,label,coaches,onView,bgDark=true}){
 export default function Home(){
   const navigate=useNavigate();
   const [categories,setCategories]=useState([]);
-  const [topCoaches,setTopCoaches]=useState([]);       // featured row: top 10 overall
-  const [coachesByCat,setCoachesByCat]=useState({});   // { catSlug: coaches[] }
+  const [topCoaches,setTopCoaches]=useState([]);
+  const [coachesByCat,setCoachesByCat]=useState({});
   const [activeFilter,setActiveFilter]=useState('all');
   const [searchQuery,setSearchQuery]=useState('');
   const [searchFocus,setSearchFocus]=useState(false);
@@ -312,13 +312,22 @@ export default function Home(){
 
   /* ── fonts & keyframes ── */
   useEffect(()=>{
-    const id='coachly-v18';
+    const id='coachly-v19';
     if(document.getElementById(id)) return;
     const s=document.createElement('style'); s.id=id;
     s.textContent=`
       @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=Inter:wght@300;400;500;600;700&display=swap');
       @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
       @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+      /* ── Page-wide background color wave ── */
+      /* A slow hue shift travels left→right across the whole page */
+      @keyframes bgWave{
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
       @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
       @keyframes waveX{
         0%  {transform:translateX(-30%) scaleY(1)}
@@ -344,8 +353,68 @@ export default function Home(){
       *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
       button{outline:none;-webkit-tap-highlight-color:transparent}
       ::-webkit-scrollbar{display:none}
-      .gshimmer{background:linear-gradient(90deg,${GREEN},#86efac,${GREEN},${GREEN_DARK});background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 4s linear infinite}
+      .gshimmer{
+        background:linear-gradient(90deg,${GREEN},${GREEN_LIGHT},${GREEN},${GREEN_DARK});
+        background-size:200% auto;
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        background-clip:text;
+        animation:shimmer 4s linear infinite
+      }
+
+      /* ── NAVBAR color wave overlay ── */
+      .nav-wave{
+        position:absolute;inset:0;
+        background: linear-gradient(
+          270deg,
+          rgba(200,255,0,0.07),
+          rgba(249,115,22,0.05),
+          rgba(200,255,0,0.04),
+          rgba(59,130,246,0.05),
+          rgba(200,255,0,0.07)
+        );
+        background-size: 400% 400%;
+        animation: bgWave 14s ease infinite;
+        pointer-events:none;
+        z-index:0;
+      }
+
+      /* ── HERO background color wave (behind video) ── */
+      .hero-wave-bg{
+        position:absolute;inset:0;
+        background: linear-gradient(
+          270deg,
+          #0B1528,
+          #0d1f10,
+          #1a1208,
+          #0B1528,
+          #0a1520,
+          #0B1528
+        );
+        background-size: 600% 600%;
+        animation: bgWave 20s ease infinite;
+        z-index:0;
+      }
+
+      /* ── COACHES SECTION background color wave ── */
+      .coaches-wave-bg{
+        position:absolute;inset:0;
+        background: linear-gradient(
+          270deg,
+          #0B1528,
+          #0e1f14,
+          #161008,
+          #0c1426,
+          #0B1528
+        );
+        background-size: 500% 500%;
+        animation: bgWave 18s ease infinite;
+        z-index:0;
+      }
+
       @media(max-width:1100px){[data-coach-card]{flex:0 0 calc(40% - 16px)!important}}
+
+      /* ── Mobile fixes for search + pills ── */
       @media(max-width:750px){
         [data-coach-card]{flex:0 0 calc(72% - 16px)!important;min-width:250px!important}
         .hero-h1{font-size:36px!important;line-height:1.08!important}
@@ -354,13 +423,30 @@ export default function Home(){
         .hide-mob{display:none!important}
         .footer-row{flex-direction:column!important;align-items:center!important;text-align:center!important}
         .nav-inner{padding:0 16px!important}
-        .pill-bar{gap:8px!important}
+        .pill-bar{gap:6px!important}
+
+        /* search full width on top, pills wrap below */
+        .search-filter-wrap{
+          flex-direction:column!important;
+          align-items:stretch!important;
+          gap:12px!important;
+        }
+        .search-box{
+          min-width:0!important;
+          max-width:100%!important;
+          width:100%!important;
+        }
+        .pill-bar{
+          flex-wrap:wrap!important;
+          width:100%!important;
+        }
       }
       @media(max-width:480px){
         [data-coach-card]{flex:0 0 86vw!important;min-width:0!important}
         .hero-h1{font-size:28px!important}
         .sec-pad{padding:44px 14px!important}
         .nav-inner{padding:0 12px!important}
+        .pill-bar button{font-size:12px!important;padding:7px 14px!important}
       }
     `;
     document.head.appendChild(s);
@@ -375,8 +461,7 @@ export default function Home(){
     ]).then(([cats,coaches])=>{
       const sorted=[...coaches].sort((a,b)=>rankScore(b)-rankScore(a));
       setCategories(cats.slice(0,8));
-      setTopCoaches(sorted.slice(0,10));  // featured: top 10
-      // per-category: top 8 each
+      setTopCoaches(sorted.slice(0,10));
       const map={};
       cats.slice(0,8).forEach(cat=>{
         map[cat.slug]=sorted.filter(c=>c.category_slug===cat.slug||(c.category_name||'').toLowerCase()===cat.name.toLowerCase()).slice(0,8);
@@ -387,7 +472,7 @@ export default function Home(){
     .finally(()=>setLoading(false));
   },[]);
 
-  /* ── filter+search for the "active filter" mode ── */
+  /* ── filter+search ── */
   const allForFilter=Object.values(coachesByCat).flat();
   const filteredCoaches=allForFilter
     .filter(c=>{
@@ -409,7 +494,7 @@ export default function Home(){
     padding:'8px 20px',borderRadius:'100px',
     border:`1.5px solid ${active?GREEN:'rgba(255,255,255,0.12)'}`,
     background:active?GREEN:'transparent',
-    color:active?'#022c12':TEXT_DIM,
+    color:active?'#0a1a00':TEXT_DIM,
     fontFamily:'inherit',fontSize:'13px',fontWeight:'600',cursor:'pointer',
     transition:'all 0.18s',letterSpacing:'0.02em',whiteSpace:'nowrap',
   });
@@ -420,8 +505,10 @@ export default function Home(){
       {legalModal&&<LegalModal type={legalModal} onClose={()=>setLegalModal(null)}/>}
 
       {/* ══ NAVBAR ══ */}
-      <header style={{position:'fixed',top:0,left:0,right:0,zIndex:100,height:'66px',background:'rgba(8,14,28,0.93)',backdropFilter:'blur(20px)',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-        <div className="nav-inner" style={{maxWidth:'1440px',margin:'0 auto',height:'100%',padding:'0 40px',display:'grid',gridTemplateColumns:'1fr auto 1fr',alignItems:'center'}}>
+      <header style={{position:'fixed',top:0,left:0,right:0,zIndex:100,height:'66px',background:'rgba(8,14,28,0.93)',backdropFilter:'blur(20px)',borderBottom:'1px solid rgba(255,255,255,0.06)',overflow:'hidden'}}>
+        {/* subtle color wave behind the navbar */}
+        <div className="nav-wave"/>
+        <div className="nav-inner" style={{maxWidth:'1440px',margin:'0 auto',height:'100%',padding:'0 40px',display:'grid',gridTemplateColumns:'1fr auto 1fr',alignItems:'center',position:'relative',zIndex:1}}>
           <div>
             <button className="hide-mob" onClick={()=>navigate('/coach/signup')}
               style={{background:'none',border:'none',fontFamily:'inherit',fontSize:'13px',color:TEXT_DIM,cursor:'pointer',padding:'8px 0',transition:'color 0.2s'}}
@@ -435,16 +522,16 @@ export default function Home(){
           </div>
           <div style={{display:'flex',alignItems:'center',gap:'8px',justifyContent:'flex-end'}}>
             {token&&tokenType==='user'?(
-              <button onClick={()=>navigate('/dashboard')} style={{padding:'9px 22px',borderRadius:'100px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>Dashboard</button>
+              <button onClick={()=>navigate('/dashboard')} style={{padding:'9px 22px',borderRadius:'100px',background:GREEN,color:'#0a1a00',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>Dashboard</button>
             ):token&&tokenType==='coach'?(
-              <button onClick={()=>navigate('/coach/dashboard')} style={{padding:'9px 22px',borderRadius:'100px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>Coach dashboard</button>
+              <button onClick={()=>navigate('/coach/dashboard')} style={{padding:'9px 22px',borderRadius:'100px',background:GREEN,color:'#0a1a00',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>Coach dashboard</button>
             ):(<>
               <button onClick={()=>navigate('/user/login')}
                 style={{padding:'9px 20px',borderRadius:'100px',border:'1px solid rgba(255,255,255,0.14)',background:'transparent',fontFamily:'inherit',fontSize:'13px',color:TEXT_DIM,cursor:'pointer',transition:'all 0.18s'}}
                 onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.35)';e.currentTarget.style.color='#fff';}}
                 onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.14)';e.currentTarget.style.color=TEXT_DIM;}}>Log in</button>
               <button onClick={()=>navigate('/user/login')}
-                style={{padding:'9px 22px',borderRadius:'100px',background:`linear-gradient(135deg,${GREEN_DARK},${GREEN})`,color:'#fff',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 18px ${GREEN}44`,transition:'all 0.18s'}}
+                style={{padding:'9px 22px',borderRadius:'100px',background:`linear-gradient(135deg,${GREEN_DARK},${GREEN})`,color:'#0a1a00',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 18px ${GREEN}44`,transition:'all 0.18s'}}
                 onMouseEnter={e=>{e.currentTarget.style.boxShadow=`0 6px 28px ${GREEN}66`;e.currentTarget.style.transform='translateY(-1px)';}}
                 onMouseLeave={e=>{e.currentTarget.style.boxShadow=`0 4px 18px ${GREEN}44`;e.currentTarget.style.transform='none';}}>Get started</button>
             </>)}
@@ -453,22 +540,25 @@ export default function Home(){
       </header>
 
       {/* ══ HERO ══ */}
-      <section style={{position:'relative',height:'100vh',minHeight:'600px',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',background:'#060D1A'}}>
+      <section style={{position:'relative',height:'100vh',minHeight:'600px',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+        {/* animated bg color wave — visible before/behind video */}
+        <div className="hero-wave-bg"/>
+
         <video ref={videoRef} autoPlay muted loop playsInline onLoadedData={()=>setVideoLoaded(true)}
-          style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:videoLoaded?0.32:0,transition:'opacity 1.5s ease'}}>
+          style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:videoLoaded?0.32:0,transition:'opacity 1.5s ease',zIndex:1}}>
           <source src="https://videos.pexels.com/video-files/4761789/4761789-uhd_2560_1440_25fps.mp4" type="video/mp4"/>
           <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4"/>
         </video>
 
-        {/* animated wave blobs */}
-        <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:1}}>
-          <div style={{position:'absolute',top:'-20%',left:'-10%',width:'160%',height:'70%',background:`radial-gradient(ellipse 60% 55% at 35% 50%,${GREEN}18 0%,transparent 65%)`,animation:'waveX 18s ease-in-out infinite'}}/>
-          <div style={{position:'absolute',bottom:'-20%',right:'-15%',width:'140%',height:'65%',background:`radial-gradient(ellipse 55% 50% at 65% 50%,${ORANGE}12 0%,transparent 65%)`,animation:'waveX2 22s ease-in-out infinite'}}/>
+        {/* ambient blobs */}
+        <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:2}}>
+          <div style={{position:'absolute',top:'-20%',left:'-10%',width:'160%',height:'70%',background:`radial-gradient(ellipse 60% 55% at 35% 50%,${GREEN}14 0%,transparent 65%)`,animation:'waveX 18s ease-in-out infinite'}}/>
+          <div style={{position:'absolute',bottom:'-20%',right:'-15%',width:'140%',height:'65%',background:`radial-gradient(ellipse 55% 50% at 65% 50%,${ORANGE}0E 0%,transparent 65%)`,animation:'waveX2 22s ease-in-out infinite'}}/>
         </div>
 
-        <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(6,13,26,0.15) 0%,rgba(6,13,26,0) 40%,rgba(11,21,40,1) 100%)',zIndex:2}}/>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(6,13,26,0.15) 0%,rgba(6,13,26,0) 40%,rgba(11,21,40,1) 100%)',zIndex:3}}/>
 
-        <div style={{position:'relative',zIndex:3,textAlign:'center',padding:'0 24px',maxWidth:'860px',margin:'0 auto'}}>
+        <div style={{position:'relative',zIndex:4,textAlign:'center',padding:'0 24px',maxWidth:'860px',margin:'0 auto'}}>
           <div style={{animation:'fadeUp 0.5s ease both',fontSize:'11px',fontWeight:'700',letterSpacing:'0.22em',textTransform:'uppercase',color:GREEN,marginBottom:'20px'}}>Every Sport · Every Level · Any Goal</div>
           <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:'68px',fontWeight:'900',lineHeight:'1.05',color:'#F1F5F9',margin:0,letterSpacing:'-0.02em'}}>
             <AnimatedHeadline text="Find your coach." delay={200}/>
@@ -480,7 +570,7 @@ export default function Home(){
           </p>
           <div style={{animation:'fadeUp 0.6s ease 1s both',display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
             <button onClick={()=>document.getElementById('coaches-section')?.scrollIntoView({behavior:'smooth'})}
-              style={{padding:'15px 38px',borderRadius:'100px',background:`linear-gradient(135deg,${GREEN_DARK},${GREEN})`,color:'#fff',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 6px 32px ${GREEN}55`,transition:'all 0.22s'}}
+              style={{padding:'15px 38px',borderRadius:'100px',background:`linear-gradient(135deg,${GREEN_DARK},${GREEN})`,color:'#0a1a00',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 6px 32px ${GREEN}55`,transition:'all 0.22s'}}
               onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow=`0 10px 48px ${GREEN}77`;}}
               onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow=`0 6px 32px ${GREEN}55`;}}>Find a coach</button>
             <button onClick={()=>navigate('/coach/signup')}
@@ -489,30 +579,31 @@ export default function Home(){
               onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(241,245,249,0.28)';e.currentTarget.style.background='rgba(241,245,249,0.07)';}}>Become a coach</button>
           </div>
         </div>
-        <div style={{position:'absolute',bottom:'28px',left:'50%',transform:'translateX(-50%)',display:'flex',flexDirection:'column',alignItems:'center',gap:'8px',animation:'fadeUp 0.6s ease 1.4s both',zIndex:3}}>
+        <div style={{position:'absolute',bottom:'28px',left:'50%',transform:'translateX(-50%)',display:'flex',flexDirection:'column',alignItems:'center',gap:'8px',animation:'fadeUp 0.6s ease 1.4s both',zIndex:4}}>
           <span style={{fontSize:'10px',letterSpacing:'0.16em',textTransform:'uppercase',color:'rgba(255,255,255,0.2)'}}>Scroll</span>
           <div style={{width:'1px',height:'32px',background:`linear-gradient(to bottom,${GREEN},transparent)`,animation:'pulse 2s ease infinite'}}/>
         </div>
       </section>
 
-      {/* ══ COACHES SECTION — flows seamlessly from hero ══ */}
-      {/* Wave blending layer: hero bottom bleeds into coaches section */}
-      <div style={{height:'120px',marginTop:'-120px',background:`linear-gradient(to bottom,transparent,${NAVY})`,position:'relative',zIndex:2,pointerEvents:'none'}}/>
-
+      {/* ══ COACHES SECTION ══ */}
       <section id="coaches-section" style={{background:NAVY,position:'relative',overflow:'hidden'}}>
-        {/* live wave background for coaches section */}
-        <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
-          <div style={{position:'absolute',top:'-30%',right:'-20%',width:'120%',height:'80%',background:`radial-gradient(ellipse 50% 60% at 70% 40%,${GREEN}0D 0%,transparent 65%)`,animation:'waveX2 20s ease-in-out infinite'}}/>
-          <div style={{position:'absolute',bottom:'-30%',left:'-20%',width:'120%',height:'80%',background:`radial-gradient(ellipse 55% 55% at 30% 60%,${ORANGE}08 0%,transparent 65%)`,animation:'waveX 25s ease-in-out infinite'}}/>
+        {/* animated bg color wave */}
+        <div className="coaches-wave-bg"/>
+
+        {/* ambient blobs on top of wave */}
+        <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:1}}>
+          <div style={{position:'absolute',top:'-30%',right:'-20%',width:'120%',height:'80%',background:`radial-gradient(ellipse 50% 60% at 70% 40%,${GREEN}09 0%,transparent 65%)`,animation:'waveX2 20s ease-in-out infinite'}}/>
+          <div style={{position:'absolute',bottom:'-30%',left:'-20%',width:'120%',height:'80%',background:`radial-gradient(ellipse 55% 55% at 30% 60%,${ORANGE}06 0%,transparent 65%)`,animation:'waveX 25s ease-in-out infinite'}}/>
         </div>
 
-        <div className="sec-pad" style={{padding:'20px 52px 80px',maxWidth:'1440px',margin:'0 auto',position:'relative',zIndex:1}}>
+        <div className="sec-pad" style={{padding:'60px 52px 80px',maxWidth:'1440px',margin:'0 auto',position:'relative',zIndex:2}}>
 
-          {/* search + pills */}
+          {/* search + pills — mobile stacks vertically */}
           <Reveal>
-            <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:'16px',marginBottom:'24px'}}>
+            <div className="search-filter-wrap" style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:'16px',marginBottom:'32px'}}>
+
               {/* search */}
-              <div style={{position:'relative',flex:'0 0 auto',minWidth:'260px',maxWidth:'400px'}}>
+              <div className="search-box" style={{position:'relative',flex:'0 0 auto',minWidth:'260px',maxWidth:'400px'}}>
                 <div style={{position:'absolute',left:'16px',top:'50%',transform:'translateY(-50%)',color:searchFocus?GREEN:TEXT_FAINT,transition:'color 0.2s',pointerEvents:'none'}}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -525,12 +616,12 @@ export default function Home(){
                   onChange={e=>setSearchQuery(e.target.value)}
                   onFocus={()=>setSearchFocus(true)}
                   onBlur={()=>setSearchFocus(false)}
-                  style={{width:'100%',padding:'11px 40px 11px 42px',borderRadius:'100px',border:`1.5px solid ${searchFocus?GREEN:'rgba(255,255,255,0.1)'}`,background:'rgba(255,255,255,0.05)',color:TEXT,fontFamily:'inherit',fontSize:'13px',outline:'none',transition:'all 0.2s',boxShadow:searchFocus?`0 0 0 3px ${GREEN}18`:'none'}}
+                  style={{width:'100%',padding:'11px 40px 11px 42px',borderRadius:'100px',border:`1.5px solid ${searchFocus?GREEN:'rgba(255,255,255,0.1)'}`,background:'rgba(255,255,255,0.05)',color:TEXT,fontFamily:'inherit',fontSize:'13px',outline:'none',transition:'all 0.2s',boxShadow:searchFocus?`0 0 0 3px ${GREEN}22`:'none'}}
                 />
                 {searchQuery&&<button onClick={()=>setSearchQuery('')} style={{position:'absolute',right:'12px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:TEXT_FAINT,cursor:'pointer',fontSize:'18px',lineHeight:1,padding:'2px'}}>×</button>}
               </div>
 
-              {/* pills */}
+              {/* category pills */}
               {!loading&&categories.length>0&&(
                 <div className="pill-bar" style={{display:'flex',flexWrap:'wrap',gap:'8px',flex:1}}>
                   <button onClick={()=>setActiveFilter('all')} style={makePill(activeFilter==='all')}
@@ -553,7 +644,6 @@ export default function Home(){
               {[1,2,3].map(i=><div key={i} style={{flex:'0 0 calc(28% - 16px)',minWidth:'280px'}}><LoadingSkeleton type="card"/></div>)}
             </div>
           ) : isFiltering ? (
-            /* ── FILTERED VIEW: single carousel of results ── */
             <CoachRow
               title={activeFilter==='all'?`Results for "${searchQuery}"`:categories.find(c=>c.slug===activeFilter)?.name||activeFilter}
               coaches={filteredCoaches}
@@ -561,7 +651,6 @@ export default function Home(){
               bgDark={true}
             />
           ) : (
-            /* ── DEFAULT VIEW: multiple rows ── */
             <>
               <CoachRow title="Featured coaches" label="Top rated" coaches={topCoaches} onView={id=>navigate(`/coach/${id}`)} bgDark={true}/>
               {categories.map(cat=>(
@@ -572,15 +661,12 @@ export default function Home(){
             </>
           )}
         </div>
-
-        {/* smooth bottom blend into beige */}
-        <div style={{height:'160px',background:`linear-gradient(to bottom,transparent,${BEIGE})`,position:'relative',zIndex:1,pointerEvents:'none'}}/>
       </section>
 
-      {/* ══ HOW IT WORKS — beige, waves ══ */}
-      <section style={{background:BEIGE,position:'relative',overflow:'hidden',marginTop:'-1px'}}>
+      {/* ══ HOW IT WORKS — beige, clean separation ══ */}
+      <section style={{background:BEIGE,position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
-          <div style={{position:'absolute',top:'-40%',left:'-15%',width:'130%',height:'80%',background:`radial-gradient(ellipse 55% 55% at 40% 50%,${GREEN}10 0%,transparent 65%)`,animation:'waveX 19s ease-in-out infinite'}}/>
+          <div style={{position:'absolute',top:'-40%',left:'-15%',width:'130%',height:'80%',background:`radial-gradient(ellipse 55% 55% at 40% 50%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX 19s ease-in-out infinite'}}/>
           <div style={{position:'absolute',bottom:'-30%',right:'-15%',width:'110%',height:'70%',background:`radial-gradient(ellipse 50% 55% at 60% 55%,${ORANGE}0D 0%,transparent 65%)`,animation:'waveX2 24s ease-in-out infinite'}}/>
         </div>
         <div className="sec-pad" style={{padding:'80px 52px 100px',maxWidth:'980px',margin:'0 auto',position:'relative',zIndex:1}}>
@@ -596,7 +682,7 @@ export default function Home(){
             {[
               {label:'Subscribe',color:GREEN_DARK,num:'01',title:'Choose your coach',body:'Browse real coaches across every sport and discipline. Pick the program built for your goals and subscribe monthly.'},
               {label:'Train',color:ORANGE,num:'02',title:'Get your plan + AI helper',body:'Each coach sets you a custom training plan and a built-in AI assistant for quick questions between sessions.'},
-              {label:'Grow',color:GREEN,num:'03',title:'Track your progress',body:'Weekly reviews, direct coach messaging, and real progress tracking. Your coach adjusts your plan as you improve.'},
+              {label:'Grow',color:GREEN_DARK,num:'03',title:'Track your progress',body:'Weekly reviews, direct coach messaging, and real progress tracking. Your coach adjusts your plan as you improve.'},
             ].map((step,i)=>(
               <Reveal key={i} delay={i*110} style={{display:'contents'}}>
                 <div style={{background:'rgba(255,255,255,0.75)',padding:'44px 30px',position:'relative',overflow:'hidden',transition:'background 0.22s,transform 0.22s',cursor:'default'}}
@@ -612,16 +698,13 @@ export default function Home(){
             ))}
           </div>
         </div>
-
-        {/* blend into CTA */}
-        <div style={{height:'80px',background:`linear-gradient(to bottom,transparent,${BEIGE2})`,position:'relative',zIndex:1,pointerEvents:'none'}}/>
       </section>
 
       {/* ══ CTA ══ */}
-      <section style={{background:BEIGE2,position:'relative',overflow:'hidden',marginTop:'-1px'}}>
+      <section style={{background:BEIGE2,position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
           <div style={{position:'absolute',top:'-50%',left:'-10%',width:'120%',height:'100%',background:`radial-gradient(ellipse 60% 55% at 45% 55%,${ORANGE}12 0%,transparent 65%)`,animation:'waveX 16s ease-in-out infinite'}}/>
-          <div style={{position:'absolute',top:'-30%',right:'-20%',width:'100%',height:'90%',background:`radial-gradient(ellipse 50% 50% at 65% 45%,${GREEN}0E 0%,transparent 65%)`,animation:'waveX2 21s ease-in-out infinite'}}/>
+          <div style={{position:'absolute',top:'-30%',right:'-20%',width:'100%',height:'90%',background:`radial-gradient(ellipse 50% 50% at 65% 45%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX2 21s ease-in-out infinite'}}/>
         </div>
         <div className="sec-pad" style={{padding:'110px 52px',textAlign:'center',position:'relative',zIndex:1,maxWidth:'580px',margin:'0 auto'}}>
           <Reveal>
@@ -634,7 +717,7 @@ export default function Home(){
             </p>
             <div style={{display:'flex',gap:'14px',justifyContent:'center',flexWrap:'wrap'}}>
               <button onClick={()=>document.getElementById('coaches-section')?.scrollIntoView({behavior:'smooth'})}
-                style={{padding:'15px 44px',borderRadius:'100px',background:`linear-gradient(135deg,${GREEN_DARK},${GREEN})`,color:'#fff',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 6px 32px ${GREEN}44`,transition:'all 0.22s'}}
+                style={{padding:'15px 44px',borderRadius:'100px',background:`linear-gradient(135deg,${GREEN_DARK},${GREEN})`,color:'#0a1a00',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 6px 32px ${GREEN}44`,transition:'all 0.22s'}}
                 onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow=`0 10px 44px ${GREEN}66`;}}
                 onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow=`0 6px 32px ${GREEN}44`;}}>Browse coaches</button>
               <button onClick={()=>navigate('/coach/signup')}
