@@ -791,11 +791,6 @@ export default function Home(){
         </div>
       </section>
 
-      {/* ══ BEIGE DIVIDER ══ */}
-      <div style={{height:'80px',background:`linear-gradient(to bottom, ${BEIGE}, ${BEIGE2})`,position:'relative',zIndex:1}}>
-        <div style={{position:'absolute',inset:0,background:'linear-gradient(to right,transparent,rgba(200,255,0,0.08),rgba(249,115,22,0.06),transparent)'}}/>
-      </div>
-
       {/* ══ CTA ══ */}
       <section style={{background:BEIGE2,position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
