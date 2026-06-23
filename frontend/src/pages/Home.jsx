@@ -791,8 +791,13 @@ export default function Home(){
         </div>
       </section>
 
+      {/* ══ BEIGE DIVIDER ══ */}
+      <div style={{height:'80px',background:`linear-gradient(to bottom, ${BEIGE}, ${BEIGE2})`,position:'relative',zIndex:1}}>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(to right,transparent,rgba(200,255,0,0.08),rgba(249,115,22,0.06),transparent)'}}/>
+      </div>
+
       {/* ══ CTA ══ */}
-      <section style={{background:'#0B1528',position:'relative',overflow:'hidden'}}>
+      <section style={{background:BEIGE2,position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',zIndex:0}}>
           <div style={{position:'absolute',top:'-50%',left:'-10%',width:'120%',height:'100%',background:`radial-gradient(ellipse 60% 55% at 45% 55%,${ORANGE}12 0%,transparent 65%)`,animation:'waveX 16s ease-in-out infinite'}}/>
           <div style={{position:'absolute',top:'-30%',right:'-20%',width:'100%',height:'90%',background:`radial-gradient(ellipse 50% 50% at 65% 45%,${GREEN}0C 0%,transparent 65%)`,animation:'waveX2 21s ease-in-out infinite'}}/>
@@ -800,11 +805,11 @@ export default function Home(){
         <div className="cta-wave-bg"/>
         <div className="sec-pad" style={{padding:'110px 52px',textAlign:'center',position:'relative',zIndex:1,maxWidth:'580px',margin:'0 auto'}}>
           <Reveal>
-            <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:GREEN,marginBottom:'18px'}}>Start today</div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,52px)',fontWeight:'900',color:TEXT,lineHeight:'1.1',marginBottom:'18px'}}>
-              Ready to find<br/><span style={{fontStyle:'italic',color:GREEN}}>your coach?</span>
+            <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:ORANGE,marginBottom:'18px'}}>Start today</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,52px)',fontWeight:'900',color:TEXT_B,lineHeight:'1.1',marginBottom:'18px'}}>
+              Ready to find<br/><span style={{fontStyle:'italic',color:GREEN_DARK}}>your coach?</span>
             </h2>
-            <p style={{fontSize:'15px',color:TEXT_DIM,marginBottom:'40px',lineHeight:'1.8',fontWeight:'300'}}>
+            <p style={{fontSize:'15px',color:TEXT_B_DIM,marginBottom:'40px',lineHeight:'1.8',fontWeight:'300'}}>
               Athletes everywhere are already training smarter. Your coach is waiting.
             </p>
             <div style={{display:'flex',gap:'14px',justifyContent:'center',flexWrap:'wrap'}}>
@@ -813,9 +818,9 @@ export default function Home(){
                 onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow=`0 10px 44px ${GREEN}66`;}}
                 onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow=`0 6px 32px ${GREEN}44`;}}>Browse coaches</button>
               <button onClick={()=>navigate('/coach/signup')}
-                style={{padding:'15px 44px',borderRadius:'100px',border:'1.5px solid rgba(255,255,255,0.14)',background:'rgba(255,255,255,0.07)',fontFamily:'inherit',fontSize:'15px',fontWeight:'600',cursor:'pointer',color:TEXT_DIM,transition:'all 0.22s',backdropFilter:'blur(8px)'}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=GREEN;e.currentTarget.style.color=GREEN;}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.14)';e.currentTarget.style.color=TEXT_DIM;}}>Become a coach</button>
+                style={{padding:'15px 44px',borderRadius:'100px',border:'1.5px solid rgba(0,0,0,0.1)',background:'rgba(255,255,255,0.55)',fontFamily:'inherit',fontSize:'15px',fontWeight:'600',cursor:'pointer',color:TEXT_B_DIM,transition:'all 0.22s',backdropFilter:'blur(8px)'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=ORANGE;e.currentTarget.style.color=ORANGE;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(0,0,0,0.1)';e.currentTarget.style.color=TEXT_B_DIM;}}>Become a coach</button>
             </div>
           </Reveal>
         </div>
