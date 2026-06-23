@@ -576,6 +576,8 @@ export default function Home(){
         <div className="hero-wave-bg"/>
         <video
   controls
+  poster="https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1200"
+  
   ref={videoRef}
   autoPlay
   muted
