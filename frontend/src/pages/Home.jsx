@@ -8,13 +8,24 @@ import Toast, { showToast } from '../components/Toast';
 const GREEN       = '#22C55E';
 const GREEN_DARK  = '#15803D';
 const GREEN_LIGHT = '#86efac';
-const PAGE_BG     = '#0F172A';
-const SECTION_BG  = '#111827';
-const CARD_BG     = '#111827';
+
+/* Blue → beige page background */
+const NAVY        = '#0F172A';
+const BEIGE       = '#E8DFCE';
+const PAGE_BG     = `linear-gradient(180deg, ${NAVY} 0%, #1E2A3F 22%, #4A4339 55%, ${BEIGE} 80%, ${BEIGE} 100%)`;
+const PAGE_BG_SOLID_TOP = NAVY; // for elements that need a flat color reference near the top
+
+const SECTION_BG  = '#1A2236';
+const CARD_BG     = '#15203A';
 const BORDER      = 'rgba(255,255,255,0.07)';
 const TEXT        = '#F1F5F9';
 const TEXT_DIM    = '#94A3B8';
 const TEXT_FAINT  = '#475569';
+
+/* darker text variants for beige zone */
+const TEXT_ON_BEIGE       = '#2B2418';
+const TEXT_DIM_ON_BEIGE   = '#6B6151';
+const TEXT_FAINT_ON_BEIGE = '#8A8068';
 
 /* ─── Legal Modal ─── */
 function LegalModal({ type, onClose }) {
@@ -70,7 +81,7 @@ function initials(name) {
   return name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
 }
 
-/* ─── Coach Card — ORIGINAL STYLE, action strip now UNDER the card ─── */
+/* ─── Coach Card — original style, action strip slides out UNDER the card ─── */
 function CoachCard({ coach, onView, delay = 0 }) {
   const [hovered, setHovered]   = useState(false);
   const [pressed, setPressed]   = useState(false);
@@ -81,7 +92,6 @@ function CoachCard({ coach, onView, delay = 0 }) {
   const heroImage  = coach.banner || null;
   const profilePic = coach.photo  || null;
 
-  // click outside closes the reveal
   useEffect(() => {
     if (!revealed) return;
     const onDocClick = (e) => {
@@ -228,7 +238,7 @@ function CoachCard({ coach, onView, delay = 0 }) {
         </div>
       </div>
 
-      {/* ── Action panel — UNDER the card, shown on click/hover ── */}
+      {/* ── Action panel — under the card ── */}
       <div style={{
         maxHeight: revealed ? `${ACTION_H}px` : '0px',
         overflow:'hidden',
@@ -269,8 +279,8 @@ function AnimatedHeadline({ text, delay=0 }) {
   );
 }
 
-/* ─── Carousel ─── */
-function CoachesCarousel({ coaches, onView }) {
+/* ─── Single horizontal carousel row (used once per category) ─── */
+function CoachesCarousel({ coaches, onView, dark }) {
   const rowRef = useRef(null);
   const [canLeft, setCanLeft]   = useState(false);
   const [canRight, setCanRight] = useState(false);
@@ -295,6 +305,8 @@ function CoachesCarousel({ coaches, onView }) {
     el.scrollBy({ left: dir * (cardW * 2 + 20), behavior:'smooth' });
   };
 
+  const fadeColor = dark ? NAVY : BEIGE;
+
   return (
     <div style={{ position:'relative' }}>
       {canLeft && (
@@ -303,12 +315,12 @@ function CoachesCarousel({ coaches, onView }) {
       {canRight && (
         <button onClick={()=>scroll(1)} style={{ position:'absolute',top:'40%',transform:'translateY(-50%)',right:'-18px',zIndex:20,width:'40px',height:'40px',borderRadius:'50%',background:CARD_BG,border:`1px solid ${GREEN}88`,color:GREEN,fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 4px 16px rgba(34,197,94,0.2)` }}>›</button>
       )}
-      {canLeft  && <div style={{ position:'absolute',left:0,top:0,bottom:0,width:'60px',background:`linear-gradient(to right,${PAGE_BG},transparent)`,zIndex:10,pointerEvents:'none' }} />}
-      {canRight && <div style={{ position:'absolute',right:0,top:0,bottom:0,width:'60px',background:`linear-gradient(to left,${PAGE_BG},transparent)`,zIndex:10,pointerEvents:'none' }} />}
+      {canLeft  && <div style={{ position:'absolute',left:0,top:0,bottom:0,width:'60px',background:`linear-gradient(to right,${fadeColor},transparent)`,zIndex:10,pointerEvents:'none' }} />}
+      {canRight && <div style={{ position:'absolute',right:0,top:0,bottom:0,width:'60px',background:`linear-gradient(to left,${fadeColor},transparent)`,zIndex:10,pointerEvents:'none' }} />}
 
-      <div ref={rowRef} style={{ display:'flex',gap:'20px',overflowX:'auto',scrollSnapType:'x mandatory',scrollbarWidth:'none',paddingBottom:'8px',paddingLeft:'2px',paddingRight:'2px' }}>
+      <div ref={rowRef} style={{ display:'flex',gap:'20px',overflowX:'auto',scrollSnapType:'x mandatory',scrollbarWidth:'none',paddingBottom:'8px',paddingTop:'2px',paddingLeft:'2px',paddingRight:'2px' }}>
         {coaches.map((coach,i)=>(
-          <div key={coach.id} data-coach-card="" style={{ flex:'0 0 calc(25% - 15px)',minWidth:'280px',maxWidth:'380px',scrollSnapAlign:'start' }}>
+          <div key={coach.id} data-coach-card="" style={{ flex:'0 0 calc(20% - 16px)',minWidth:'250px',maxWidth:'320px',scrollSnapAlign:'start' }}>
             <CoachCard coach={coach} onView={onView} delay={i*55} />
           </div>
         ))}
@@ -322,8 +334,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   const [categories,     setCategories]     = useState([]);
-  const [coaches,        setCoaches]        = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [coachesByCat,   setCoachesByCat]   = useState({}); // { [categorySlug]: coaches[] }
   const [loadingCats,    setLoadingCats]    = useState(true);
   const [loadingCoaches, setLoadingCoaches] = useState(true);
   const [legalModal,     setLegalModal]     = useState(null);
@@ -331,7 +342,7 @@ export default function Home() {
   const videoRef = useRef(null);
 
   useEffect(()=>{
-    const id='coachly-v14';
+    const id='coachly-v15';
     if (document.getElementById(id)) return;
     const s=document.createElement('style'); s.id=id;
     s.textContent=`
@@ -342,7 +353,7 @@ export default function Home() {
       *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
       button{outline:none;-webkit-tap-highlight-color:transparent}
       ::-webkit-scrollbar{display:none}
-      body{background:${PAGE_BG}!important}
+      body{background:${NAVY}!important}
       .gshimmer{background:linear-gradient(90deg,${GREEN},#86efac,${GREEN},${GREEN_DARK});background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 4s linear infinite}
       @media(max-width:1100px){[data-coach-card]{flex:0 0 calc(33.333% - 14px)!important}}
       @media(max-width:750px){
@@ -361,23 +372,37 @@ export default function Home() {
       }
     `;
     document.head.appendChild(s);
-    document.body.style.background = PAGE_BG;
   },[]);
 
   useEffect(()=>{
-    getCategories().then(setCategories).catch(()=>setCategories([])).finally(()=>setLoadingCats(false));
+    getCategories()
+      .then(cats => setCategories(cats.slice(0,5))) // up to 5 rows
+      .catch(()=>setCategories([]))
+      .finally(()=>setLoadingCats(false));
   },[]);
 
   useEffect(()=>{
+    if (categories.length === 0) { setLoadingCoaches(false); return; }
     setLoadingCoaches(true);
-    (activeCategory ? getCoaches(activeCategory) : getRankedCoaches().catch(()=>getCoaches(null)))
-      .then(setCoaches)
-      .catch(()=>{ setCoaches([]); showToast('Failed to load coaches','error'); })
-      .finally(()=>setLoadingCoaches(false));
-  },[activeCategory]);
+    Promise.all(
+      categories.map(cat =>
+        getCoaches(cat.slug)
+          .then(list => ({ slug: cat.slug, list: list.slice(0,5) })) // 5 coaches per row
+          .catch(() => ({ slug: cat.slug, list: [] }))
+      )
+    ).then(results => {
+      const map = {};
+      results.forEach(r => { map[r.slug] = r.list; });
+      setCoachesByCat(map);
+    })
+    .catch(()=>showToast('Failed to load coaches','error'))
+    .finally(()=>setLoadingCoaches(false));
+  },[categories]);
 
   const token     = localStorage.getItem('coachly_token');
   const tokenType = localStorage.getItem('coachly_token_type');
+
+  const hasAnyCoaches = Object.values(coachesByCat).some(list => list && list.length > 0);
 
   return (
     <div style={{ position:'relative',minHeight:'100vh',background:PAGE_BG,color:TEXT,fontFamily:"'Inter',system-ui,sans-serif",overflowX:'hidden' }}>
@@ -467,69 +492,75 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── COACHES SECTION ── */}
-      <section id="coaches-section" className="section-inner" style={{ background:PAGE_BG,padding:'80px 44px' }}>
+      {/* ── COACHES SECTION — one carousel row per category ── */}
+      <section id="coaches-section" className="section-inner" style={{ padding:'80px 44px 40px' }}>
         <div style={{ maxWidth:'1440px',margin:'0 auto' }}>
-          <div style={{ marginBottom:'32px' }}>
+          <div style={{ marginBottom:'40px' }}>
             <div style={{ fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:GREEN,marginBottom:'8px' }}>Our coaches</div>
             <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:'clamp(24px,3vw,40px)',fontWeight:'800',color:TEXT,lineHeight:'1.15',margin:0 }}>
               Find the coach <span style={{ color:TEXT_FAINT,fontStyle:'italic' }}>that moves you.</span>
             </h2>
           </div>
 
-          {!loadingCats && categories.length > 0 && (
-            <div style={{ display:'flex',gap:'7px',marginBottom:'28px',overflowX:'auto',scrollbarWidth:'none',paddingBottom:'2px' }}>
-              {[{id:'all',name:'All',slug:null}].concat(categories).map(cat=>{
-                const isActive = cat.slug===null ? activeCategory===null : activeCategory===cat.slug;
-                return (
-                  <button key={cat.id}
-                    onClick={()=>setActiveCategory(cat.slug===activeCategory?null:(cat.slug??null))}
-                    style={{ padding:'7px 17px',borderRadius:'100px',whiteSpace:'nowrap',flexShrink:0,border:`1px solid ${isActive?GREEN:BORDER}`,background:isActive?`${GREEN}14`:'transparent',color:isActive?GREEN:TEXT_DIM,fontFamily:'inherit',fontSize:'13px',fontWeight:'600',cursor:'pointer',transition:'all 0.18s' }}
-                    onMouseEnter={e=>{ if(!isActive){ e.currentTarget.style.borderColor=GREEN; e.currentTarget.style.color=GREEN; }}}
-                    onMouseLeave={e=>{ if(!isActive){ e.currentTarget.style.borderColor=BORDER; e.currentTarget.style.color=TEXT_DIM; }}}>
-                    {cat.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {loadingCoaches ? (
+          {(loadingCats || loadingCoaches) ? (
             <div style={{ display:'flex',gap:'20px' }}>
-              {[1,2,3,4].map(i=><div key={i} style={{ flex:'0 0 calc(25% - 15px)',minWidth:'280px' }}><LoadingSkeleton type="card" /></div>)}
+              {[1,2,3,4,5].map(i=><div key={i} style={{ flex:'0 0 calc(20% - 16px)',minWidth:'250px' }}><LoadingSkeleton type="card" /></div>)}
             </div>
-          ) : coaches.length===0 ? (
+          ) : (!hasAnyCoaches) ? (
             <EmptyState message="No coaches yet." cta="Become a coach" onCta={()=>navigate('/coach/signup')} />
           ) : (
-            <CoachesCarousel coaches={coaches} onView={id=>navigate(`/coach/${id}`)} />
+            categories.map((cat, idx) => {
+              const list = coachesByCat[cat.slug] || [];
+              if (list.length === 0) return null;
+              // First couple of rows sit over the dark navy zone, later rows drift into the beige zone —
+              // use dark text/dark-fade up top, and switch to dark-on-beige styling for later rows.
+              const onBeige = idx >= 3;
+              return (
+                <div key={cat.id} style={{ marginBottom:'48px' }}>
+                  <div style={{ display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:'18px' }}>
+                    <h3 style={{
+                      fontFamily:"'Playfair Display',serif", fontSize:'22px', fontWeight:'700',
+                      color: onBeige ? TEXT_ON_BEIGE : TEXT, margin:0,
+                    }}>
+                      {cat.name}
+                    </h3>
+                    <button onClick={()=>navigate(`/category/${cat.slug}`)}
+                      style={{ background:'none',border:'none',fontFamily:'inherit',fontSize:'13px',fontWeight:'600',color: onBeige ? '#4D7A52' : GREEN,cursor:'pointer' }}>
+                      See all →
+                    </button>
+                  </div>
+                  <CoachesCarousel coaches={list} onView={id=>navigate(`/coach/${id}`)} dark={!onBeige} />
+                </div>
+              );
+            })
           )}
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="section-inner" style={{ background:SECTION_BG,borderTop:`1px solid ${BORDER}`,borderBottom:`1px solid ${BORDER}`,padding:'100px 44px' }}>
+      <section className="section-inner" style={{ background:'rgba(255,255,255,0.08)',borderTop:`1px solid rgba(255,255,255,0.08)`,borderBottom:`1px solid rgba(255,255,255,0.08)`,padding:'100px 44px' }}>
         <div style={{ maxWidth:'980px',margin:'0 auto' }}>
           <div style={{ textAlign:'center',marginBottom:'56px' }}>
-            <div style={{ fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:GREEN,marginBottom:'12px' }}>How it works</div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:'clamp(24px,3vw,40px)',fontWeight:'800',color:TEXT,margin:0 }}>
-              Coaching, <span style={{ fontStyle:'italic',color:GREEN }}>reimagined.</span>
+            <div style={{ fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:'#4D7A52',marginBottom:'12px' }}>How it works</div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:'clamp(24px,3vw,40px)',fontWeight:'800',color:TEXT_ON_BEIGE,margin:0 }}>
+              Coaching, <span style={{ fontStyle:'italic',color:'#3F8B49' }}>reimagined.</span>
             </h2>
           </div>
-          <div className="how-grid" style={{ display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'2px',background:BORDER,borderRadius:'18px',overflow:'hidden' }}>
+          <div className="how-grid" style={{ display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'2px',background:'rgba(43,36,24,0.12)',borderRadius:'18px',overflow:'hidden' }}>
             {[
               { label:'Subscribe',title:'Choose your coach',body:'Browse real coaches across every sport and discipline. Pick the program built for your goals and subscribe monthly.' },
               { label:'Train',title:'Get your plan + AI helper',body:'Each coach sets you a custom training plan and a built-in AI assistant for quick questions between sessions.' },
               { label:'Grow',title:'Track your progress',body:'Weekly reviews, direct coach messaging, and real progress tracking. Your coach adjusts your plan as you improve.' },
             ].map((step,i)=>(
-              <div key={i} style={{ background:'#151E2E',padding:'40px 28px',position:'relative',overflow:'hidden',transition:'background 0.2s' }}
-                onMouseEnter={e=>e.currentTarget.style.background='#1A2537'}
-                onMouseLeave={e=>e.currentTarget.style.background='#151E2E'}>
-                <div style={{ position:'absolute',top:'12px',right:'16px',fontFamily:"'Playfair Display',serif",fontSize:'60px',fontWeight:'900',color:`${GREEN}0C`,lineHeight:1 }}>
+              <div key={i} style={{ background:'#F1EADC',padding:'40px 28px',position:'relative',overflow:'hidden',transition:'background 0.2s' }}
+                onMouseEnter={e=>e.currentTarget.style.background='#EAE1CE'}
+                onMouseLeave={e=>e.currentTarget.style.background='#F1EADC'}>
+                <div style={{ position:'absolute',top:'12px',right:'16px',fontFamily:"'Playfair Display',serif",fontSize:'60px',fontWeight:'900',color:'rgba(43,36,24,0.06)',lineHeight:1 }}>
                   {String(i+1).padStart(2,'0')}
                 </div>
-                <div style={{ fontSize:'10px',fontWeight:'700',letterSpacing:'0.2em',textTransform:'uppercase',color:GREEN,marginBottom:'14px' }}>{step.label}</div>
-                <h3 style={{ fontFamily:"'Playfair Display',serif",fontSize:'18px',fontWeight:'700',color:TEXT,marginBottom:'12px',lineHeight:'1.3' }}>{step.title}</h3>
-                <p style={{ fontSize:'13px',color:TEXT_DIM,lineHeight:'1.8',margin:0 }}>{step.body}</p>
+                <div style={{ fontSize:'10px',fontWeight:'700',letterSpacing:'0.2em',textTransform:'uppercase',color:'#3F8B49',marginBottom:'14px' }}>{step.label}</div>
+                <h3 style={{ fontFamily:"'Playfair Display',serif",fontSize:'18px',fontWeight:'700',color:TEXT_ON_BEIGE,marginBottom:'12px',lineHeight:'1.3' }}>{step.title}</h3>
+                <p style={{ fontSize:'13px',color:TEXT_DIM_ON_BEIGE,lineHeight:'1.8',margin:0 }}>{step.body}</p>
               </div>
             ))}
           </div>
@@ -537,39 +568,39 @@ export default function Home() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="section-inner" style={{ padding:'110px 44px',textAlign:'center',background:PAGE_BG,position:'relative',overflow:'hidden' }}>
-        <div style={{ position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'600px',height:'600px',borderRadius:'50%',background:`radial-gradient(circle,${GREEN}0D 0%,transparent 70%)`,pointerEvents:'none' }} />
+      <section className="section-inner" style={{ padding:'110px 44px',textAlign:'center',position:'relative',overflow:'hidden' }}>
+        <div style={{ position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'600px',height:'600px',borderRadius:'50%',background:`radial-gradient(circle,rgba(34,197,94,0.08) 0%,transparent 70%)`,pointerEvents:'none' }} />
         <div style={{ position:'relative',zIndex:1,maxWidth:'540px',margin:'0 auto' }}>
-          <div style={{ fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:GREEN,marginBottom:'18px' }}>Start today</div>
-          <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,50px)',fontWeight:'900',color:TEXT,lineHeight:'1.1',marginBottom:'18px' }}>
-            Ready to find<br /><span style={{ fontStyle:'italic',color:GREEN }}>your coach?</span>
+          <div style={{ fontSize:'11px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:'#3F8B49',marginBottom:'18px' }}>Start today</div>
+          <h2 style={{ fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,5vw,50px)',fontWeight:'900',color:TEXT_ON_BEIGE,lineHeight:'1.1',marginBottom:'18px' }}>
+            Ready to find<br /><span style={{ fontStyle:'italic',color:'#3F8B49' }}>your coach?</span>
           </h2>
-          <p style={{ fontSize:'15px',color:TEXT_DIM,marginBottom:'36px',lineHeight:'1.75',fontWeight:'300' }}>
+          <p style={{ fontSize:'15px',color:TEXT_DIM_ON_BEIGE,marginBottom:'36px',lineHeight:'1.75',fontWeight:'300' }}>
             Athletes everywhere are already training smarter. Your coach is waiting.
           </p>
           <button onClick={()=>document.getElementById('coaches-section')?.scrollIntoView({behavior:'smooth'})}
-            style={{ padding:'15px 44px',borderRadius:'8px',background:GREEN,color:'#022c12',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 36px ${GREEN}33`,transition:'all 0.2s',letterSpacing:'0.02em' }}
-            onMouseEnter={e=>{ e.currentTarget.style.background='#4ade80'; e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow=`0 8px 56px ${GREEN}55`; }}
-            onMouseLeave={e=>{ e.currentTarget.style.background=GREEN; e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow=`0 4px 36px ${GREEN}33`; }}>
+            style={{ padding:'15px 44px',borderRadius:'8px',background:GREEN_DARK,color:'#FFFFFF',border:'none',fontFamily:'inherit',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:`0 4px 36px rgba(21,128,61,0.33)`,transition:'all 0.2s',letterSpacing:'0.02em' }}
+            onMouseEnter={e=>{ e.currentTarget.style.background='#16a34a'; e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow=`0 8px 56px rgba(21,128,61,0.4)`; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background=GREEN_DARK; e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow=`0 4px 36px rgba(21,128,61,0.33)`; }}>
             Browse coaches →
           </button>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ padding:'24px 44px',borderTop:`1px solid ${BORDER}`,background:SECTION_BG }}>
+      <footer style={{ padding:'24px 44px',borderTop:`1px solid rgba(43,36,24,0.12)`,background:'#DED2B8' }}>
         <div className="footer-row" style={{ maxWidth:'1440px',margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'14px' }}>
-          <span style={{ fontFamily:"'Playfair Display',serif",fontWeight:'800',fontSize:'16px',color:TEXT,letterSpacing:'0.08em' }}>
-            COACHLY<span style={{ color:GREEN }}>.</span>
+          <span style={{ fontFamily:"'Playfair Display',serif",fontWeight:'800',fontSize:'16px',color:TEXT_ON_BEIGE,letterSpacing:'0.08em' }}>
+            COACHLY<span style={{ color:'#3F8B49' }}>.</span>
           </span>
           <div style={{ display:'flex',gap:'20px',alignItems:'center' }}>
             {[['For coaches',()=>navigate('/coach/signup')],['Terms',()=>setLegalModal('terms')],['Privacy',()=>setLegalModal('privacy')]].map(([label,fn])=>(
-              <button key={label} onClick={fn} style={{ background:'none',border:'none',fontFamily:'inherit',fontSize:'13px',color:TEXT_FAINT,cursor:'pointer',transition:'color 0.2s' }}
-                onMouseEnter={e=>e.currentTarget.style.color=GREEN}
-                onMouseLeave={e=>e.currentTarget.style.color=TEXT_FAINT}>{label}</button>
+              <button key={label} onClick={fn} style={{ background:'none',border:'none',fontFamily:'inherit',fontSize:'13px',color:TEXT_FAINT_ON_BEIGE,cursor:'pointer',transition:'color 0.2s' }}
+                onMouseEnter={e=>e.currentTarget.style.color='#3F8B49'}
+                onMouseLeave={e=>e.currentTarget.style.color=TEXT_FAINT_ON_BEIGE}>{label}</button>
             ))}
           </div>
-          <div style={{ fontSize:'12px',color:TEXT_FAINT }}>© {new Date().getFullYear()} Coachly</div>
+          <div style={{ fontSize:'12px',color:TEXT_FAINT_ON_BEIGE }}>© {new Date().getFullYear()} Coachly</div>
         </div>
       </footer>
     </div>
