@@ -477,12 +477,6 @@ export default function Store() {
           {/* Right side — desktop: stats + big CTA. Mobile: compact price card (CSS swaps content via classes) */}
           <div className="store-hero-stats-cta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
             <div className="store-hero-stats-row" style={{ display: 'flex', gap: '12px' }}>
-              {Array.isArray(coach.custom_sections) && coach.custom_sections.filter(s => s.title || s.content).map((s, i) => (
-                <div key={i} style={{ marginBottom: '32px' }}>
-                  {s.title && <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '12px' }}>{s.title}</div>}
-                  {s.content && <p style={{ fontSize: '15px', lineHeight: '1.8', color: '#333', margin: 0, whiteSpace: 'pre-line' }}>{s.content}</p>}
-                </div>
-              ))}
               {coach.subscriber_count > 0 && (
                 <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center' }}>
                   <div style={{ fontSize: '22px', fontWeight: '900', color: '#fff', lineHeight: 1 }}>{coach.subscriber_count}</div>
@@ -642,6 +636,12 @@ export default function Store() {
                   </div>
                 </div>
               )}
+              {Array.isArray(coach.custom_sections) && coach.custom_sections.filter(s => s.title || s.content).map((s, i) => (
+                <div key={i} style={{ marginBottom: '32px' }}>
+                  {s.title && <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '12px' }}>{s.title}</div>}
+                  {s.content && <p style={{ fontSize: '15px', lineHeight: '1.8', color: '#333', margin: 0, whiteSpace: 'pre-line' }}>{s.content}</p>}
+                </div>
+              ))}
             </div>
           )}
 
