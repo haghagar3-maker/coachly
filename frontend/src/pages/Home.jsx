@@ -603,7 +603,7 @@ onCanPlay={()=>setVideoLoaded(true)}
             <span className="gshimmer" style={{fontStyle:'italic'}}><AnimatedHeadline text="Any sport. 24/7." delay={440}/></span>
           </h1>
           <p style={{animation:'fadeUp 0.6s ease 0.8s both',fontSize:'16px',color:'rgba(241,245,249,0.45)',lineHeight:'1.8',fontWeight:'300',maxWidth:'460px',margin:'20px auto 40px'}}>
-            Real coaches across every discipline — each with their own AI assistant to support you between sessions.
+            Real coaches across every discipline — each with a personal AI trained on their methods to support you between sessions.
           </p>
           <div style={{animation:'fadeUp 0.6s ease 1s both',display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
             <button onClick={()=>document.getElementById('coaches-section')?.scrollIntoView({behavior:'smooth'})}
