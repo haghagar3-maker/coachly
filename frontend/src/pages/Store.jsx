@@ -344,6 +344,7 @@ export default function Store() {
   const [alreadySubbed, setAlreadySubbed] = useState(false);
   const [activeTab, setActiveTab] = useState('about');
   const [coachRating, setCoachRating] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
     setLoading(true);
