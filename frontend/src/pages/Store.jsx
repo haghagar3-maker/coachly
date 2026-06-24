@@ -427,6 +427,7 @@ export default function Store() {
     { key: 'tiktok', label: 'TikTok', icon: <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg> },
     { key: 'youtube', label: 'YouTube', icon: <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg> },
     { key: 'twitter', label: 'Twitter', icon: <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
+    { key: 'linkedin', label: 'LinkedIn', icon: <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> },
   ].filter(s => coach[s.key]);
 
   const planOptions = [3, 6, 12];
@@ -475,6 +476,12 @@ export default function Store() {
           {/* Right side — desktop: stats + big CTA. Mobile: compact price card (CSS swaps content via classes) */}
           <div className="store-hero-stats-cta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
             <div className="store-hero-stats-row" style={{ display: 'flex', gap: '12px' }}>
+              {Array.isArray(coach.custom_sections) && coach.custom_sections.filter(s => s.title || s.content).map((s, i) => (
+                <div key={i} style={{ marginBottom: '32px' }}>
+                  {s.title && <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '12px' }}>{s.title}</div>}
+                  {s.content && <p style={{ fontSize: '15px', lineHeight: '1.8', color: '#333', margin: 0, whiteSpace: 'pre-line' }}>{s.content}</p>}
+                </div>
+              ))}
               {coach.subscriber_count > 0 && (
                 <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', padding: '10px 18px', textAlign: 'center' }}>
                   <div style={{ fontSize: '22px', fontWeight: '900', color: '#fff', lineHeight: 1 }}>{coach.subscriber_count}</div>
@@ -525,7 +532,7 @@ export default function Store() {
               {socials.map(s => (
                 <a key={s.key} href={coach[s.key]} target="_blank" rel="noopener noreferrer" title={s.label}
                   style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#fff', flexShrink: 0,
-                    background: s.key === 'instagram' ? 'radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%)' : s.key === 'tiktok' ? '#010101' : s.key === 'youtube' ? '#FF0000' : '#000',
+                    background: s.key === 'instagram' ? 'radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%)' : s.key === 'tiktok' ? '#010101' : s.key === 'youtube' ? '#FF0000' : s.key === 'linkedin' ? '#0077B5' : '#000',
                   }}>
                   {s.icon}
                 </a>
@@ -676,7 +683,7 @@ export default function Store() {
                       ? (m.url?.includes('youtube.com') || m.url?.includes('youtu.be')
                           ? <iframe src={m.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
                           : <video src={m.url} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />)
-                      : <img src={m.url} alt={m.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <img src={m.url} alt={m.caption || ''} onClick={() => setLightbox(m.url)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }} />
                     }
                     {m.caption && (
                       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '28px 14px 12px', fontSize: '12px', color: '#fff', fontWeight: '700', letterSpacing: '0.01em' }}>
@@ -802,7 +809,12 @@ export default function Store() {
           </div>
         </div>
       </div>
-
+{lightbox && (
+        <div onClick={() => setLightbox(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', cursor: 'zoom-out' }}>
+          <img src={lightbox} alt="" style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain', boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()} />
+          <button onClick={() => setLightbox(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '22px', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+        </div>
+      )}
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={onAuthSuccess} />}
       {showIntake && coach && <IntakeModal coach={coach} planMonths={planMonths} planPrice={getPlanPrice(planMonths)} onClose={() => setShowIntake(false)} onDone={onSubDone} />}
       {showPayment && <PaymentModal subId={showPayment.subId} coach={showPayment.coach} onClose={() => setShowPayment(null)} onPaid={() => { setShowPayment(null); setAlreadySubbed(true); navigate(`/dashboard?coach=${coach.id}`); }} />}

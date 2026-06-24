@@ -1044,6 +1044,8 @@ function SectionStore({ coach, setCoach }) {
     twitter: coach.twitter || '',
     youtube: coach.youtube || '',
     tiktok: coach.tiktok || '',
+    linkedin: coach.linkedin || '',
+    custom_sections: coach.custom_sections || [],
     media: coach.media || [],
     testimonials: coach.testimonials || [],
     credentials: coach.credentials || '',
@@ -1216,6 +1218,7 @@ function SectionStore({ coach, setCoach }) {
           { key: 'twitter', label: 'Twitter / X', placeholder: 'https://twitter.com/yourhandle' },
           { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/@yourchannel' },
           { key: 'tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/@yourhandle' },
+          { key: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/in/yourprofile' },
         ].map(({ key, label, placeholder }) => (
           <div key={key} className="field">
             <label>{label}</label>
@@ -1284,6 +1287,20 @@ function SectionStore({ coach, setCoach }) {
           <label>Coaching philosophy</label>
           <textarea value={form.coaching_philosophy} onChange={e => upd('coaching_philosophy', e.target.value)} rows={4} placeholder="What do you believe in? What separates your coaching from everyone else?" />
         </div>
+      </div>
+
+      {/* Custom paragraphs */}
+      <div className="field-group">
+        <div className="field-group-title">Custom sections</div>
+        <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '12px' }}>Add custom sections to your store page — name them and write anything you want.</div>
+        {(form.custom_sections || []).map((s, i) => (
+          <div key={i} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px', marginBottom: '10px' }}>
+            <input type="text" placeholder="Section title e.g. My Story, My Results, FAQ…" value={s.title || ''} onChange={e => { const arr = [...(form.custom_sections||[])]; arr[i] = { ...arr[i], title: e.target.value }; upd('custom_sections', arr); }} style={{ width: '100%', marginBottom: '8px', padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', boxSizing: 'border-box' }} />
+            <textarea placeholder="Write your content here…" value={s.content || ''} onChange={e => { const arr = [...(form.custom_sections||[])]; arr[i] = { ...arr[i], content: e.target.value }; upd('custom_sections', arr); }} rows={4} style={{ width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)', resize: 'vertical', boxSizing: 'border-box' }} />
+            <button onClick={() => upd('custom_sections', (form.custom_sections||[]).filter((_, j) => j !== i))} style={{ marginTop: '6px', background: 'none', border: 'none', color: 'var(--coral)', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>Remove</button>
+          </div>
+        ))}
+        <button onClick={() => upd('custom_sections', [...(form.custom_sections || []), { title: '', content: '' }])} style={{ background: 'none', border: '1px dashed var(--border)', borderRadius: '8px', padding: '10px', width: '100%', fontSize: '13px', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'inherit' }}>+ Add section</button>
       </div>
 
       {/* What's included */}
