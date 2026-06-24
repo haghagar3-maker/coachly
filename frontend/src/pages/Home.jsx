@@ -815,7 +815,7 @@ onCanPlay={()=>setVideoLoaded(true)}
         <div className="footer-row" style={{maxWidth:'1440px',margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'14px'}}>
           <span style={{fontFamily:"'Playfair Display',serif",fontWeight:'900',fontSize:'17px',color:TEXT,letterSpacing:'0.1em'}}>COACHLY<span style={{color:GREEN}}>.</span></span>
           <div style={{display:'flex',gap:'24px',alignItems:'center'}}>
-            {[['For coaches',()=>navigate('/coach/signup')],['Terms',()=>setLegalModal('terms')],['Privacy',()=>setLegalModal('privacy')]].map(([label,fn])=>(
+            {[['For coaches',()=>navigate('/coach/signup')],['Terms',()=>navigate('/terms')],['Privacy',()=>navigate('/privacy')]].map(([label,fn])=>(
               <button key={label} onClick={fn} style={{background:'none',border:'none',fontFamily:'inherit',fontSize:'13px',color:TEXT_DIM,cursor:'pointer',transition:'color 0.18s'}}
                 onMouseEnter={e=>e.currentTarget.style.color=GREEN_LIGHT}
                 onMouseLeave={e=>e.currentTarget.style.color=TEXT_DIM}>{label}</button>
