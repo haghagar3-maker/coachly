@@ -1633,6 +1633,73 @@ app.get('/api/program', requireAuth, requireUser, async (req, res) => {
     const programs = await db('programs', 'GET', null,
       `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&order=week_number.asc,day_name.asc&select=*`
     );
+
+    // Auto-progress: check if current week is fully done and generate next week
+    if (programs && programs.length > 0) {
+      const maxWeek = Math.max(...programs.map(p => p.week_number || 1));
+      const currentWeekPrograms = programs.filter(p => p.week_number === maxWeek);
+
+      // Get workout logs for this user
+      const logs = await db('workout_logs', 'GET', null,
+        `?user_id=eq.${req.session.user_id}&select=program_id,exercise_index`
+      ).catch(() => []);
+
+      const loggedKeys = new Set((logs || []).map(l => `${l.program_id}-${l.exercise_index}`));
+      const restKeys = new Set((logs || []).filter(l => parseInt(l.exercise_index) === -1).map(l => `rest-${l.program_id}`));
+
+      // Check if every day in current week is completed
+      const allDone = currentWeekPrograms.every(day => {
+        const exercises = day.exercises || [];
+        if (exercises.length === 0) return restKeys.has(`rest-${day.id}`);
+        return exercises.every((_, idx) => loggedKeys.has(`${day.id}-${idx}`));
+      });
+
+      if (allDone && maxWeek < 12) {
+        // Check if next week already exists
+        const nextWeekExists = programs.some(p => p.week_number === maxWeek + 1);
+        if (!nextWeekExists) {
+          // Generate next week in background
+          const coaches = await db('coaches', 'GET', null, `?id=eq.${coachId}&select=*`).catch(() => []);
+          const users = await db('users', 'GET', null, `?id=eq.${req.session.user_id}&select=*`).catch(() => []);
+          const subs = await db('subscriptions', 'GET', null, `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&status=eq.active&select=intake`).catch(() => []);
+          const coach = coaches[0];
+          const user = { ...users[0], ...(subs?.[0]?.intake || {}) };
+
+          if (coach) {
+            const prevWeekSummary = currentWeekPrograms.map(d => `${d.day_name}: ${d.session_title} (${(d.exercises||[]).map(e=>e.name).join(', ')})`).join(' | ');
+            const prompt = `You are ${coach.name}. Generate Week ${maxWeek + 1} of a progressive workout program.
+Previous week (Week ${maxWeek}): ${prevWeekSummary}
+Client goal: ${user.goal || 'general fitness'}. Sport: ${coach.sport || 'fitness'}.
+Coach method: ${coach.ai_method || ''}. Workout strategy: ${coach.ai_workout_strategy || ''}.
+PROGRESSION RULE: slightly increase difficulty vs last week (more reps, sets, harder variations, or new exercises).
+Return ONLY a JSON array like: [{"day_name":"Monday","session_title":"Upper Body","exercises":[{"name":"Push-ups","sets":3,"reps":"15","rest":"45s"}]}]
+Keep the same day structure as Week ${maxWeek}. ONLY return the JSON array.`;
+
+            enqueue(async () => {
+              const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GROQ_KEY}` },
+                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }], max_tokens: 1500 }),
+              });
+              const groqData = await groqRes.json();
+              const text = groqData.choices?.[0]?.message?.content || '[]';
+              const days = JSON.parse(text.replace(/```json|```/g, '').trim());
+              await Promise.all(days.map(day =>
+                db('programs', 'POST', {
+                  coach_id: coachId,
+                  user_id: req.session.user_id,
+                  week_number: maxWeek + 1,
+                  day_name: day.day_name,
+                  session_title: day.session_title,
+                  exercises: day.exercises || [],
+                }).catch(() => {})
+              ));
+            }).catch(() => {});
+          }
+        }
+      }
+    }
+
     res.json(programs || []);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch program' });
