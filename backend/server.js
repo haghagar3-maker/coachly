@@ -453,7 +453,14 @@ app.post('/api/coach/login', async (req, res) => {
 
 app.post('/api/upload-media', requireAuth, async (req, res) => {
   try {
-    const { fileBase64, fileName, fileType } = req.body;
+    const { fileBase64, fileName, fileType, oldUrl } = req.body;
+    if (oldUrl && oldUrl.includes('/coach-media/')) {
+      const oldName = oldUrl.split('/coach-media/').pop();
+      await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${oldName}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`, 'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY },
+      }).catch(() => {});
+    }
     const buffer = Buffer.from(fileBase64.split(',')[1], 'base64');
     const uniqueName = `${Date.now()}_${fileName}`;
     const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${uniqueName}`, {
@@ -466,9 +473,30 @@ app.post('/api/upload-media', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.delete('/api/delete-media', requireAuth, requireCoach, async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (url && url.includes('/coach-media/')) {
+      const name = url.split('/coach-media/').pop();
+      await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${name}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`, 'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY },
+      });
+    }
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/upload-content', requireAuth, requireCoach, async (req, res) => {
   try {
-    const { fileBase64, fileName, fileType } = req.body;
+    const { fileBase64, fileName, fileType, oldUrl } = req.body;
+    if (oldUrl && oldUrl.includes('/coach-media/')) {
+      const oldName = oldUrl.split('/coach-media/').pop();
+      await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${oldName}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY}`, 'apikey': process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY },
+      }).catch(() => {});
+    }
     const buffer = Buffer.from(fileBase64.split(',')[1], 'base64');
     const uniqueName = `${Date.now()}_${fileName}`;
     const uploadRes = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/coach-media/${uniqueName}`, {

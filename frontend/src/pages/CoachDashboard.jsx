@@ -1247,14 +1247,25 @@ function SectionStore({ coach, setCoach }) {
                       const file = e.target.files[0];
                       if (!file) return;
                       if (file.size > 500 * 1024) { alert('Image too large! Max 500KB. Compress it at squoosh.app first.'); return; }
+                      const oldUrl = form.media?.[i]?.url || '';
                       const base64 = await toBase64(file);
-                      const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: base64 }; upd('media', arr);
+                      const arr = [...(form.media||[])]; arr[i] = { ...arr[i], url: base64, _oldUrl: oldUrl }; upd('media', arr);
                     }} />
                   </label>
                 </div>
             }
             <input type="text" placeholder="Caption (optional)" value={m.caption || ''} onChange={e => { const arr = [...(form.media||[])]; arr[i] = { ...arr[i], caption: e.target.value }; upd('media', arr); }} style={{ width: '140px', padding: '8px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--card)', fontFamily: 'inherit', fontSize: '12px', color: 'var(--dark)' }} />
-            <button onClick={() => upd('media', (form.media||[]).filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#ff4d1c', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}>×</button>
+            <button onClick={() => {
+              const item = form.media?.[i];
+              if (item?.url && item.url.includes('/coach-media/')) {
+                fetch(`${import.meta.env.VITE_API_URL||''}/api/delete-media`, {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('coachly_token')}` },
+                  body: JSON.stringify({ url: item.url }),
+                }).catch(() => {});
+              }
+              upd('media', (form.media||[]).filter((_, j) => j !== i));
+            }} style={{ background: 'none', border: 'none', color: '#ff4d1c', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}>×</button>
           </div>
         ))}
         <div style={{ display: 'flex', gap: '8px' }}>
