@@ -23,9 +23,10 @@ const sections = [
 export default function Terms() {
   const navigate = useNavigate();
   return (
-    <div style={{ minHeight: '100vh', background: NAVY, color: TEXT, fontFamily: "'Inter',system-ui,sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: NAVY, color: TEXT, fontFamily: "'Inter',system-ui,sans-serif", position: 'relative' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&q=80)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.07, pointerEvents: 'none' }} />
       {/* Navbar */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 100, height: '66px', background: 'rgba(8,14,28,0.95)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', padding: '0 40px', justifyContent: 'space-between' }}>
+      <header style={{ position: 'sticky', zIndex: 100, top: 0, zIndex: 100, height: '66px', background: 'rgba(8,14,28,0.95)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', padding: '0 40px', justifyContent: 'space-between' }}>
         <span onClick={() => navigate('/')} style={{ fontFamily: "'Playfair Display',serif", fontWeight: '900', fontSize: '20px', color: '#F1EDE6', letterSpacing: '0.12em', cursor: 'pointer' }}>
           COACHLY<span style={{ color: GREEN }}>.</span>
         </span>
@@ -37,7 +38,7 @@ export default function Terms() {
       </header>
 
       {/* Content */}
-      <main style={{ maxWidth: '720px', margin: '0 auto', padding: '60px 24px 100px' }}>
+      <main style={{ maxWidth: '720px', position: 'relative', zIndex: 1, margin: '0 auto', padding: '60px 24px 100px' }}>
         <div style={{ marginBottom: '48px' }}>
           <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.18em', textTransform: 'uppercase', color: GREEN, marginBottom: '12px' }}>Legal</div>
           <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 'clamp(28px,4vw,42px)', fontWeight: '800', margin: '0 0 12px', color: TEXT }}>Terms of Service</h1>
