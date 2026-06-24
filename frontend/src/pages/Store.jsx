@@ -416,8 +416,49 @@ export default function Store() {
   const isDarkAccent = accentColor === '#C8FF00' || accentColor === '#ffffff';
 
   if (loading) return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
-      <LoadingSkeleton type="card" count={3} />
+    <div style={{ minHeight: '100vh', background: '#f8f7f4', fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* Hero skeleton */}
+      <div style={{ height: '520px', background: 'linear-gradient(135deg, #e0e0e0, #d0d0d0)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)', animation: 'shimmerMove 1.6s infinite', backgroundSize: '200% 100%' }} />
+        <div style={{ position: 'absolute', bottom: '32px', left: '28px', display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
+          <div style={{ width: '110px', height: '110px', borderRadius: '50%', background: '#ccc' }} />
+          <div>
+            <div style={{ width: '200px', height: '28px', borderRadius: '8px', background: '#ccc', marginBottom: '10px' }} />
+            <div style={{ width: '120px', height: '18px', borderRadius: '6px', background: '#ccc' }} />
+          </div>
+        </div>
+      </div>
+      {/* Stats bar skeleton */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '0 24px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', gap: '32px', padding: '18px 0' }}>
+          {[80, 60, 100, 50].map((w, i) => (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: `${w}px`, height: '20px', borderRadius: '6px', background: '#eee' }} />
+              <div style={{ width: '50px', height: '12px', borderRadius: '4px', background: '#f0f0f0' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Content skeleton */}
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 24px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '32px' }}>
+        <div>
+          <div style={{ width: '100%', height: '20px', borderRadius: '6px', background: '#eee', marginBottom: '12px' }} />
+          <div style={{ width: '80%', height: '20px', borderRadius: '6px', background: '#eee', marginBottom: '32px' }} />
+          <div style={{ display: 'flex', gap: '24px', marginBottom: '28px', borderBottom: '2px solid #eee', paddingBottom: '12px' }}>
+            {[60, 90, 100].map((w, i) => <div key={i} style={{ width: `${w}px`, height: '16px', borderRadius: '4px', background: '#eee' }} />)}
+          </div>
+          {[100, 90, 75, 85, 60].map((w, i) => (
+            <div key={i} style={{ width: `${w}%`, height: '16px', borderRadius: '6px', background: '#eee', marginBottom: '12px' }} />
+          ))}
+        </div>
+        <div style={{ background: '#fff', borderRadius: '24px', padding: '28px', border: '1px solid #eee', height: '380px' }}>
+          <div style={{ width: '120px', height: '14px', borderRadius: '4px', background: '#eee', marginBottom: '12px' }} />
+          <div style={{ width: '180px', height: '22px', borderRadius: '6px', background: '#eee', marginBottom: '24px' }} />
+          {[1,2,3].map(i => <div key={i} style={{ height: '68px', borderRadius: '14px', background: '#f5f5f5', marginBottom: '10px' }} />)}
+          <div style={{ height: '52px', borderRadius: '14px', background: '#e0e0e0', marginTop: '8px' }} />
+        </div>
+      </div>
+      <style>{`@keyframes shimmerMove { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }`}</style>
     </div>
   );
 
