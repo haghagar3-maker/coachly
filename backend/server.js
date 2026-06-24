@@ -353,11 +353,18 @@ app.get('/api/posts/:coachId', async (req, res) => {
 
     // Attach user info and comment count
     const enriched = await Promise.all(posts.map(async (post) => {
-      const users = await db('users', 'GET', null, `?id=eq.${post.user_id}&select=name,photo`);
       const comments = await db('comments', 'GET', null, `?post_id=eq.${post.id}&select=id`);
+      let user = null;
+      if (post.sender_type === 'coach') {
+        const coaches = await db('coaches', 'GET', null, `?id=eq.${post.coach_id}&select=name,photo`);
+        user = coaches?.[0] ? { ...coaches[0], is_coach: true } : null;
+      } else if (post.user_id) {
+        const users = await db('users', 'GET', null, `?id=eq.${post.user_id}&select=name,photo`);
+        user = users?.[0] || null;
+      }
       return {
         ...post,
-        user: users?.[0] || null,
+        user,
         comment_count: comments?.length || 0,
       };
     }));

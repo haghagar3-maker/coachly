@@ -1410,7 +1410,10 @@ function SectionCommunity({ user, coach }) {
                     : initials(p.user?.name)}
                 </div>
                 <div>
-                  <div className="post-author">{p.user?.name || 'Member'}</div>
+                  <div className="post-author">
+                  {p.user?.name || 'Member'}
+                  {p.user?.is_coach && <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: '700', background: 'var(--orange)', color: '#fff', padding: '2px 7px', borderRadius: '100px' }}>Coach</span>}
+                </div>
                   <div className="post-time">{timeAgo(p.created_at)}</div>
                 </div>
               </div>
