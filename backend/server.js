@@ -1321,7 +1321,12 @@ app.get('/api/meals/today', requireAuth, requireUser, async (req, res) => {
     const coach = coaches[0];
     const user = { ...users[0], ...(subs?.[0]?.intake || {}) };
 
-    const mealData = await enqueue(() => generateMealPlan({ user, coach }));
+    // Fetch last 7 days of meal plans so AI can avoid repeating them
+    const recentMeals = await db('meal_plans', 'GET', null,
+      `?user_id=eq.${req.session.user_id}&coach_id=eq.${coachId}&order=date.desc&limit=7&select=breakfast,lunch,snack,dinner,date`
+    ).catch(() => []);
+
+    const mealData = await enqueue(() => generateMealPlan({ user, coach, recentMeals }));
 
     const saved = await db('meal_plans', 'POST', {
       user_id: req.session.user_id,

@@ -185,7 +185,7 @@ RULES:
 // Called once per day when no meal plan exists for today
 // Returns strict JSON
 // ─────────────────────────────────────────────
-async function generateMealPlan({ user, coach }) {
+async function generateMealPlan({ user, coach, recentMeals = [] }) {
   const hasStrategy = coach.ai_nutrition_strategy && coach.ai_nutrition_strategy.trim().length > 0;
   const system = `You are a nutrition AI generating a daily meal plan.
 Return ONLY valid JSON. No explanation, no markdown, no extra text.
@@ -228,6 +228,9 @@ Same logic applies to lunch, snack, and dinner: each is only marked "Not Applica
 When breakfast is included, make it real, varied, light, and healthy — vary it across days (e.g. fresh juice, smoothie, yogurt with fruit, protein shake, eggs), never the same thing every time.
 Snacks, when included, should also be varied and healthy (e.g. fruit, nuts, yogurt, veggies with hummus) rather than repeating the same item every day.
 Whenever meals are reduced (by explicit coach naming or to fit calories), shrink portions of the remaining/included meals so the total still matches the coach's exact calorie and macro target — never add extra calories on top.
+
+RECENT MEALS ALREADY SERVED (last ${recentMeals.length} days — do NOT repeat any of these exact meals or combinations):
+${recentMeals.length > 0 ? recentMeals.map(m => `${m.date}: B:${m.breakfast} / L:${m.lunch} / S:${m.snack} / D:${m.dinner}`).join('\n') : 'None yet — this is the first plan.'}
 
 Generate a realistic, practical, tasty meal plan that fits these parameters exactly, applying the meal inclusion rule above.${hasStrategy ? ' Strictly follow the coach\'s exact strategy for calories, macros, and food choices, while still respecting the meal inclusion rule.' : ''}`;
 
