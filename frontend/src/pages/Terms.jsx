@@ -11,7 +11,7 @@ const TEXT_DIM = '#94A3B8';
 const sections = [
   { heading: 'Acceptance', body: 'By using Coachly you agree to these Terms. If you do not agree, please do not use the platform.' },
   { heading: 'Use of Service', body: 'Coachly connects clients with fitness and wellness coaches. You may only use the platform for lawful purposes and in accordance with these Terms.' },
-  { heading: 'Subscriptions', body: 'Subscriptions are billed monthly. You may cancel at any time. Refunds are handled on a case-by-case basis — contact support@coachly.app.' },
+  { heading: 'Subscriptions', body: 'Subscriptions are billed monthly. You may cancel at any time. All payments are final — we do not offer refunds once a subscription has been activated.' },
   { heading: 'Coach Content', body: 'Coaches are independent professionals and not employees of Coachly. Always consult a qualified healthcare professional before starting any fitness or nutrition program.' },
   { heading: 'User Responsibilities', body: 'You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account.' },
   { heading: 'Intellectual Property', body: 'All content on the Coachly platform, including text, graphics, and software, is the property of Coachly or its coaches and is protected by applicable intellectual property laws.' },
