@@ -8,6 +8,8 @@ import UserDashboard from './pages/UserDashboard';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import UserLogin from './pages/UserLogin';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 function getToken() {
   return localStorage.getItem('coachly_token');
@@ -99,6 +101,10 @@ export default function App() {
             </RequireAdmin>
           }
         />
+
+        {/* Legal */}
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
