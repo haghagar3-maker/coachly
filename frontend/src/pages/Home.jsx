@@ -761,7 +761,7 @@ onCanPlay={()=>setVideoLoaded(true)}
             <div className="how-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'3px',borderRadius:'22px',overflow:'hidden',boxShadow:'0 8px 48px rgba(0,0,0,0.09)'}}>
               {[
                 {label:'Subscribe',color:GREEN_DARK,num:'01',title:'Choose your coach',body:'Browse real coaches across every sport and discipline. Pick the program built for your goals and subscribe monthly.'},
-                {label:'Train',color:ORANGE,num:'02',title:'Get your plan + AI helper',body:'Each coach sets you a custom training plan and a built-in AI assistant for quick questions between sessions.'},
+                {label:'Train',color:ORANGE,num:'02',title:'Get your plan + coach AI',body:'Your coach builds your training plan personally. Between sessions, their AI answers quick questions about your workouts and nutrition — trained on your coach\'s exact methods.'},
                 {label:'Grow',color:GREEN_DARK,num:'03',title:'Track your progress',body:'Weekly reviews, direct coach messaging, and real progress tracking. Your coach adjusts your plan as you improve.'},
               ].map((step,i)=>(
                 <Reveal key={i} delay={i*110} style={{display:'contents'}}>
