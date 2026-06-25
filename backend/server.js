@@ -33,14 +33,17 @@ const PORT = process.env.PORT || 3001;
 // ─────────────────────────────────────────────
 // MIDDLEWARE
 // ─────────────────────────────────────────────
-app.use(cors({ origin: function(origin, callback) {
-  const allowed = (process.env.FRONTEND_URL || '').split(',').map(s => s.trim());
-  if (!origin || allowed.includes(origin)) {
-    callback(null, true);
-  } else {
-    callback(new Error('Not allowed by CORS'));
-  }
-}, || '*' }));
+app.use(cors({
+  origin: function(origin, callback) {
+    const allowed = (process.env.FRONTEND_URL || '').split(',').map(s => s.trim());
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '100mb' })); // base64 images can be large
 
 // In-memory error log (last 100 errors) — also persisted to DB
