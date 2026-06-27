@@ -2636,7 +2636,7 @@ app.get('/api/coaches/ranked', async (req, res) => {
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const coaches = await db('coaches', 'GET', null, '?is_active=eq.true&is_approved=eq.true&select=slug,id,created_at');
-    const base = process.env.FRONTEND_URL || 'https://coachly-two.vercel.app';
+    const base = 'https://www.findcoachly.com';
     const urls = (coaches || []).map(c => `
   <url>
     <loc>${base}/coach/${c.slug || c.id}</loc>
@@ -2657,7 +2657,7 @@ app.get('/sitemap.xml', async (req, res) => {
 // GET /robots.txt
 app.get('/robots.txt', (req, res) => {
   res.set('Content-Type', 'text/plain');
-  res.send(`User-agent: *\nAllow: /\nSitemap: ${process.env.FRONTEND_URL || 'https://coachly-two.vercel.app'}/sitemap.xml`);
+  res.send(`User-agent: *\nAllow: /\nSitemap: https://www.findcoachly.com/sitemap.xml`);
 });
 // ─────────────────────────────────────────────
 // COACH MEETINGS (calendar/sessions)
