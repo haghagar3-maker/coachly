@@ -2644,7 +2644,7 @@ app.get('/sitemap.xml', async (req, res) => {
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`).join('');
-    res.set('Content-Type', 'application/xml');
+    res.set('Content-Type', 'text/xml; charset=utf-8');
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${base}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>${urls}
