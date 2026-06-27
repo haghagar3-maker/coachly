@@ -197,12 +197,11 @@ function CoachCard({coach,onView,delay=0}){
 
       {/* Action strip */}
       <div style={{maxHeight:revealed?`${ACTION_H}px`:'0px',overflow:'hidden',transition:'max-height 0.28s cubic-bezier(0.22,1,0.36,1)',borderRadius:'0 0 22px 22px'}}>
-        <a
-          href={`/coach/${coach.slug||coach.id}`}
-          onClick={(e)=>{e.preventDefault();e.stopPropagation();onView(coach.slug||coach.id);}}
-          style={{textDecoration:'none',display:'flex',width:'100%',height:`${ACTION_H}px`,background:`linear-gradient(100deg,${GREEN_DARK},${GREEN},${GREEN_LIGHT})`,color:'#0a1a00',alignItems:'center',justifyContent:'center',gap:'9px',fontSize:'13px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit',letterSpacing:'0.05em',textTransform:'uppercase',borderRadius:'0 0 22px 22px'}}>
+        <button
+          onClick={(e)=>{e.stopPropagation();onView(coach.slug||coach.id);}}
+          style={{width:'100%',height:`${ACTION_H}px`,border:'none',background:`linear-gradient(100deg,${GREEN_DARK},${GREEN},${GREEN_LIGHT})`,color:'#0a1a00',display:'flex',alignItems:'center',justifyContent:'center',gap:'9px',fontSize:'13px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit',letterSpacing:'0.05em',textTransform:'uppercase',borderRadius:'0 0 22px 22px'}}>
           View Profile <span style={{fontSize:'17px'}}>→</span>
-        </a>
+        </button>
       </div>
     </div>
   );
