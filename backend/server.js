@@ -2650,7 +2650,8 @@ app.get('/sitemap.xml', async (req, res) => {
   <url><loc>${base}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>${urls}
 </urlset>`);
   } catch (e) {
-    res.status(500).send('Sitemap error');
+    console.error('SITEMAP ERROR:', e.message, e.stack);
+    res.status(500).send('Sitemap error: ' + e.message);
   }
 });
 // GET /robots.txt
