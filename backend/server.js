@@ -2635,12 +2635,12 @@ app.get('/api/coaches/ranked', async (req, res) => {
 // GET /sitemap.xml — for Google indexing
 app.get('/sitemap.xml', async (req, res) => {
   try {
-    const coaches = await db('coaches', 'GET', null, '?is_active=eq.true&is_approved=eq.true&select=slug,id,updated_at');
+    const coaches = await db('coaches', 'GET', null, '?is_active=eq.true&is_approved=eq.true&select=slug,id,created_at');
     const base = process.env.FRONTEND_URL || 'https://coachly-two.vercel.app';
     const urls = (coaches || []).map(c => `
   <url>
     <loc>${base}/coach/${c.slug || c.id}</loc>
-    <lastmod>${(c.updated_at || new Date().toISOString()).slice(0, 10)}</lastmod>
+    <lastmod>${(c.created_at || new Date().toISOString()).slice(0, 10)}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`).join('');
