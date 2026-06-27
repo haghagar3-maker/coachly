@@ -1,1 +1,7 @@
-{"rewrites":[{"source":"/:path*","destination":"/index.html"}]}
+{
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "https://api.findcoachly.com/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "https://api.findcoachly.com/robots.txt" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}
